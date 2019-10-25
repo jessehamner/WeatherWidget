@@ -118,12 +118,21 @@ def split_hwo(bodytext):
   """
 
   """
+  returntext = ''
+  bodytext = re.sub('(\.DAY ONE.*.?)\n\n', '\g<1>\n', bodytext)
 
+  bodytext = re.sub('(\.SPOTTER INFORMATION STATEMENT.*.?)\n\n', '\g<1>\n', bodytext)
+
+  print('body text of HWO: {0}'.format(bodytext))
   hwolist = bodytext.split('\n\n')
   for i in hwolist:
-    # print('i: {0}'.format(i))
-    if re.search('.DAY ONE', i):
-      return i
+    if re.search('\.DAY ONE', i):
+      returntext = '{0}{1}\n\n'.format(returntext, i)
+    if re.search('\.SPOTTER INFORMATION STATEMENT', i):
+      returntext = '{0}{1}\n\n'.format(returntext, i)
+
+  if returntext:
+    return returntext
 
   return None
 
