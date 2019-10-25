@@ -116,6 +116,8 @@ def get_hwo(url, abbr):
 
 def split_hwo(bodytext):
   """
+  Pull out today's hazardous weather outlook and spotter activation notice.
+  Return a slightly more compact text block of the two paragraphs.
 
   """
   returntext = ''
@@ -123,7 +125,7 @@ def split_hwo(bodytext):
 
   bodytext = re.sub('(\.SPOTTER INFORMATION STATEMENT.*.?)\n\n', '\g<1>\n', bodytext)
 
-  print('body text of HWO: {0}'.format(bodytext))
+  # print('body text of HWO: {0}'.format(bodytext))
   hwolist = bodytext.split('\n\n')
   for i in hwolist:
     if re.search('\.DAY ONE', i):
