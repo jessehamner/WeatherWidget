@@ -5,10 +5,14 @@
         <key>Label</key>
         <string>getweather</string>
         <key>Program</key>
-        <string>/path/to/the/script/getweather.sh</string>
+        <string>/Users/jhamner/Dropbox/bin/getweather.sh</string>
         <key>RunAtLoad</key>
         <true/>
         <key>StartInterval</key>
         <integer>120</integer>
+        <key>StandardOutPath</key>
+        <string>/tmp/weather-output.txt</string>
+        <key>StandardErrorPath</key>
+        <string>/tmp/weather-errors.txt</string>
     </dict>
 </plist>

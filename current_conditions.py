@@ -34,7 +34,6 @@ CUR_URL = 'https://api.weather.gov/stations/{station}/observations/current'
 RADAR_URL = 'https://radar.weather.gov/ridge/RadarImg/N0R/{station}_{image}'
 WARNINGS_URL = 'https://radar.weather.gov/ridge/Warnings/Short/{station}_{warnings}_0.gif'
 HWO_URL = 'https://forecast.weather.gov/product.php'
-# params='?site=DDC&issuedby={abbr}&product=HWO&format=txt&version=1&glossary=0'
 
 WEATHER_URL_ROOT = 'https://radar.weather.gov/ridge/Overlays'
 SHORT_RANGE_COUNTIES = 'County/Short/{radar}_County_Short.gif'
@@ -134,9 +133,6 @@ def get_hwo(url, params_dict):
   response = requests.get(url, params=params_dict)
   html = response.text
   soup = BeautifulSoup(html, 'html.parser')
-  # body = soup.body
-  # print(body)
-
   pres = soup.body.find_all('pre')
   for pretag in pres:
     hwo_text = pretag.get_text()

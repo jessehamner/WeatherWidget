@@ -1,23 +1,25 @@
 #!/bin/bash
 $(which python) ${HOME}/Dropbox/bin/current_conditions.py
+convert_binary="/opt/local/bin/convert"
+dir="/tmp"
 
 for file in bkg2
 do
-  if [[ -f "/tmp/${file}.gif" ]]; then
-    # echo "${file}.gif is already there."
+  if [[ -f "${dir}/${file}.gif" ]]; then
+    echo "${file}.gif is already present in ${dir}."
     sleep 1
   else
-    cp ${HOME}/Dropbox/${file}.gif /tmp/
+    cp ${HOME}/Dropbox/${file}.gif ${dir}/
   fi
 done
 
 for file in wow weather 
 do
-  if [[ -f "/tmp/${file}.gif" ]]; then
-    # echo "Removing /tmp/${file}.gif"
-    rm /tmp/${file}.gif
+  if [[ -f "${dir}/${file}.gif" ]]; then
+    echo "Removing ${dir}/${file}.gif"
+    rm ${dir}/${file}.gif
   fi
 done
 
-convert -composite /tmp/current_image.gif   /tmp/current_warnings.gif  /tmp/weather.gif
-convert -composite /tmp/weather.gif   /tmp/bkg2.gif  /tmp/wow.gif
+${convert_binary} -composite ${dir}/current_image.gif   ${dir}/current_warnings.gif  ${dir}/weather.gif
+${convert_binary} -composite ${dir}/weather.gif   ${dir}/bkg2.gif  ${dir}/wow.gif
