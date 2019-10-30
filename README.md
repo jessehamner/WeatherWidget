@@ -7,7 +7,10 @@ US National Weather Service. On Mac OS X, these scripts integrate nicely with
 [GeekTool](https://www.tynsoe.org/v2/geektool/) 
 desktop widgets.
 
-![alt text](https://github.com/jessehamner/weatherwidget/raw/master/src/common/images/desktop.png "GeekTool desktop widgets showing radar image and hazardous weather outlook information")
+<p align="center">
+<img src="https://github.com/jessehamner/WeatherWidget/blob/master/images/desktop.png" width="300" alt-text="GeekTool desktop widgets showing radar image and hazardous weather outlook information">
+</p>
+
 
 ## Prerequisites
 
