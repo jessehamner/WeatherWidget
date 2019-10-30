@@ -96,3 +96,13 @@ If you have already done this once, you may need to `unload` the plist first.
 To use GeekTool, one must also set up a widget ("geeklet").
 
 ### Linux
+
+
+
+### That other Geeklet
+
+In case you're curious (one person was) about the "Time Zones" geeklet seen in the desktop screencap, the bash command is this:
+
+```bash
+echo "Mtn View:   $(env TZ=America/Los_Angeles date +'%l:%M %p %A')";echo "Dallas:     $(env TZ=America/Chicago date +'%l:%M %p %A')";echo "Boston:     $(env TZ=America/New_York date +'%l:%M %p %A')";echo "London:     $(env TZ=Europe/London date +'%l:%M %p %A')";echo "Amsterdam:  $(env TZ=Europe/Amsterdam date +'%l:%M %p %A')";echo "Banglalore: $(env TZ=Asia/Kolkata date +'%l:%M %p %A')"
+```
