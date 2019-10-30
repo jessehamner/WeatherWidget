@@ -5,7 +5,7 @@
         <key>Label</key>
         <string>getweather</string>
         <key>Program</key>
-        <string>/Users/jhamner/Dropbox/bin/getweather.sh</string>
+        <string>/path/to/getweather.sh</string>
         <key>RunAtLoad</key>
         <true/>
         <key>StartInterval</key>
