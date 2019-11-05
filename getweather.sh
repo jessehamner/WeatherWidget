@@ -9,7 +9,7 @@ do
     echo "${file}.gif is already present in ${dir}."
     sleep 1
   else
-    cp ${HOME}/Dropbox/${file}.gif ${dir}/
+    cp ${HOME}/Dropbox/images/${file}.gif ${dir}/
   fi
 done
 
