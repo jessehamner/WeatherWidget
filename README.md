@@ -14,14 +14,17 @@ desktop widgets.
 
 ## Prerequisites
 
-Python, bash (no idea if this works on the Windows 10 bash interpreter),
-and ImageMagick. This codebase is generally intended for Mac OS X and Linux,
+[Python](https://www.python.org/), and either [bash](https://www.gnu.org/software/bash/) or [zsh](http://zsh.sourceforge.net/). I have no idea if this works on the Windows 10 bash interpreter.
+[ImageMagick](https://imagemagick.org/) is also required. This codebase is generally intended for Mac OS X and Linux,
 but obviously there are Windows versions of all of this software, but I don't
 regularly use Windows.
 
 ## Quick Start
 
+- Install prerequisites, if needed (`requests` and `bs4` for python; ImageMagick libraries)
 - Change three variables in the Python script
+- Make sure the hard-coded paths to the `convert` binary are correct (might be `/usr/bin/convert`, might be `/opt/local/bin/convert`, might be something else)
+- If you don't have any cities larger than 1M people nearby, change the name of the weather station `City_xxxx_Short.gif` file in `merge_backgrounds.sh`
 - Put the bash and python scripts into a directory on your PATH
 - Run the python script once, manually, to ensure that everything works and to get the background images you need to have
 - Run `merge_backgrounds.sh` to make composited background images for the radar images
