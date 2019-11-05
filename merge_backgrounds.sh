@@ -5,10 +5,12 @@ radar="FWS"
 
 highways="${dir}/${radar}_Highways_Short.gif"
 rangering="${dir}/${radar}_RangeRing_Short.gif"
-cities="${dir}/${radar}_City_Short.gif"
+cities="${dir}/${radar}_City_1M_Short.gif"
+smallcities="${dir}/${radar}_City_250K_Short.gif"
 counties="${dir}/${radar}_County_Short.gif"
 
-for file in ${highways} ${rangering} ${cities} ${counties}
+echo "Checking for files in ${dir} directory..."
+for file in ${highways} ${rangering} ${cities} ${smallcities} ${counties}
 do
   if [[ -f "${file}" ]]; then
     sleep 0.5
