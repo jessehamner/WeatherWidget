@@ -1,13 +1,17 @@
+import os
+import sys
+import re
+import requests
+import datetime
+from bs4 import BeautifulSoup
 
-def check_graphics(dest='/tmp', radar='FWS'):
+def check_graphics(graphics_list, dest='/tmp', radar='FWS'):
   """
   Ensure that the needed graphics are available in /tmp/ -- and if needed.
   (re-) download them from the NWS.
   """
 
-  for suf in [SHORT_RANGE_COUNTIES, SHORT_RANGE_HIGHWAYS, SHORT_RANGE_MED_CITIES,
-              SHORT_RANGE_LRG_CITIES, SHORT_RANGE_SML_CITIES, SHORT_RANGE_RING,
-              SHORT_RANGE_RIVERS, SHORT_RANGE_TOPO]:
+  for suf in graphics_list: 
     filename = '{0}'.format(suf.format(radar=radar))
     filename = filename.split('/')[-1]
     localpath = os.path.join(dest, filename)
@@ -71,7 +75,7 @@ def get_warnings_box(url, station):
   return 0
 
 
-def get_hwo(url, params_dict):
+def get_hwo(url, params_dict, outputfile='current_hwo.txt'):
   """
   Get the HTML-only Hazardous Weather Outlook. The raw text of this statement
   is available inside
@@ -92,7 +96,7 @@ def get_hwo(url, params_dict):
     if len(hwo_text) > 200:
       #print('{0}'.format(pretag.get_text()))
 
-      cur = open('/tmp/current_hwo.txt', 'w')
+      cur = open(os.path.join('/tmp/', outputfile), 'w')
       cur.write(hwo_text)
       cur.close()
       return hwo_text
@@ -161,3 +165,61 @@ def conditions_summary(conditions):
 
   return summary
 
+
+def check_outage(radar, url, params_dict):
+  """
+  Check a webpage for information about any outages at the radar site.
+  The product is called a 'Free Text Message' (FTM).
+  'https://forecast.weather.gov/product.php?site=NWS&issuedby=FWS&product=FTM&format=CI&version=1&glossary=0'
+  The information is identical to the HWO call.
+  """
+    
+  response = requests.get(url, params=params_dict)
+  html = response.text
+  #print('Response text: {0}'.format(html))
+  soup = BeautifulSoup(html, 'html.parser')
+  pres = soup.body.find_all('pre')
+  for pretag in pres:
+    ftm_text = pretag.get_text()
+    # print('ftm_text: {0}'.format(ftm_text))
+    if len(ftm_text) > 100:
+      return ftm_text.split('\n')
+  return None
+
+
+def parse_outage(bodytext):
+  """
+  Read the outage text, if any, and determine:
+  - should it be displayed (i.e. is it timely and current?)
+  - what text is relevant (but default to "all of the text")
+  """
+  if not bodytext:
+    print('No outage text seen. Returning -None-')
+    return None
+  message_date = ''
+  return_text = ''
+  for line in bodytext:
+    line.strip()
+    if re.search(r'^\s*$', line):
+      continue
+    if re.search(r'^\s*FTM|^000\s*$|^NOUS', line):
+      continue
+    #print('line: {0}'.format(line))
+    if re.search('MESSAGE DATE:', line, flags=re.I):
+      message_date = re.sub(r'MESSAGE DATE:\s+', '', line, flags=re.I)
+      print('Date of issue: {0}'.format(message_date))
+      dateobj = datetime.datetime.strptime(message_date, '%b %d %Y %H:%M:%S')
+      today = datetime.datetime.now()
+      if (today - dateobj) > datetime.timedelta(days=1):
+        print('Alert is older than one day -- ignoring.')
+        return None
+      else:
+        return_text = str('{0}\nNWS FTM NOTICE:'.format(return_text))
+
+    else:
+      return_text = str('{0} {1}'.format(return_text, line))
+   
+  if message_date:
+    return_text = re.sub('  ', ' ', return_text)
+    return return_text.strip()
+  return None

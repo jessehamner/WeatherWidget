@@ -40,6 +40,15 @@ HWO_DICT = {
     'glossary': 0
     }
 
+FTM_DICT = {
+    'site': 'NWS',
+    'issuedby': RADAR_STATION,
+    'product': 'FTM',
+    'format': 'CI',
+    'version': 1,
+    'glossary': 0
+    }
+
 STATION = 'KDTO'
 CUR_URL = 'https://api.weather.gov/stations/{station}/observations/current'
 RADAR_URL = 'https://radar.weather.gov/ridge/RadarImg/N0R/{station}_{image}'
@@ -56,6 +65,9 @@ SHORT_RANGE_RING = 'RangeRings/Short/{radar}_RangeRing_Short.gif'
 SHORT_RANGE_RIVERS = 'Rivers/Short/{radar}_Rivers_Short.gif'
 SHORT_RANGE_TOPO = 'Topo/Short/{radar}_Topo_Short.jpg'
 
+GRAPHICS_LIST = [SHORT_RANGE_COUNTIES, SHORT_RANGE_HIGHWAYS, SHORT_RANGE_TOPO,
+                 SHORT_RANGE_MED_CITIES, SHORT_RANGE_LRG_CITIES, SHORT_RANGE_RING,
+                 SHORT_RANGE_SML_CITIES, SHORT_RANGE_RIVERS]
 
 def main():
   """
@@ -63,6 +75,7 @@ def main():
   - Get the radar image
   - Get the warnings boxes graphic
   - Get today's hazardous weather outlook statement and parse it
+  - Check for FTM outage notifications
   - Write out the files to helpful locations.
   - Next: should run the getweather.sh shell script, that overlays/composites
     the weather graphics. At present, that shell script calls this script
@@ -75,7 +88,21 @@ def main():
 
   """
 
-  check_graphics()
+  outage_text = check_outage(STATION, HWO_URL, FTM_DICT)
+  returned_message = parse_outage(outage_text)
+  outfilepath = os.path.join('/tmp/', 'outage.txt')
+  if returned_message:
+    print('There is outage text: {0}'.format(returned_message))
+    cur = open(outfilepath, 'w')
+    cur.write(returned_message)
+    cur.close()
+  else:
+    try: 
+      os.unlink(outfilepath)
+    except OSError:
+      print('file does not exist: {0}'.format(outfilepath))
+
+  check_graphics(GRAPHICS_LIST)
   conditions = get_current_conditions(CUR_URL, STATION)
   sum_con = conditions_summary(conditions)
 
