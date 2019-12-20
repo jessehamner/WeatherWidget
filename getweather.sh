@@ -1,5 +1,5 @@
 #!/bin/bash
-$(which python) ${HOME}/Dropbox/bin/current_conditions.py
+$(which python) ${HOME}/Dropbox/weatherwidget/current_conditions.py
 convert_binary="/opt/local/bin/convert"
 dir="/tmp"
 

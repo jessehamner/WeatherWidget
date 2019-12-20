@@ -102,7 +102,7 @@ def main():
     except OSError:
       print('file does not exist: {0}'.format(outfilepath))
 
-  check_graphics(GRAPHICS_LIST)
+  check_graphics(GRAPHICS_LIST, WEATHER_URL_ROOT)
   conditions = get_current_conditions(CUR_URL, STATION)
   sum_con = conditions_summary(conditions)
 

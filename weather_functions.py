@@ -5,7 +5,7 @@ import requests
 import datetime
 from bs4 import BeautifulSoup
 
-def check_graphics(graphics_list, dest='/tmp', radar='FWS'):
+def check_graphics(graphics_list, root_url, dest='/tmp', radar='FWS'):
   """
   Ensure that the needed graphics are available in /tmp/ -- and if needed.
   (re-) download them from the NWS.
@@ -17,7 +17,7 @@ def check_graphics(graphics_list, dest='/tmp', radar='FWS'):
     localpath = os.path.join(dest, filename)
     if os.path.isfile(localpath) is False:
       print('Need to retrieve {0}'.format(filename))
-      graphic = requests.get(os.path.join(WEATHER_URL_ROOT, suf.format(radar=radar)))
+      graphic = requests.get(os.path.join(root_url, suf.format(radar=radar)))
       with open(os.path.join(dest, filename), 'wb') as output:
         output.write(graphic.content)
       output.close()
