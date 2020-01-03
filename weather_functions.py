@@ -45,6 +45,37 @@ def get_current_conditions(url, station):
   return None
 
 
+def format_current_conditions(cur):
+  """
+  Take in the dictionary of current conditions and return a text document.
+  """
+  temp_unit = "F"
+  if cur['temperature']['unitCode'] == 'unit:degC':
+    temp_unit = "C"
+
+  pressure_unit = re.sub('unit:', '', cur['barometricPressure']['unitCode'])
+  
+  doctext = str('Conditions as of {}'.format(cur['timestamp'],
+      temp_unit))
+  doctext = str('{}\nTemperature: {:3.0f} {}'.format(doctext,
+      cur['temperature']['value'], temp_unit))
+  doctext = str('{}\nDewpoint: {:3.0f} {}'.format(doctext,
+      cur['dewpoint']['value'], temp_unit))
+  doctext = str('{}\nRel. Humidity: {:3.0f}%'.format(doctext,
+      cur['relativeHumidity']['value']))
+
+  heat_index = "None"
+  if cur['heatIndex']['value']:
+    heat_index = str('{:3.0f} {}'.format(cur['heatIndex']['value'], temp_unit))
+  doctext = str('{}\nHeat Index: {}'.format(doctext,
+      cur['heatIndex']['value'], heat_index))
+
+  doctext = str('{}\nPressure: {:6.0f} {}'.format(doctext,
+      cur['barometricPressure']['value'], pressure_unit))
+
+  return doctext
+
+
 def get_weather_radar(url, station):
   """
   Using the NWS radar station abbreviation, retrieve the current radar image

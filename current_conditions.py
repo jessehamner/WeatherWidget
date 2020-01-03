@@ -102,6 +102,10 @@ def main():
   check_graphics(GRAPHICS_LIST, WEATHER_URL_ROOT)
   conditions = get_current_conditions(CUR_URL, STATION)
   sum_con = conditions_summary(conditions)
+  nice_con = format_current_conditions(sum_con)
+  with open('/tmp/current_conditions.txt', 'w') as current_conditions:
+    current_conditions.write(nice_con)
+  current_conditions.close()
 
   get_weather_radar(RADAR_URL, RADAR_STATION)
   get_warnings_box(WARNINGS_URL, RADAR_STATION)
