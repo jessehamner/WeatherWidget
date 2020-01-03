@@ -1,6 +1,6 @@
 #!/bin/bash
 $(which python) ${HOME}/Dropbox/weatherwidget/current_conditions.py
-convert_binary="/opt/local/bin/convert"
+convert_binary="$(which convert)"
 dir="/tmp"
 
 for file in bkg2

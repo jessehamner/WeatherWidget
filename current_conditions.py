@@ -15,9 +15,6 @@ from __future__ import print_function
 import sys
 import os
 import re
-import requests
-import datetime
-from bs4 import BeautifulSoup
 from weather_functions import *
 
 RADAR_STATION = 'FWS'
@@ -77,18 +74,18 @@ def main():
   - Get today's hazardous weather outlook statement and parse it
   - Check for FTM outage notifications
   - Write out the files to helpful locations.
-  - Next: should run the getweather.sh shell script, that overlays/composites
+  - TODO: should run the getweather.sh shell script, that overlays/composites
     the weather graphics. At present, that shell script calls this script
     and runs the overlays with -bash-.
-  - Next: Acquire multi-band GOES-x imagery from today, checking to see if
+  - TODO: Acquire multi-band GOES-x imagery from today, checking to see if
     there is a new image and comparing it to the list of files from today,
-    of the specified resolution. 
-  - Remove radar and satellite images more than two days old
-  - Make animated gifs of the last 36 hours of radar and a few bands of images
+    of the specified resolution.
+  - TODO: Remove radar and satellite images more than two days old
+  - TODO: Make animated gifs of last 36 hours of radar and a few bands of images
 
   """
 
-  outage_text = check_outage(STATION, HWO_URL, FTM_DICT)
+  outage_text = check_outage(HWO_URL, FTM_DICT)
   returned_message = parse_outage(outage_text)
   outfilepath = os.path.join('/tmp/', 'outage.txt')
   if returned_message:
@@ -97,7 +94,7 @@ def main():
     cur.write(returned_message)
     cur.close()
   else:
-    try: 
+    try:
       os.unlink(outfilepath)
     except OSError:
       print('file does not exist: {0}'.format(outfilepath))

@@ -1,9 +1,18 @@
+'''
+Weather functions to be used with the NWS radar and weather information
+download script.
+
+Jesse Hamner, 2019-2020
+'''
+
+from __future__ import print_function
+
 import os
-import sys
 import re
-import requests
 import datetime
+import requests
 from bs4 import BeautifulSoup
+
 
 def check_graphics(graphics_list, root_url, dest='/tmp', radar='FWS'):
   """
@@ -11,7 +20,7 @@ def check_graphics(graphics_list, root_url, dest='/tmp', radar='FWS'):
   (re-) download them from the NWS.
   """
 
-  for suf in graphics_list: 
+  for suf in graphics_list:
     filename = '{0}'.format(suf.format(radar=radar))
     filename = filename.split('/')[-1]
     localpath = os.path.join(dest, filename)
@@ -166,14 +175,15 @@ def conditions_summary(conditions):
   return summary
 
 
-def check_outage(radar, url, params_dict):
+def check_outage(url, params_dict):
   """
   Check a webpage for information about any outages at the radar site.
   The product is called a 'Free Text Message' (FTM).
-  'https://forecast.weather.gov/product.php?site=NWS&issuedby=FWS&product=FTM&format=CI&version=1&glossary=0'
+  'https://forecast.weather.gov/product.php?site=NWS
+  &issuedby=FWS&product=FTM&format=CI&version=1&glossary=0'
   The information is identical to the HWO call.
   """
-    
+
   response = requests.get(url, params=params_dict)
   html = response.text
   #print('Response text: {0}'.format(html))
@@ -218,7 +228,7 @@ def parse_outage(bodytext):
 
     else:
       return_text = str('{0} {1}'.format(return_text, line))
-   
+
   if message_date:
     return_text = re.sub('  ', ' ', return_text)
     return return_text.strip()

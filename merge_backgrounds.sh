@@ -2,6 +2,13 @@
 
 dir="/tmp"
 radar="FWS"
+convert_binary="$(which convert)"
+
+echo "-convert- binary: ${convert_binary}"
+if [ "${convert_binary}" == "convert not found" ]; then
+  echo "Error! -convert- command not found."
+  exit
+fi
 
 highways="${dir}/${radar}_Highways_Short.gif"
 rangering="${dir}/${radar}_RangeRing_Short.gif"
@@ -20,9 +27,9 @@ do
   fi
 done
 
-convert -composite "${highways}" "${rangering}" "${dir}/result1.gif"
-convert -composite  "${dir}/result1.gif" "${cities}" "${dir}/bkg1.gif"
-convert -composite  "${dir}/bkg1.gif" "${counties}" "${dir}/bkg2.gif"
+${convert_binary} -composite "${highways}" "${rangering}" "${dir}/result1.gif"
+${convert_binary} -composite  "${dir}/result1.gif" "${cities}" "${dir}/bkg1.gif"
+${convert_binary} -composite  "${dir}/bkg1.gif" "${counties}" "${dir}/bkg2.gif"
 
 echo "Done!"
 # <EOF>
