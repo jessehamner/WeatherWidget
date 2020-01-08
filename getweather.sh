@@ -1,11 +1,16 @@
 #!/bin/bash
 $(/usr/bin/which python) ${HOME}/Dropbox/weatherwidget/current_conditions.py
-convert_binary=$(/usr/bin/which convert)
+convert_binary=`source ${HOME}/.bash_profile; /usr/bin/which convert`
 dir="/tmp"
 
 echo "-convert- binary: ${convert_binary}"
 if [ "${convert_binary}" == "convert not found" ]; then
   echo "Error! -convert- command not found."
+  exit
+fi
+
+if [ "${convert_binary}" == "" ]; then
+  echo "Error! -convert- command not found -- missing binary?"
   exit
 fi
 

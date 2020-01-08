@@ -11,6 +11,7 @@ import os
 import re
 import datetime
 import requests
+requests.packages.urllib3.disable_warnings()
 from bs4 import BeautifulSoup
 
 
@@ -26,7 +27,8 @@ def check_graphics(graphics_list, root_url, dest='/tmp', radar='FWS'):
     localpath = os.path.join(dest, filename)
     if os.path.isfile(localpath) is False:
       print('Need to retrieve {0}'.format(filename))
-      graphic = requests.get(os.path.join(root_url, suf.format(radar=radar)))
+      graphic = requests.get(os.path.join(root_url, suf.format(radar=radar)),
+                             verify=False)
       with open(os.path.join(dest, filename), 'wb') as output:
         output.write(graphic.content)
       output.close()
@@ -37,7 +39,7 @@ def get_current_conditions(url, station):
   Take the JSON object from the NWS station and produce a reduced set of
   information for display.
   """
-  response = requests.get(url.format(station=station))
+  response = requests.get(url.format(station=station), verify=False)
   if response.status_code == 200:
     conditions = response.json()
     return conditions
@@ -73,6 +75,13 @@ def format_current_conditions(cur):
   doctext = str('{}\nPressure: {:6.0f} {}'.format(doctext,
       cur['barometricPressure']['value'], pressure_unit))
 
+  wind_direction_unit = re.sub('unit:', '', cur['windDirection']['unitCode'])
+  if wind_direction_unit == 'degree_(angle)':
+    wind_direction_unit = 'degree azimuth'
+
+  doctext = str('{}\nWind Direction: {:3.0f} {}'.format(doctext,
+      cur['windDirection']['value'], wind_direction_unit))
+
   return doctext
 
 
@@ -81,7 +90,8 @@ def get_weather_radar(url, station):
   Using the NWS radar station abbreviation, retrieve the current radar image
   and world file from the NWS.
   """
-  response1 = requests.get(url.format(station=station, image='N0R_0.gfw'))
+  response1 = requests.get(url.format(station=station, image='N0R_0.gfw'),
+                           verify=False)
   if response1.status_code != 200:
     print('Response from server was not OK: {0}'.format(response1.status_code))
     return None
@@ -89,7 +99,8 @@ def get_weather_radar(url, station):
   cur1.write(response1.text)
   cur1.close()
 
-  response2 = requests.get(url.format(station=station, image='N0R_0.gif'))
+  response2 = requests.get(url.format(station=station, image='N0R_0.gif'),
+                           verify=False)
   if response2.status_code != 200:
     print('Response from server was not OK: {0}'.format(response2.status_code))
     return None
@@ -107,7 +118,8 @@ def get_warnings_box(url, station):
   from the NWS for the specified locale.
   """
   warnings = 'Warnings'
-  response = requests.get(url.format(station=station, warnings=warnings))
+  response = requests.get(url.format(station=station, warnings=warnings),
+                          verify=False)
   cur = open('/tmp/current_warnings.gif', 'wb')
   cur.write(response.content)
   cur.close()
@@ -127,7 +139,7 @@ def get_hwo(url, params_dict, outputfile='current_hwo.txt'):
     </pre>
   """
 
-  response = requests.get(url, params=params_dict)
+  response = requests.get(url, params=params_dict, verify=False)
   html = response.text
   soup = BeautifulSoup(html, 'html.parser')
   pres = soup.body.find_all('pre')
@@ -215,7 +227,7 @@ def check_outage(url, params_dict):
   The information is identical to the HWO call.
   """
 
-  response = requests.get(url, params=params_dict)
+  response = requests.get(url, params=params_dict, verify=False)
   html = response.text
   #print('Response text: {0}'.format(html))
   soup = BeautifulSoup(html, 'html.parser')
