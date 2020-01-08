@@ -1,7 +1,13 @@
 #!/bin/bash
-$(which python) ${HOME}/Dropbox/weatherwidget/current_conditions.py
-convert_binary="$(/usr/bin/which convert)"
+$(/usr/bin/which python) ${HOME}/Dropbox/weatherwidget/current_conditions.py
+convert_binary=$(/usr/bin/which convert)
 dir="/tmp"
+
+echo "-convert- binary: ${convert_binary}"
+if [ "${convert_binary}" == "convert not found" ]; then
+  echo "Error! -convert- command not found."
+  exit
+fi
 
 for file in bkg2
 do

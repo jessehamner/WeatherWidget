@@ -2,7 +2,7 @@
 
 dir="/tmp"
 radar="FWS"
-convert_binary="$(which convert)"
+convert_binary=$(/usr/bin/which convert)
 
 echo "-convert- binary: ${convert_binary}"
 if [ "${convert_binary}" == "convert not found" ]; then
