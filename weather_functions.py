@@ -11,8 +11,8 @@ import os
 import re
 import datetime
 import requests
-requests.packages.urllib3.disable_warnings()
 from bs4 import BeautifulSoup
+requests.packages.urllib3.disable_warnings()
 
 
 def check_graphics(graphics_list, root_url, dest='/tmp', radar='FWS'):
@@ -56,31 +56,33 @@ def format_current_conditions(cur):
     temp_unit = "C"
 
   pressure_unit = re.sub('unit:', '', cur['barometricPressure']['unitCode'])
-  
-  doctext = str('Conditions as of {}'.format(cur['timestamp'],
-      temp_unit))
+
+  doctext = str('Conditions as of {}'.format(cur['timestamp']))
   doctext = str('{}\nTemperature: {:3.0f} {}'.format(doctext,
-      cur['temperature']['value'], temp_unit))
+                                                     cur['temperature']['value'],
+                                                     temp_unit))
   doctext = str('{}\nDewpoint: {:3.0f} {}'.format(doctext,
-      cur['dewpoint']['value'], temp_unit))
+                                                  cur['dewpoint']['value'],
+                                                  temp_unit))
   doctext = str('{}\nRel. Humidity: {:3.0f}%'.format(doctext,
-      cur['relativeHumidity']['value']))
+                                                     cur['relativeHumidity']['value']))
 
   heat_index = "None"
   if cur['heatIndex']['value']:
     heat_index = str('{:3.0f} {}'.format(cur['heatIndex']['value'], temp_unit))
-  doctext = str('{}\nHeat Index: {}'.format(doctext,
-      cur['heatIndex']['value'], heat_index))
+  doctext = str('{}\nHeat Index: {}'.format(doctext, heat_index))
 
   doctext = str('{}\nPressure: {:6.0f} {}'.format(doctext,
-      cur['barometricPressure']['value'], pressure_unit))
+                                                  cur['barometricPressure']['value'],
+                                                  pressure_unit))
 
   wind_direction_unit = re.sub('unit:', '', cur['windDirection']['unitCode'])
   if wind_direction_unit == 'degree_(angle)':
     wind_direction_unit = 'degree azimuth'
 
   doctext = str('{}\nWind Direction: {:3.0f} {}'.format(doctext,
-      cur['windDirection']['value'], wind_direction_unit))
+                                                        cur['windDirection']['value'],
+                                                        wind_direction_unit))
 
   return doctext
 
@@ -276,3 +278,23 @@ def parse_outage(bodytext):
     return_text = re.sub('  ', ' ', return_text)
     return return_text.strip()
   return None
+
+
+def get_current_alerts(url, params_dict):
+  """
+  Get current watches, warnings, or advisories for a county or zone.
+  Check https://alerts.weather.gov/cap/wwaatmget.php?x=TXC121&y=1 as example.
+  For abbreviations, see https://alerts.weather.gov/
+  The ATOM and CAP feeds are updated about every two minutes.
+  """
+
+  response = requests.get(url, params=params_dict, verify=False)
+  if response.status_code == 200:
+    conditions = response.text
+    return conditions
+  print('Response from server was not OK: {0}'.format(response.status_code))
+  return None
+
+  # Parse the feed for relevant content:
+
+  # Write a simple formatted text file to /tmp/:

@@ -15,8 +15,11 @@ from __future__ import print_function
 import sys
 import os
 import re
-from weather_functions import *
+import weather_functions as wf
 
+# TODO move the location params to a YAML file or something
+ALERT_ZONE = 'TXZ103'
+ALERT_COUNTY = 'TXC121'
 RADAR_STATION = 'FWS'
 NWS_ABBR = 'FWD'
 GOES_SECTOR = 'sp'
@@ -46,11 +49,17 @@ FTM_DICT = {
     'glossary': 0
     }
 
+# Alert abbreviations can be found at https://alerts.weather.gov/
+ALERTS_DICT = {'x': 'TXC121',
+               'y': 1
+              }
+
 STATION = 'KDTO'
 CUR_URL = 'https://api.weather.gov/stations/{station}/observations/current'
 RADAR_URL = 'https://radar.weather.gov/ridge/RadarImg/N0R/{station}_{image}'
 WARNINGS_URL = 'https://radar.weather.gov/ridge/Warnings/Short/{station}_{warnings}_0.gif'
 HWO_URL = 'https://forecast.weather.gov/product.php'
+ALERTS_URL = 'https://alerts.weather.gov/cap/wwaatmget.php'
 
 WEATHER_URL_ROOT = 'https://radar.weather.gov/ridge/Overlays'
 SHORT_RANGE_COUNTIES = 'County/Short/{radar}_County_Short.gif'
@@ -85,8 +94,8 @@ def main():
 
   """
 
-  outage_text = check_outage(HWO_URL, FTM_DICT)
-  returned_message = parse_outage(outage_text)
+  outage_text = wf.check_outage(HWO_URL, FTM_DICT)
+  returned_message = wf.parse_outage(outage_text)
   outfilepath = os.path.join('/tmp/', 'outage.txt')
   if returned_message:
     print('There is outage text: {0}'.format(returned_message))
@@ -99,18 +108,18 @@ def main():
     except OSError:
       print('file does not exist: {0}'.format(outfilepath))
 
-  check_graphics(GRAPHICS_LIST, WEATHER_URL_ROOT)
-  conditions = get_current_conditions(CUR_URL, STATION)
-  sum_con = conditions_summary(conditions)
-  nice_con = format_current_conditions(sum_con)
+  wf.check_graphics(GRAPHICS_LIST, WEATHER_URL_ROOT)
+  conditions = wf.get_current_conditions(CUR_URL, STATION)
+  sum_con = wf.conditions_summary(conditions)
+  nice_con = wf.format_current_conditions(sum_con)
   with open('/tmp/current_conditions.txt', 'w') as current_conditions:
     current_conditions.write(nice_con)
   current_conditions.close()
 
-  get_weather_radar(RADAR_URL, RADAR_STATION)
-  get_warnings_box(WARNINGS_URL, RADAR_STATION)
-  hwo_statement = get_hwo(HWO_URL, HWO_DICT)
-  hwo_today = split_hwo(hwo_statement)
+  wf.get_weather_radar(RADAR_URL, RADAR_STATION)
+  wf.get_warnings_box(WARNINGS_URL, RADAR_STATION)
+  hwo_statement = wf.get_hwo(HWO_URL, HWO_DICT)
+  hwo_today = wf.split_hwo(hwo_statement)
   if hwo_today is not None:
     hwo = re.sub('.DAY ONE', 'Hazardous Weather Outlook', hwo_today)
     print(hwo)
