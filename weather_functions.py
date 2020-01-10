@@ -165,22 +165,26 @@ def split_hwo(bodytext):
 
   """
   returntext = ''
-  bodytext = re.sub(r'(\.DAY ONE.*.?)\n\n', r'\g<1>\n', bodytext)
+  #print('Raw body text of HWO: \n{0}'.format(bodytext))
 
-  bodytext = re.sub(r'(\.SPOTTER INFORMATION STATEMENT.*.?)\n\n', r'\g<1>\n', bodytext)
+  dayone = re.search(r'(\.DAY ONE.*?)(\.DAYS TWO THROUGH SEVEN)', bodytext, re.DOTALL)
+  if dayone:
+    hwotext = re.sub(r'\n\n$', '', dayone.group(1))
 
-  # print('body text of HWO: {0}'.format(bodytext))
-  hwolist = bodytext.split('\n\n')
-  for i in hwolist:
-    if re.search(r'\.DAY ONE', i):
-      returntext = '{0}{1}\n\n'.format(returntext, i)
-    if re.search(r'\.SPOTTER INFORMATION STATEMENT', i):
-      returntext = '{0}{1}\n\n'.format(returntext, i)
+  #bodytext = re.sub(r'(\.DAY ONE.*?)\n\n', r'\g<1>\n', bodytext)
+  #bodytext = re.sub(r'(\.SPOTTER INFORMATION STATEMENT.*?)\n\n', r'\g<1>\n', bodytext)
+  spotter = re.search(r'(\.SPOTTER INFORMATION STATEMENT.*?)(\s*\$\$)', bodytext, re.DOTALL)
+  if spotter:
+    spottertext = re.sub(r'\n\n$', '', spotter.group(1))
 
-  if returntext:
-    return returntext
+  if hwotext:
+    returntext = '{0}{1}\n\n'.format(returntext, hwotext)
+  if spottertext:
+    returntext = '{0}{1}\n\n'.format(returntext, spottertext)
 
-  return None
+  returntext = re.sub(r'\n\n$', '', returntext)
+  return returntext
+
 
 
 def print_current_conditions(conditions):
