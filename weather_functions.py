@@ -72,8 +72,8 @@ def format_current_conditions(cur):
     heat_index = str('{:3.0f} {}'.format(cur['heatIndex']['value'], temp_unit))
   doctext = str('{}\nHeat Index: {}'.format(doctext, heat_index))
 
-  doctext = str('{}\nPressure: {:6.0f} {}'.format(doctext,
-                                                  cur['barometricPressure']['value'],
+  doctext = str('{}\nPressure: {:6.2f} {}'.format(doctext,
+                                                  float(cur['barometricPressure']['value']),
                                                   pressure_unit))
 
   wind_direction_unit = re.sub('unit:', '', cur['windDirection']['unitCode'])
@@ -83,6 +83,14 @@ def format_current_conditions(cur):
   doctext = str('{}\nWind Direction: {:3.0f} {}'.format(doctext,
                                                         cur['windDirection']['value'],
                                                         wind_direction_unit))
+  wind_speed_unit = re.sub('unit:', '', cur['windSpeed']['unitCode'])
+  wind_speed_value = cur['windSpeed']['value']
+  if wind_speed_unit == 'm_s-1':
+    wind_speed_value = (wind_speed_value / 1000.0) * 3600.0
+    wind_speed_unit = 'km / hr'
+  doctext = str('{}\nWind speed: {:3.0f} {}'.format(doctext,
+                                                    wind_speed_value,
+                                                    wind_speed_unit))
 
   return doctext
 
@@ -184,7 +192,6 @@ def split_hwo(bodytext):
 
   returntext = re.sub(r'\n\n$', '', returntext)
   return returntext
-
 
 
 def print_current_conditions(conditions):

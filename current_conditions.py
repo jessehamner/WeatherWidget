@@ -82,6 +82,7 @@ def main():
   - Get the warnings boxes graphic
   - Get today's hazardous weather outlook statement and parse it
   - Check for FTM outage notifications
+  - Get and parse current weather conditions.
   - Write out the files to helpful locations.
   - TODO: should run the getweather.sh shell script, that overlays/composites
     the weather graphics. At present, that shell script calls this script
@@ -122,7 +123,7 @@ def main():
   hwo_today = wf.split_hwo(hwo_statement)
   if hwo_today is not None:
     hwo = re.sub('.DAY ONE', 'Hazardous Weather Outlook', hwo_today)
-    print(hwo)
+    #print(hwo)
     with open('/tmp/today_hwo.txt', 'w') as today_hwo:
       today_hwo.write(hwo)
     today_hwo.close()
