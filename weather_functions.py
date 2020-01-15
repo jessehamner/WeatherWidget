@@ -59,17 +59,17 @@ def format_current_conditions(cur):
 
   doctext = str('Conditions as of {}'.format(cur['timestamp']))
   doctext = str('{}\nTemperature: {:3.0f} {}'.format(doctext,
-                                                     cur['temperature']['value'],
+                                                     float(cur['temperature']['value']),
                                                      temp_unit))
   doctext = str('{}\nDewpoint: {:3.0f} {}'.format(doctext,
-                                                  cur['dewpoint']['value'],
+                                                  float(cur['dewpoint']['value']),
                                                   temp_unit))
   doctext = str('{}\nRel. Humidity: {:3.0f}%'.format(doctext,
-                                                     cur['relativeHumidity']['value']))
+                                                     float(cur['relativeHumidity']['value'])))
 
   heat_index = "None"
   if cur['heatIndex']['value']:
-    heat_index = str('{:3.0f} {}'.format(cur['heatIndex']['value'], temp_unit))
+    heat_index = str('{:3.0f} {}'.format(float(cur['heatIndex']['value']), temp_unit))
   doctext = str('{}\nHeat Index: {}'.format(doctext, heat_index))
 
   doctext = str('{}\nPressure: {:6.2f} {}'.format(doctext,
@@ -81,10 +81,10 @@ def format_current_conditions(cur):
     wind_direction_unit = 'degree azimuth'
 
   doctext = str('{}\nWind Direction: {:3.0f} {}'.format(doctext,
-                                                        cur['windDirection']['value'],
+                                                        float(cur['windDirection']['value']),
                                                         wind_direction_unit))
   wind_speed_unit = re.sub('unit:', '', cur['windSpeed']['unitCode'])
-  wind_speed_value = cur['windSpeed']['value']
+  wind_speed_value = float(cur['windSpeed']['value'])
   if wind_speed_unit == 'm_s-1':
     wind_speed_value = (wind_speed_value / 1000.0) * 3600.0
     wind_speed_unit = 'km / hr'
