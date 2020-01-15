@@ -15,6 +15,18 @@ from bs4 import BeautifulSoup
 requests.packages.urllib3.disable_warnings()
 
 
+def prettify_timestamp(timestamp):
+  """
+  Make a more user-readable time stamp for current conditions.
+  """
+  posix_timestamp = datetime.datetime.strptime(timestamp,'%Y-%m-%dT%H:%M:%S+00:00')
+  #print('Input timestamp: {0}'.format(timestamp))
+  #print('Posix timestamp: {0}'.format(posix_timestamp))
+  timetext = datetime.datetime.strftime(posix_timestamp, '%Y-%m-%d, %H:%M:%S UTC')
+  #print('Nicely formatted text: {0}'.format(timetext))
+  return timetext
+
+
 def check_graphics(graphics_list, root_url, dest='/tmp', radar='FWS'):
   """
   Ensure that the needed graphics are available in /tmp/ -- and if needed.
@@ -57,7 +69,7 @@ def format_current_conditions(cur):
 
   pressure_unit = re.sub('unit:', '', cur['barometricPressure']['unitCode'])
 
-  doctext = str('Conditions as of {}'.format(cur['timestamp']))
+  doctext = str('Conditions as of {}'.format(prettify_timestamp(cur['timestamp'])))
   doctext = str('{}\nTemperature: {:3.0f} {}'.format(doctext,
                                                      float(cur['temperature']['value']),
                                                      temp_unit))
