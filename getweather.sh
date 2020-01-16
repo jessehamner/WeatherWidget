@@ -25,7 +25,7 @@ do
   fi
 done
 
-for file in wow weather 
+for file in weather 
 do
   if [[ -f "${dir}/${file}.gif" ]]; then
     # echo "Removing ${dir}/${file}.gif"
@@ -33,5 +33,31 @@ do
   fi
 done
 
+cp ${dir}/wow.gif ${dir}/wow_0.gif
+sha0=$(shasum /tmp/wow_0.gif | awk {'print $1'} | tr '\n' ' ' | sed 's/ $//g')
 ${convert_binary} -composite ${dir}/current_image.gif   ${dir}/current_warnings.gif  ${dir}/weather.gif
 ${convert_binary} -composite ${dir}/weather.gif   ${dir}/bkg2.gif  ${dir}/wow.gif
+sha1=$(shasum /tmp/wow.gif | awk {'print $1'} | tr '\n' ' ' | sed 's/ $//g')
+
+if [[ "${sha0}" == "${sha1}" ]]; then
+  echo "Radar image has not changed."
+   exit
+fi
+
+imagecount=20
+animate=" -delay 100 -dispose Background "
+for i in $(seq ${imagecount} -1 0)
+  do
+    sum=`expr ${i} - 1`
+    if [[ -f "${dir}/wow_${sum}.gif" ]]; then
+      echo "Converting image from ${sum} to ${i}"
+      mv ${dir}/wow_${sum}.gif ${dir}/wow_${i}.gif
+      animate="${animate} ${dir}/wow_${i}.gif"
+    fi
+  done
+animate="${animate} -loop 0 ${dir}/animation.gif"
+
+echo "animate command: ${animate}"
+
+${convert_binary} ${animate}
+
