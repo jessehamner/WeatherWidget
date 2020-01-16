@@ -77,7 +77,7 @@ def sanity_check(value, numtype='float'):
     return 'None'
 
 
-def format_current_conditions(cur):
+def format_current_conditions(cur, cardinal_directions=True):
   """
   Take in the dictionary of current conditions and return a text document.
   """
@@ -111,7 +111,11 @@ def format_current_conditions(cur):
     wind_dir_unit = 'degree azimuth'
   
   wind_azimuth = sanity_check(cur['windDirection']['value'], 'int')
-  doctext = str('{}\nWind Direction: {} {}'.format(doctext, wind_azimuth, wind_dir_unit))
+  if cardinal_directions and wind_azimuth:
+    wind_string = str('out of the {}'.format(wind_direction(wind_azimuth)))
+  else: 
+    wind_string = str('{} {}'.format(wind_azimuth, wind_dir_unit))
+  doctext = str('{}\nWind Direction: {}'.format(doctext, wind_string))
   
   wind_speed_unit = re.sub('unit:', '', cur['windSpeed']['unitCode'])
   wind_speed_value = sanity_check(cur['windSpeed']['value'], 'int')
@@ -340,3 +344,39 @@ def get_current_alerts(url, params_dict):
   # Parse the feed for relevant content:
 
   # Write a simple formatted text file to /tmp/:
+
+
+def wind_direction(azimuth):
+  """
+  Convert "wind coming from an azimuth" to cardinal directions
+  """
+  try:
+    azimuth = float(azimuth)
+  except:
+    print('Unable to convert azimuth to a numerical value. Returning None.')
+    return None
+
+  plusminus = 11.25
+  azdir = {'0.0': 'N',
+               '22.5': 'NNE',
+               '45.0': 'NE',
+               '67.5': 'ENE',
+               '90.0': 'E',
+               '112.5': 'ESE',
+               '135.0': 'SE',
+               '157.5': 'SSE',
+               '180.0': 'S',
+               '202.5': 'SSW',
+               '225.0': 'SW',
+               '247.5': 'WSW',
+               '270.0': 'W',
+               '292.5': 'WNW',
+               '315.0': 'NW',
+               '337.5': 'NNW'}
+
+  for az, val in azdir.iteritems():
+    az = float(az)
+    if (az - plusminus < azimuth) and (az + plusminus >= azimuth):
+      return val
+
+  return 'None'
