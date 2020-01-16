@@ -59,6 +59,24 @@ def get_current_conditions(url, station):
   return None
 
 
+def sanity_check(value, numtype='float'):
+  """
+  Check for an actual value in the argument. If it has one, return a formatted
+  text string. If it has no value, return a text string of "None".
+  """
+  # print('Input value: {0}'.format(value))
+  if numtype != 'float':
+    try:
+        return str('{0:.0f}'.format(float(value)))
+    except TypeError:
+      return 'None'
+  
+  try: 
+    return str('{0:6.2f}'.format(float(value)))
+  except TypeError:
+    return 'None'
+
+
 def format_current_conditions(cur):
   """
   Take in the dictionary of current conditions and return a text document.
@@ -67,42 +85,40 @@ def format_current_conditions(cur):
   if cur['temperature']['unitCode'] == 'unit:degC':
     temp_unit = "C"
 
-  pressure_unit = re.sub('unit:', '', cur['barometricPressure']['unitCode'])
-
   doctext = str('Conditions as of {}'.format(prettify_timestamp(cur['timestamp'])))
-  doctext = str('{}\nTemperature: {:3.0f} {}'.format(doctext,
-                                                     float(cur['temperature']['value']),
-                                                     temp_unit))
-  doctext = str('{}\nDewpoint: {:3.0f} {}'.format(doctext,
-                                                  float(cur['dewpoint']['value']),
-                                                  temp_unit))
-  doctext = str('{}\nRel. Humidity: {:3.0f}%'.format(doctext,
-                                                     float(cur['relativeHumidity']['value'])))
+  temp_value = sanity_check(cur['temperature']['value'], 'int')
+  doctext = str('{}\nTemperature: {} {}'.format(doctext, temp_value, temp_unit))
 
-  heat_index = "None"
-  if cur['heatIndex']['value']:
-    heat_index = str('{:3.0f} {}'.format(float(cur['heatIndex']['value']), temp_unit))
-  doctext = str('{}\nHeat Index: {}'.format(doctext, heat_index))
+  dewpoint_value = sanity_check(cur['dewpoint']['value'], 'int')
+  doctext = str('{0}\nDewpoint: {1} {2}'.format(doctext, dewpoint_value, temp_unit))
 
-  doctext = str('{}\nPressure: {:6.2f} {}'.format(doctext,
-                                                  float(cur['barometricPressure']['value']),
-                                                  pressure_unit))
+  rh_value = sanity_check(cur['relativeHumidity']['value'], 'int')
+  doctext = str('{}\nRel. Humidity: {}%'.format(doctext, rh_value))
 
-  wind_direction_unit = re.sub('unit:', '', cur['windDirection']['unitCode'])
-  if wind_direction_unit == 'degree_(angle)':
-    wind_direction_unit = 'degree azimuth'
+  heat_index_value = sanity_check(cur['heatIndex']['value'], 'int')
+  if heat_index_value == "None":
+    heat_index_string = heat_index_value
+  else:
+    heat_index_string = str('{} {}'.format(heat_index_value, temp_unit))
+  doctext = str('{}\nHeat Index: {}'.format(doctext, heat_index_string))
 
-  doctext = str('{}\nWind Direction: {:3.0f} {}'.format(doctext,
-                                                        float(cur['windDirection']['value']),
-                                                        wind_direction_unit))
+  pressure_unit = re.sub('unit:', '', cur['barometricPressure']['unitCode'])
+  pressure_value = sanity_check(cur['barometricPressure']['value'])
+  doctext = str('{}\nPressure: {} {}'.format(doctext, pressure_value, pressure_unit))
+
+  wind_dir_unit = re.sub('unit:', '', cur['windDirection']['unitCode'])
+  if wind_dir_unit == 'degree_(angle)':
+    wind_dir_unit = 'degree azimuth'
+  
+  wind_azimuth = sanity_check(cur['windDirection']['value'], 'int')
+  doctext = str('{}\nWind Direction: {} {}'.format(doctext, wind_azimuth, wind_dir_unit))
+  
   wind_speed_unit = re.sub('unit:', '', cur['windSpeed']['unitCode'])
-  wind_speed_value = float(cur['windSpeed']['value'])
-  if wind_speed_unit == 'm_s-1':
-    wind_speed_value = (wind_speed_value / 1000.0) * 3600.0
+  wind_speed_value = sanity_check(cur['windSpeed']['value'], 'int')
+  if wind_speed_unit == 'm_s-1' and wind_speed_value != 'None':
+    wind_speed_value = (float(wind_speed_value) / 1000.0) * 3600.0
     wind_speed_unit = 'km / hr'
-  doctext = str('{}\nWind speed: {:3.0f} {}'.format(doctext,
-                                                    wind_speed_value,
-                                                    wind_speed_unit))
+  doctext = str('{}\nWind speed: {} {}'.format(doctext, wind_speed_value, wind_speed_unit))
 
   return doctext
 
@@ -238,7 +254,10 @@ def conditions_summary(conditions):
           'relativeHumidity', 'heatIndex']
   summary = dict()
   for key in keys:
-    summary[key] = conditions['properties'][key]
+    try:
+      summary[key] = conditions['properties'][key]
+    except:
+      summary[key] = 'none'
 
   return summary
 

@@ -4,7 +4,7 @@ convert_binary=`source ${HOME}/.bash_profile; /usr/bin/which convert`
 dir="/tmp"
 echo""
 echo "$(date)"
-echo "-convert- binary: ${convert_binary}"
+# echo "-convert- binary: ${convert_binary}"
 if [ "${convert_binary}" == "convert not found" ]; then
   echo "Error! -convert- command not found."
   exit
@@ -18,9 +18,9 @@ fi
 for file in bkg2
 do
   if [[ -f "${dir}/${file}.gif" ]]; then
-    echo "${file}.gif is already present in ${dir}."
     sleep 1
   else
+    echo "${file}.gif is not present in ${dir}. Copying it in."
     cp ${HOME}/Dropbox/weatherwidget/images/${file}.gif ${dir}/
   fi
 done
@@ -28,7 +28,7 @@ done
 for file in wow weather 
 do
   if [[ -f "${dir}/${file}.gif" ]]; then
-    echo "Removing ${dir}/${file}.gif"
+    # echo "Removing ${dir}/${file}.gif"
     rm ${dir}/${file}.gif
   fi
 done

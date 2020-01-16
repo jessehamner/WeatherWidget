@@ -112,7 +112,11 @@ def main():
   wf.check_graphics(GRAPHICS_LIST, WEATHER_URL_ROOT)
   conditions = wf.get_current_conditions(CUR_URL, STATION)
   sum_con = wf.conditions_summary(conditions)
+  if not(conditions and sum_con):
+    print('ERROR: something went wrong getting the current conditions. Halting.')
+    return 1
   nice_con = wf.format_current_conditions(sum_con)
+  
   with open('/tmp/current_conditions.txt', 'w') as current_conditions:
     current_conditions.write(nice_con)
   current_conditions.close()
