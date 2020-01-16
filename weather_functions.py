@@ -111,8 +111,13 @@ def format_current_conditions(cur, cardinal_directions=True):
     wind_dir_unit = 'degree azimuth'
   
   wind_azimuth = sanity_check(cur['windDirection']['value'], 'int')
+  if wind_azimuth == 'None':
+    wind_dir_unit = ''
   if cardinal_directions and wind_azimuth:
-    wind_string = str('out of the {}'.format(wind_direction(wind_azimuth)))
+    if wind_azimuth == 'None':
+      wind_string = 'No data'
+    else:
+      wind_string = str('out of the {}'.format(wind_direction(wind_azimuth)))
   else: 
     wind_string = str('{} {}'.format(wind_azimuth, wind_dir_unit))
   doctext = str('{}\nWind Direction: {}'.format(doctext, wind_string))
