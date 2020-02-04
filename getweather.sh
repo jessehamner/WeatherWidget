@@ -1,7 +1,9 @@
 #!/bin/bash
 $(/usr/bin/which python) ${HOME}/Dropbox/weatherwidget/current_conditions.py
 convert_binary=`source ${HOME}/.bash_profile; /usr/bin/which convert`
+legendfile=""
 dir="/tmp"
+
 echo""
 echo "$(date)"
 # echo "-convert- binary: ${convert_binary}"
@@ -25,6 +27,22 @@ do
   fi
 done
 
+if [[ -f "${dir}/trim_legend.gif" ]]; then
+  # echo "Found trim_legend.gif file -- looks good."
+  sleep 0.1
+  else
+    legendfile=$(ls -1 /tmp/ | grep -e "N0R_Legend" -i | tr '\n' ' ' | sed  's/ //g')
+
+    if [[ -f "${dir}/${legendfile}" ]]; then
+      echo "No trim_legend.gif file found, but can convert ${legendfile}..."
+      # convert FWS_N0R_Legend_0.gif -crop 0x0+0+25 crop1.gif to improve the legend
+      ${convert_binary} "${dir}/${legendfile}" -crop 0x0+0+25 ${dir}/crop1.gif
+      ${convert_binary} "${dir}/crop1.gif" -background none -splice 0x25  ${dir}/trim_legend.gif
+  else 
+    echo "Unable to process legend file. Skipping it."
+  fi
+fi
+
 for file in weather 
 do
   if [[ -f "${dir}/${file}.gif" ]]; then
@@ -36,7 +54,8 @@ done
 # Get the MD5 hash of the backup image (no time stamp):
 sha0=$(shasum /tmp/wow_00.gif | awk {'print $1'} | tr '\n' ' ' | sed 's/ $//g')
 ${convert_binary} -composite ${dir}/current_image.gif   ${dir}/current_warnings.gif  ${dir}/weather.gif
-${convert_binary} -composite ${dir}/weather.gif   ${dir}/bkg2.gif  ${dir}/wow.gif
+${convert_binary} -composite ${dir}/weather.gif   ${dir}/bkg2.gif  ${dir}/wow-test.gif
+${convert_binary} -composite ${dir}/wow-test.gif  ${dir}/trim_legend.gif ${dir}/wow.gif
 
 # Copy the potentially new image (no time stamp) to a backup image:
 cp ${dir}/wow.gif ${dir}/wow_00.gif
@@ -49,9 +68,6 @@ if [[ "${sha0}" == "${sha1}" ]]; then
   echo "Radar image has not changed."
   exit
 fi
-
-# Keep a clean copy for comparison next time
-# cp ${dir}/wow.gif ${dir}/wow_00.gif
 
 # Timestamp the image with the system time:
 ${convert_binary} -font Courier -pointsize 18 -strokewidth 0.5 -stroke white \
@@ -67,7 +83,7 @@ for i in $(seq ${imagecount} -1 0)
   do
     sum=`expr ${i} - 1`
     if [[ -f "${dir}/wow_${sum}.gif" ]]; then
-      echo "Converting image from ${sum} to ${i}"
+      # echo "Converting image from ${sum} to ${i}"
       mv ${dir}/wow_${sum}.gif ${dir}/wow_${i}.gif
       animate="${animate} ${dir}/wow_${i}.gif"
     fi

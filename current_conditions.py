@@ -70,6 +70,8 @@ SHORT_RANGE_SML_CITIES = 'Cities/Short/{radar}_City_25K_Short.gif'
 SHORT_RANGE_RING = 'RangeRings/Short/{radar}_RangeRing_Short.gif'
 SHORT_RANGE_RIVERS = 'Rivers/Short/{radar}_Rivers_Short.gif'
 SHORT_RANGE_TOPO = 'Topo/Short/{radar}_Topo_Short.jpg'
+LEGEND_URL_ROOT = 'https://radar.weather.gov'
+LEGEND = 'Legend/N0R/{radar}_N0R_Legend_0.gif'
 
 GRAPHICS_LIST = [SHORT_RANGE_COUNTIES, SHORT_RANGE_HIGHWAYS, SHORT_RANGE_TOPO,
                  SHORT_RANGE_MED_CITIES, SHORT_RANGE_LRG_CITIES, SHORT_RANGE_RING,
@@ -78,7 +80,7 @@ GRAPHICS_LIST = [SHORT_RANGE_COUNTIES, SHORT_RANGE_HIGHWAYS, SHORT_RANGE_TOPO,
 def main():
   """
   - Check to see that the needed graphics are available. If not, get them.
-  - Get the radar image
+  - Get the radar image, plus the legend overlay.
   - Get the warnings boxes graphic
   - Get today's hazardous weather outlook statement and parse it
   - Check for FTM outage notifications
@@ -110,6 +112,7 @@ def main():
       print('file does not exist: {0}'.format(outfilepath))
 
   wf.check_graphics(GRAPHICS_LIST, WEATHER_URL_ROOT)
+  wf.check_graphics([LEGEND,], LEGEND_URL_ROOT)
   conditions = wf.get_current_conditions(CUR_URL, STATION)
   sum_con = wf.conditions_summary(conditions)
   if conditions and sum_con:

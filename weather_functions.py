@@ -44,6 +44,7 @@ def check_graphics(graphics_list, root_url, dest='/tmp', radar='FWS'):
       with open(os.path.join(dest, filename), 'wb') as output:
         output.write(graphic.content)
       output.close()
+  return True
 
 
 def get_current_conditions(url, station):
