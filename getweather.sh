@@ -1,12 +1,16 @@
 #!/bin/bash
-$(/usr/bin/which python) ${HOME}/Dropbox/weatherwidget/current_conditions.py
+python_binary="$(/usr/bin/which python | tr '\n' ' ' | sed 's/ //g')"
+# echo "python: ${python_binary}"
+python_version="$(${python_binary} --version)"
+${python_binary} ${HOME}/Dropbox/weatherwidget/current_conditions.py
 convert_binary=`source ${HOME}/.bash_profile; /usr/bin/which convert`
 legendfile=""
 dir="/tmp"
 
-echo""
+# echo""
 echo "$(date)"
 # echo "-convert- binary: ${convert_binary}"
+
 if [ "${convert_binary}" == "convert not found" ]; then
   echo "Error! -convert- command not found."
   exit
@@ -35,7 +39,7 @@ if [[ -f "${dir}/trim_legend.gif" ]]; then
 
     if [[ -f "${dir}/${legendfile}" ]]; then
       echo "No trim_legend.gif file found, but can convert ${legendfile}..."
-      # convert FWS_N0R_Legend_0.gif -crop 0x0+0+25 crop1.gif to improve the legend
+      echo "Converting legend to crop1.gif: convert  FWS_N0R_Legend_0.gif -crop 0x0+0+25 crop1.gif"
       ${convert_binary} "${dir}/${legendfile}" -crop 0x0+0+25 ${dir}/crop1.gif
       ${convert_binary} "${dir}/crop1.gif" -background none -splice 0x25  ${dir}/trim_legend.gif
   else 
@@ -43,7 +47,7 @@ if [[ -f "${dir}/trim_legend.gif" ]]; then
   fi
 fi
 
-for file in weather 
+for file in weather wow-test
 do
   if [[ -f "${dir}/${file}.gif" ]]; then
     # echo "Removing ${dir}/${file}.gif"
