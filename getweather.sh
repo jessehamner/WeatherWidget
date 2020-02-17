@@ -1,7 +1,7 @@
 #!/bin/bash
 python_binary="$(/usr/bin/which python | tr '\n' ' ' | sed 's/ //g')"
 # echo "python: ${python_binary}"
-python_version="$(${python_binary} --version)"
+# python_version="$(${python_binary} --version)"
 ${python_binary} ${HOME}/Dropbox/weatherwidget/current_conditions.py
 convert_binary=`source ${HOME}/.bash_profile; /usr/bin/which convert`
 legendfile=""
@@ -39,7 +39,8 @@ if [[ -f "${dir}/trim_legend.gif" ]]; then
 
     if [[ -f "${dir}/${legendfile}" ]]; then
       echo "No trim_legend.gif file found, but can convert ${legendfile}..."
-      echo "Converting legend to crop1.gif: convert  FWS_N0R_Legend_0.gif -crop 0x0+0+25 crop1.gif"
+      echo "Converting legend to crop1.gif:"
+      # echo "convert FWS_N0R_Legend_0.gif -crop 0x0+0+25 crop1.gif"
       ${convert_binary} "${dir}/${legendfile}" -crop 0x0+0+25 ${dir}/crop1.gif
       ${convert_binary} "${dir}/crop1.gif" -background none -splice 0x25  ${dir}/trim_legend.gif
   else 

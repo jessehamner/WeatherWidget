@@ -82,9 +82,9 @@ def format_current_conditions(cur, cardinal_directions=True):
   """
   Take in the dictionary of current conditions and return a text document.
   """
-  temp_unit = "F"
+  temp_unit = 'F'
   if cur['temperature']['unitCode'] == 'unit:degC':
-    temp_unit = "C"
+    temp_unit = 'C'
 
   doctext = str('Conditions as of {}'.format(prettify_timestamp(cur['timestamp'])))
   temp_value = sanity_check(cur['temperature']['value'], 'int')
@@ -332,24 +332,58 @@ def parse_outage(bodytext):
   return None
 
 
-def get_current_alerts(url, params_dict):
+def is_county_relevant(counties_list, xml_entry, tagname='areaDesc'):
+  """
+  Check to see if an xml tag contains items from a user-specified list.
+  """
+  entry_counties = xml_entry.find(tagname)
+  clist = entry_counties.text.split(';')
+  for county in clist:
+    if county.strip() in counties_list:
+      return county.strip()
+
+  return None
+
+
+def get_current_alerts(url, params_dict, counties=['Denton', 'Wise', 'Dallas', 'Tarrant', 'Navarro', 'Henderson', 'Gregg']):
   """
   Get current watches, warnings, or advisories for a county or zone.
   Check https://alerts.weather.gov/cap/wwaatmget.php?x=TXC121&y=1 as example.
   For abbreviations, see https://alerts.weather.gov/
-  The ATOM and CAP feeds are updated about every two minutes.
+  The ATOM and CAP (XML) feeds are updated about every two minutes.
+  ATOM XML feed for Texas: https://alerts.weather.gov/cap/tx.php?x=0
+  Complete CAP feeds are linked within the ATOM XML feed.
   """
-
+  alert_dict={}
   response = requests.get(url, params=params_dict, verify=False)
   if response.status_code == 200:
-    conditions = response.text
-    return conditions
-  print('Response from server was not OK: {0}'.format(response.status_code))
-  return None
+    # Parse the feed for relevant content:
+    entries = BeautifulSoup(response.text, 'xml').find_all('entry')
+  else:
+    print('Response from server was not OK: {0}'.format(response.status_code))
+    return None
 
-  # Parse the feed for relevant content:
+  for entry in entries:
+    warning_county = is_county_relevant(counties, entry, tagname='areaDesc')
+    if warning_county:
+      # Warning includes counties we care about:
+      print('Found warning for {0} county.'.format(warning_county))
+      event_type = entry.find('event').text
+      startdate = entry.find('effective').text
+      enddate = entry.find('expires').text
+      category = entry.find('category').text
+      severity = entry.find('severity').text
+      event_id = entry.find('id').text
+      summary = entry.find('summary').text
+      summary = re.sub(r'\*', '\n', summary)
+      warning_summary = ('{0}, {1} - {2}\nSeverity: {3}  Summary: {4}\n\n'.format( 
+          event_type, startdate, enddate, severity, summary))
+      print(warning_summary)
+      eventdict = dict(event_type=event_type, startdate=startdate,
+              enddate=enddate, severity=severity, summary=summary, event_id=event_id)
+      alert_dict[event_id] = eventdict
 
-  # Write a simple formatted text file to /tmp/:
+  return alert_dict
 
 
 def wind_direction(azimuth):
@@ -364,21 +398,21 @@ def wind_direction(azimuth):
 
   plusminus = 11.25
   azdir = {'0.0': 'N',
-               '22.5': 'NNE',
-               '45.0': 'NE',
-               '67.5': 'ENE',
-               '90.0': 'E',
-               '112.5': 'ESE',
-               '135.0': 'SE',
-               '157.5': 'SSE',
-               '180.0': 'S',
-               '202.5': 'SSW',
-               '225.0': 'SW',
-               '247.5': 'WSW',
-               '270.0': 'W',
-               '292.5': 'WNW',
-               '315.0': 'NW',
-               '337.5': 'NNW'}
+           '22.5': 'NNE',
+           '45.0': 'NE',
+           '67.5': 'ENE',
+           '90.0': 'E',
+           '112.5': 'ESE',
+           '135.0': 'SE',
+           '157.5': 'SSE',
+           '180.0': 'S',
+           '202.5': 'SSW',
+           '225.0': 'SW',
+           '247.5': 'WSW',
+           '270.0': 'W',
+           '292.5': 'WNW',
+           '315.0': 'NW',
+           '337.5': 'NNW'}
 
   for az, val in azdir.iteritems():
     az = float(az)
@@ -386,3 +420,29 @@ def wind_direction(azimuth):
       return val
 
   return 'None'
+
+
+def get_hydrograph(abbr, 
+        hydro_url='https://water.weather.gov/resources/hydrographs/',
+        output_path='/tmp/'):
+  """
+  Retrieve the hydrograph image (png) of the current time and specified location
+  Can find these abbreviations at https://water.weather.gov/ahps2/hydrograph.php
+
+  Raw data output in XML for a location (here, "CART2"): 
+  https://water.weather.gov/ahps2/hydrograph_to_xml.php?gage=cart2&output=xml
+
+  """
+  filename = '{0}_hg.png'.format(abbr)
+  retval = requests.get(os.path.join(hydro_url, filename))
+  print('retrieving: {0}'.format(retval.url))
+  print('return value: {0}'.format(retval))
+  if (retval.status_code == 200):
+    cur1 = open(os.path.join(output_path, 'current_hydrograph.png'), 'wb')
+    cur1.write(retval.content)
+    cur1.close()
+
+  return retval
+
+  
+

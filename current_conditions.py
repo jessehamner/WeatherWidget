@@ -30,6 +30,7 @@ GOES_BANDS = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11',
 GOES_DOWNLOAD = 'https://cdn.star.nesdis.noaa.gov/GOES{sat}/ABI/SECTOR/{sector}/{band}'
 GOES_IMG = '{year}{doy}{timeHHMM}_GOES{sat}-ABI-{sector}-{band}-{resolution}.jpg'
 GOES_DIR_DATE_FORMAT = 'DD-Mmm-YYYY'
+RIVER_GAUGE_ABBR = 'CART2'
 
 HWO_DICT = {
     'site': 'DDC',
@@ -60,6 +61,7 @@ RADAR_URL = 'https://radar.weather.gov/ridge/RadarImg/N0R/{station}_{image}'
 WARNINGS_URL = 'https://radar.weather.gov/ridge/Warnings/Short/{station}_{warnings}_0.gif'
 HWO_URL = 'https://forecast.weather.gov/product.php'
 ALERTS_URL = 'https://alerts.weather.gov/cap/wwaatmget.php'
+WATER_URL = 'https://water.weather.gov/resources/hydrographs'
 
 WEATHER_URL_ROOT = 'https://radar.weather.gov/ridge/Overlays'
 SHORT_RANGE_COUNTIES = 'County/Short/{radar}_County_Short.gif'
@@ -94,6 +96,7 @@ def main():
     of the specified resolution.
   - TODO: Remove radar and satellite images more than two days old
   - TODO: Make animated gifs of last 36 hours of radar and a few bands of images
+  - TODO: use PythonMagick instead of post-processing via shell script
 
   """
 
@@ -140,8 +143,14 @@ def main():
       today_hwo.write(hwo)
     today_hwo.close()
 
-  return 0
+  if wf.get_hydrograph(abbr=RIVER_GAUGE_ABBR, hydro_url=WATER_URL).ok:
+    print('Retrieved hydrograph for {0} forecast station, gauge "{1}".'.format(RADAR_STATION,
+        RIVER_GAUGE_ABBR))
+  else:
+    print('Unable to retrieve hydrograph for specified gauge ({0}).'.format(RIVER_GAUGE_ABBR))
+    return 1 
 
+  return 0
 
 if __name__ == '__main__':
   sys.exit(main())
