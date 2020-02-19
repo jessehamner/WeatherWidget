@@ -35,7 +35,7 @@ if [[ -f "${dir}/trim_legend.gif" ]]; then
   # echo "Found trim_legend.gif file -- looks good."
   sleep 0.1
   else
-    legendfile=$(ls -1 /tmp/ | grep -e "N0R_Legend" -i | tr '\n' ' ' | sed  's/ //g')
+    legendfile=$(ls -1 ${dir}/ | grep -e "N0R_Legend" -i | tr '\n' ' ' | sed  's/ //g')
 
     if [[ -f "${dir}/${legendfile}" ]]; then
       echo "No trim_legend.gif file found, but can convert ${legendfile}..."
@@ -57,7 +57,7 @@ do
 done
 
 # Get the MD5 hash of the backup image (no time stamp):
-sha0=$(shasum /tmp/wow_00.gif | awk {'print $1'} | tr '\n' ' ' | sed 's/ $//g')
+sha0=$(shasum ${dir}/wow_00.gif | awk {'print $1'} | tr '\n' ' ' | sed 's/ $//g')
 ${convert_binary} -composite ${dir}/current_image.gif   ${dir}/current_warnings.gif  ${dir}/weather.gif
 ${convert_binary} -composite ${dir}/weather.gif   ${dir}/bkg2.gif  ${dir}/wow-test.gif
 ${convert_binary} -composite ${dir}/wow-test.gif  ${dir}/trim_legend.gif ${dir}/wow.gif
@@ -66,7 +66,7 @@ ${convert_binary} -composite ${dir}/wow-test.gif  ${dir}/trim_legend.gif ${dir}/
 cp ${dir}/wow.gif ${dir}/wow_00.gif
 
 # Make an MD5 hash of the potentially new image:
-sha1=$(shasum /tmp/wow.gif | awk {'print $1'} | tr '\n' ' ' | sed 's/ $//g')
+sha1=$(shasum ${dir}/wow.gif | awk {'print $1'} | tr '\n' ' ' | sed 's/ $//g')
 
 # Check the two hashes against each other (backup to possibly-new):
 if [[ "${sha0}" == "${sha1}" ]]; then

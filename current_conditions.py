@@ -30,7 +30,9 @@ GOES_BANDS = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11',
 GOES_DOWNLOAD = 'https://cdn.star.nesdis.noaa.gov/GOES{sat}/ABI/SECTOR/{sector}/{band}'
 GOES_IMG = '{year}{doy}{timeHHMM}_GOES{sat}-ABI-{sector}-{band}-{resolution}.jpg'
 GOES_DIR_DATE_FORMAT = 'DD-Mmm-YYYY'
-RIVER_GAUGE_ABBR = 'CART2'
+RIVER_GAUGE_ABBR = 'cart2'
+OUTPUT_DIR = os.path.join(os.environ['HOME'], 'Library/Caches/weatherwidget/')
+OUTPUT_DIR = '/tmp/'
 
 HWO_DICT = {
     'site': 'DDC',
@@ -102,7 +104,7 @@ def main():
 
   outage_text = wf.check_outage(HWO_URL, FTM_DICT)
   returned_message = wf.parse_outage(outage_text)
-  outfilepath = os.path.join('/tmp/', 'outage.txt')
+  outfilepath = os.path.join(OUTPUT_DIR, 'outage.txt')
   if returned_message:
     print('There is outage text: {0}'.format(returned_message))
     cur = open(outfilepath, 'w')
@@ -124,7 +126,7 @@ def main():
     print('ERROR: something went wrong getting the current conditions. Halting.')
     return 1
   
-  with open('/tmp/current_conditions.txt', 'w') as current_conditions:
+  with open(os.path.join(OUTPUT_DIR, 'current_conditions.txt'), 'w') as current_conditions:
     current_conditions.write(nice_con)
   current_conditions.close()
 
@@ -139,7 +141,7 @@ def main():
   if hwo_today is not None:
     hwo = re.sub('.DAY ONE', 'Hazardous Weather Outlook', hwo_today)
     #print(hwo)
-    with open('/tmp/today_hwo.txt', 'w') as today_hwo:
+    with open(os.path.join(OUTPUT_DIR, 'today_hwo.txt'), 'w') as today_hwo:
       today_hwo.write(hwo)
     today_hwo.close()
 

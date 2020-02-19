@@ -429,11 +429,11 @@ def get_hydrograph(abbr,
   Retrieve the hydrograph image (png) of the current time and specified location
   Can find these abbreviations at https://water.weather.gov/ahps2/hydrograph.php
 
-  Raw data output in XML for a location (here, "CART2"): 
+  Raw data output in XML for a location (here, "cart2"): 
   https://water.weather.gov/ahps2/hydrograph_to_xml.php?gage=cart2&output=xml
 
   """
-  filename = '{0}_hg.png'.format(abbr)
+  filename = '{0}_hg.png'.format(abbr.lower())
   retval = requests.get(os.path.join(hydro_url, filename))
   print('retrieving: {0}'.format(retval.url))
   print('return value: {0}'.format(retval))
