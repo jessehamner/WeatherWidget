@@ -18,6 +18,8 @@ import re
 import weather_functions as wf
 
 # TODO move the location params to a YAML file or something
+LON = -97.07
+LAT = 33.16
 ALERT_ZONE = 'TXZ103'
 ALERT_COUNTY = 'TXC121'
 RADAR_STATION = 'FWS'
@@ -57,6 +59,7 @@ ALERTS_DICT = {'x': 'TXC121',
                'y': 1
               }
 
+ALERT_COUNTIES = ['Denton', 'Wise', 'Dallas', 'Tarrant']
 STATION = 'KDTO'
 CUR_URL = 'https://api.weather.gov/stations/{station}/observations/current'
 RADAR_URL = 'https://radar.weather.gov/ridge/RadarImg/N0R/{station}_{image}'
@@ -65,6 +68,10 @@ HWO_URL = 'https://forecast.weather.gov/product.php'
 ALERTS_URL = 'https://alerts.weather.gov/cap/wwaatmget.php'
 WATER_URL = 'https://water.weather.gov/resources/hydrographs'
 
+FORECAST_URL = os.path.join('https://graphical.weather.gov',
+                            'xml/sample_products/browser_interface',
+                            'ndfdBrowserClientByDay.php'
+                           )
 WEATHER_URL_ROOT = 'https://radar.weather.gov/ridge/Overlays'
 SHORT_RANGE_COUNTIES = 'County/Short/{radar}_County_Short.gif'
 SHORT_RANGE_HIGHWAYS = 'Highways/Short/{radar}_Highways_Short.gif'
@@ -125,19 +132,18 @@ def main():
   else:
     print('ERROR: something went wrong getting the current conditions. Halting.')
     return 1
-  
+
   with open(os.path.join(OUTPUT_DIR, 'current_conditions.txt'), 'w') as current_conditions:
     current_conditions.write(nice_con)
   current_conditions.close()
 
-  
   if wf.get_weather_radar(RADAR_URL, RADAR_STATION) is None:
     print('Unable to retrieve weather radar image. Halting now.')
     return 1
 
   wf.get_warnings_box(WARNINGS_URL, RADAR_STATION)
-  hwo_statement = wf.get_hwo(HWO_URL, HWO_DICT)
-  hwo_today = wf.split_hwo(hwo_statement)
+  # hwo_statement = wf.get_hwo(HWO_URL, HWO_DICT)
+  hwo_today = wf.split_hwo(wf.get_hwo(HWO_URL, HWO_DICT))
   if hwo_today is not None:
     hwo = re.sub('.DAY ONE', 'Hazardous Weather Outlook', hwo_today)
     #print(hwo)
@@ -146,13 +152,20 @@ def main():
     today_hwo.close()
 
   if wf.get_hydrograph(abbr=RIVER_GAUGE_ABBR, hydro_url=WATER_URL).ok:
-    print('Retrieved hydrograph for {0} forecast station, gauge "{1}".'.format(RADAR_STATION,
-        RIVER_GAUGE_ABBR))
+    print('Got hydrograph for {0} station, gauge "{1}".'.format(RADAR_STATION, RIVER_GAUGE_ABBR))
   else:
     print('Unable to retrieve hydrograph for specified gauge ({0}).'.format(RIVER_GAUGE_ABBR))
-    return 1 
+    return 1
+
+  forecastxml = wf.get_forecast(lon=LON,
+                                lat=LAT,
+                                fmt=['24', 'hourly'],
+                                url=FORECAST_URL)
+  forecastdict = wf.parse_forecast(forecastxml)
+  wf.write_forecast(fc_dict=forecastdict, outputdir=OUTPUT_DIR)
 
   return 0
+
 
 if __name__ == '__main__':
   sys.exit(main())

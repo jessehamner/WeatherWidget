@@ -19,7 +19,7 @@ def prettify_timestamp(timestamp):
   """
   Make a more user-readable time stamp for current conditions.
   """
-  posix_timestamp = datetime.datetime.strptime(timestamp,'%Y-%m-%dT%H:%M:%S+00:00')
+  posix_timestamp = datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S+00:00')
   #print('Input timestamp: {0}'.format(timestamp))
   #print('Posix timestamp: {0}'.format(posix_timestamp))
   timetext = datetime.datetime.strftime(posix_timestamp, '%Y-%m-%d, %H:%M:%S UTC')
@@ -62,17 +62,18 @@ def get_current_conditions(url, station):
 
 def sanity_check(value, numtype='float'):
   """
-  Check for an actual value in the argument. If it has one, return a formatted
-  text string. If it has no value, return a text string of "None".
+  Check for an actual value in the argument. If it has one, return a
+  formatted text string.
+  If it has no value, return a text string of "None".
   """
   # print('Input value: {0}'.format(value))
   if numtype != 'float':
     try:
-        return str('{0:.0f}'.format(float(value)))
+      return str('{0:.0f}'.format(float(value)))
     except TypeError:
       return 'None'
-  
-  try: 
+
+  try:
     return str('{0:6.2f}'.format(float(value)))
   except TypeError:
     return 'None'
@@ -87,14 +88,19 @@ def format_current_conditions(cur, cardinal_directions=True):
     temp_unit = 'C'
 
   doctext = str('Conditions as of {}'.format(prettify_timestamp(cur['timestamp'])))
-  temp_value = sanity_check(cur['temperature']['value'], 'int')
-  doctext = str('{}\nTemperature: {} {}'.format(doctext, temp_value, temp_unit))
+  # temp_value = sanity_check(cur['temperature']['value'], 'int')
+  doctext = str('{}\nTemperature: {} {}'.format(doctext,
+                                                sanity_check(cur['temperature']['value'], 'int'),
+                                                temp_unit))
 
-  dewpoint_value = sanity_check(cur['dewpoint']['value'], 'int')
-  doctext = str('{0}\nDewpoint: {1} {2}'.format(doctext, dewpoint_value, temp_unit))
+  # dewpoint_value = sanity_check(cur['dewpoint']['value'], 'int')
+  doctext = str('{0}\nDewpoint: {1} {2}'.format(doctext,
+                                                sanity_check(cur['dewpoint']['value'], 'int'),
+                                                temp_unit))
 
-  rh_value = sanity_check(cur['relativeHumidity']['value'], 'int')
-  doctext = str('{}\nRel. Humidity: {}%'.format(doctext, rh_value))
+  # rh_value = sanity_check(cur['relativeHumidity']['value'], 'int')
+  doctext = str('{}\nRel. Humidity: {}%'.format(doctext,
+                                                sanity_check(cur['relativeHumidity']['value'], 'int')))
 
   heat_index_value = sanity_check(cur['heatIndex']['value'], 'int')
   if heat_index_value == "None":
@@ -104,13 +110,14 @@ def format_current_conditions(cur, cardinal_directions=True):
   doctext = str('{}\nHeat Index: {}'.format(doctext, heat_index_string))
 
   pressure_unit = re.sub('unit:', '', cur['barometricPressure']['unitCode'])
-  pressure_value = sanity_check(cur['barometricPressure']['value'])
-  doctext = str('{}\nPressure: {} {}'.format(doctext, pressure_value, pressure_unit))
+  doctext = str('{}\nPressure: {} {}'.format(doctext,
+                                             sanity_check(cur['barometricPressure']['value']),
+                                             pressure_unit))
 
   wind_dir_unit = re.sub('unit:', '', cur['windDirection']['unitCode'])
   if wind_dir_unit == 'degree_(angle)':
     wind_dir_unit = 'degree azimuth'
-  
+
   wind_azimuth = sanity_check(cur['windDirection']['value'], 'int')
   if wind_azimuth == 'None':
     wind_dir_unit = ''
@@ -119,10 +126,10 @@ def format_current_conditions(cur, cardinal_directions=True):
       wind_string = 'No data'
     else:
       wind_string = str('out of the {}'.format(wind_direction(wind_azimuth)))
-  else: 
+  else:
     wind_string = str('{} {}'.format(wind_azimuth, wind_dir_unit))
   doctext = str('{}\nWind Direction: {}'.format(doctext, wind_string))
-  
+
   wind_speed_unit = re.sub('unit:', '', cur['windSpeed']['unitCode'])
   wind_speed_value = sanity_check(cur['windSpeed']['value'], 'int')
   if wind_speed_unit == 'm_s-1' and wind_speed_value != 'None':
@@ -345,7 +352,7 @@ def is_county_relevant(counties_list, xml_entry, tagname='areaDesc'):
   return None
 
 
-def get_current_alerts(url, params_dict, counties=['Denton', 'Wise', 'Dallas', 'Tarrant', 'Navarro', 'Henderson', 'Gregg']):
+def get_current_alerts(url, params_dict, counties=None):
   """
   Get current watches, warnings, or advisories for a county or zone.
   Check https://alerts.weather.gov/cap/wwaatmget.php?x=TXC121&y=1 as example.
@@ -354,13 +361,16 @@ def get_current_alerts(url, params_dict, counties=['Denton', 'Wise', 'Dallas', '
   ATOM XML feed for Texas: https://alerts.weather.gov/cap/tx.php?x=0
   Complete CAP feeds are linked within the ATOM XML feed.
   """
-  alert_dict={}
+  if counties is None:
+    return None
+
+  alert_dict = {}
   response = requests.get(url, params=params_dict, verify=False)
   if response.status_code == 200:
     # Parse the feed for relevant content:
     entries = BeautifulSoup(response.text, 'xml').find_all('entry')
   else:
-    print('Response from server was not OK: {0}'.format(response.status_code))
+    print('Response from server not OK: {0}'.format(response.status_code))
     return None
 
   for entry in entries:
@@ -376,11 +386,14 @@ def get_current_alerts(url, params_dict, counties=['Denton', 'Wise', 'Dallas', '
       event_id = entry.find('id').text
       summary = entry.find('summary').text
       summary = re.sub(r'\*', '\n', summary)
-      warning_summary = ('{0}, {1} - {2}\nSeverity: {3}  Summary: {4}\n\n'.format( 
-          event_type, startdate, enddate, severity, summary))
+      warning_summary = '{0}, {1} - {2}\nSeverity: {3}  Summary: {4}\n\n'.format(event_type, startdate, enddate, severity, summary)
       print(warning_summary)
-      eventdict = dict(event_type=event_type, startdate=startdate,
-              enddate=enddate, severity=severity, summary=summary, event_id=event_id)
+      eventdict = dict(event_type=event_type,
+                       startdate=startdate,
+                       enddate=enddate,
+                       severity=severity,
+                       summary=summary,
+                       event_id=event_id)
       alert_dict[event_id] = eventdict
 
   return alert_dict
@@ -414,22 +427,23 @@ def wind_direction(azimuth):
            '315.0': 'NW',
            '337.5': 'NNW'}
 
-  for az, val in azdir.iteritems():
-    az = float(az)
-    if (az - plusminus < azimuth) and (az + plusminus >= azimuth):
+  for az_deg, val in azdir.iteritems():
+    az_deg = float(az_deg)
+    if (az_deg - plusminus < azimuth) and (az_deg + plusminus >= azimuth):
       return val
 
   return 'None'
 
 
-def get_hydrograph(abbr, 
-        hydro_url='https://water.weather.gov/resources/hydrographs/',
-        output_path='/tmp/'):
+def get_hydrograph(abbr,
+                   hydro_url='https://water.weather.gov/resources/hydrographs/',
+                   output_path='/tmp/'):
   """
-  Retrieve the hydrograph image (png) of the current time and specified location
-  Can find these abbreviations at https://water.weather.gov/ahps2/hydrograph.php
+  Retrieve hydrograph image (png) of the current time and specified location
+  Can find these abbreviations at
+  https://water.weather.gov/ahps2/hydrograph.php
 
-  Raw data output in XML for a location (here, "cart2"): 
+  Raw data output in XML for a location (here, "cart2"):
   https://water.weather.gov/ahps2/hydrograph_to_xml.php?gage=cart2&output=xml
 
   """
@@ -437,12 +451,128 @@ def get_hydrograph(abbr,
   retval = requests.get(os.path.join(hydro_url, filename))
   print('retrieving: {0}'.format(retval.url))
   print('return value: {0}'.format(retval))
-  if (retval.status_code == 200):
+  if retval.status_code == 200:
     cur1 = open(os.path.join(output_path, 'current_hydrograph.png'), 'wb')
     cur1.write(retval.content)
     cur1.close()
 
   return retval
 
-  
 
+def get_forecast(lon, lat, url, fmt=['24', 'hourly'], days=7):
+  """
+  https://graphical.weather.gov/xml/sample_products/browser_interface/
+  ndfdBrowserClientByDay.php?lat=38.99&lon=-77.01&format=24+hourly&numDays=7
+
+  These URLs and APIs are subject to change. Refresh times should be no
+  more frequent than 1/hour.
+  Updates occur approximately 45 minutes after the hour, so re-checking
+  on the 0th minute of the hour would be appropriate.
+
+  The returned payload will be XML.
+
+  See also: https://www.weather.gov/documentation/services-web-api for
+  another API?
+
+  """
+  time_format = " ".join(fmt)
+  payload = {'lon': lon, 'lat': lat, 'format': time_format, 'numDays': days}
+
+  retval = requests.get(url=url, params=payload, verify=False)
+  # print('Returned info: {0}'.format(retval.text))
+
+  return retval
+
+
+def parse_forecast(rxml):
+  """
+  Use bs4 to parse the XML returned from the AWS forecast request.
+
+  """
+  bx = BeautifulSoup(rxml.text, 'xml')
+  params = bx.find('parameters')
+  temps = params.find_all('temperature')
+  highs = []
+  lows = []
+  for temp in temps[0].find_all('value'):
+    highs.append(temp.string)
+  for temp in temps[1].find_all('value'):
+    lows.append(temp.string)
+
+  pcp = concat_precip(params)
+  forecasts = []
+  summaries = []
+  weather = params.find('weather')
+  weather_conditions = weather.find_all('weather-conditions')
+  for forecast in weather_conditions:
+    summary = forecast['weather-summary']
+    summaries.append(summary)
+    if forecast.find_all('value'):
+      shortcast = ''
+      for value in forecast.find_all('value'):
+        shortcast = '{0} {1}'.format(shortcast, concat_forecast(value))
+
+      forecasts.append(shortcast)
+
+  return dict(highs=highs, lows=lows, precip=pcp, forecasts=forecasts, summaries=summaries)
+
+
+def concat_precip(bs_obj):
+  """
+  Precip chances come in 12-hour increments. List them together by day.
+  """
+  rainlist = []
+  days = []
+  for rain in bs_obj.find('probability-of-precipitation').find_all('value'):
+    rainlist.append(rain.string)
+  for i in range(0, len(rainlist), 2):
+    try:
+      part1 = '{0:3d}%'.format(int(rainlist[i]))
+    except TypeError:
+      part1 = ' --'
+    try:
+      part2 = '{0:3d}%'.format(int(rainlist[i+1]))
+    except TypeError:
+      part2 = ' --'
+
+    if part1 == '  0%' and part2 == '  0%':
+      thestring = ' 0% '
+    else:
+      thestring = '{0} /{1}'.format(part1, part2)
+
+    days.append(thestring)
+
+  return days
+
+
+def concat_forecast(bs_obj):
+  """
+  Cycle through tag attrs, filter out the "none" values, and string
+  together the results into a quasi-sentence forecast.
+  """
+
+  result = []
+  for i in bs_obj.attrs.keys():
+    if bs_obj[i] == "none":
+      continue
+    result.append(bs_obj[i].strip())
+
+  return " ".join(result)
+
+
+def write_forecast(fc_dict, outputdir, filename='forecast.txt'):
+  """
+  Write out a nicely formatted text file using the retrieved and summarized
+  forecast information.
+  """
+  with open(os.path.join(outputdir, filename), 'w') as forecast:
+    forecast.write('  Forecast:\n')
+    for i in range(0, 6):
+      line = '{0:3d}  {1:3d}  {2:10s}  {3}'.format(int(fc_dict['highs'][i]),
+                                                   int(fc_dict['lows'][i]),
+                                                   fc_dict['precip'][i],
+                                                   fc_dict['summaries'][i],
+                                                  )
+      forecast.write('{0}\n'.format(line))
+
+    return True
