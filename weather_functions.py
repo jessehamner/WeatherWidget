@@ -489,9 +489,10 @@ def parse_forecast(rxml):
   Use bs4 to parse the XML returned from the AWS forecast request.
 
   """
-  bx = BeautifulSoup(rxml.text, 'xml')
-  params = bx.find('parameters')
+  bs_object = BeautifulSoup(rxml.text, 'xml')
+  params = bs_object.find('parameters')
   temps = params.find_all('temperature')
+  dates = get_dates(bs_object)
   highs = []
   lows = []
   for temp in temps[0].find_all('value'):
@@ -514,7 +515,8 @@ def parse_forecast(rxml):
 
       forecasts.append(shortcast)
 
-  return dict(highs=highs, lows=lows, precip=pcp, forecasts=forecasts, summaries=summaries)
+  return dict(highs=highs, lows=lows, precip=pcp, forecasts=forecasts,
+              summaries=summaries, dates=dates)
 
 
 def concat_precip(bs_obj):
@@ -568,11 +570,28 @@ def write_forecast(fc_dict, outputdir, filename='forecast.txt'):
   with open(os.path.join(outputdir, filename), 'w') as forecast:
     forecast.write('  Forecast:\n')
     for i in range(0, 6):
-      line = '{0:3d}  {1:3d}  {2:10s}  {3}'.format(int(fc_dict['highs'][i]),
-                                                   int(fc_dict['lows'][i]),
-                                                   fc_dict['precip'][i],
-                                                   fc_dict['summaries'][i],
-                                                  )
+      line = '{0}  {1:3d}  {2:3d}  {3:10s}  {4}'.format(fc_dict['dates'][i],
+                                                        int(fc_dict['highs'][i]),
+                                                        int(fc_dict['lows'][i]),
+                                                        fc_dict['precip'][i],
+                                                        fc_dict['summaries'][i],
+                                                       )
       forecast.write('{0}\n'.format(line))
 
     return True
+
+
+def get_dates(bs_object, hourly='24hourly'):
+  """
+  Get the day of the week from the next seven days' forecast.
+  """
+  dates = []
+  time_layouts = bs_object.find('data').find_all('time-layout')
+  for i in time_layouts:
+    if i['summarization'] == hourly:
+      for j in i.find_all('start-valid-time'):
+        reftime = re.sub(r'-0\d{1}:00$', ' CST', j.string)
+        t_time = datetime.datetime.strptime(reftime, "%Y-%m-%dT%H:%M:%S %Z")
+        dates.append(datetime.datetime.strftime(t_time, "%a"))
+
+  return dates
