@@ -8,7 +8,7 @@ US National Weather Service. On Mac OS X, these scripts integrate nicely with
 desktop widgets.
 
 <p align="center">
-<img src="https://github.com/jessehamner/WeatherWidget/blob/master/images/desktop.png" width="300" alt-text="GeekTool desktop widgets showing radar image and hazardous weather outlook information">
+<img src="https://github.com/jessehamner/WeatherWidget/blob/master/images/desktop.png" width="300" alt-text="GeekTool desktop widgets showing radar image and hazardous weather outlook information along with forecast and hydrograph.">
 </p>
 
 
@@ -43,11 +43,22 @@ one for the
 , and one for the
 [local conditions station abbreviation](https://w1.weather.gov/xml/current_obs/).
 
+More recently, functions have been added to gather forecast information from
+[the NWS web API](https://graphical.weather.gov/xml/rest.php)
+
+and hydrologic information from 
+[the NWS Advanced Hydrologic Prediction Service](https://water.weather.gov/ahps2/hydrograph.php).
+
+It is necessary, at present, to change code within the `current_conditions.py`
+script, because YaML or JSON parsing of settings/defaults has not been implemented.
+It will be necessary to know numerous abbreviations to get the weather for your
+locale.
 
 ```python
 RADAR_STATION = 'FWS'
 NWS_ABBR = 'FWD'
 STATION = 'KDTO'
+
 ```
 
 ### Basic program flow:
