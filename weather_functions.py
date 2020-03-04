@@ -79,6 +79,16 @@ def sanity_check(value, numtype='float'):
     return 'None'
 
 
+def quick_doctext(doctext, indicator, value, unit=''):
+  """
+  Convenience function to standardize the output format of a string.
+  """
+  unitspace = ' '
+  if unit == '%':
+    unitspace = ''
+  return str('{0}\n{1} {2}{3}{4}'.format(doctext, indicator, value, unitspace, unit))
+
+
 def format_current_conditions(cur, cardinal_directions=True):
   """
   Take in the dictionary of current conditions and return a text document.
@@ -89,31 +99,41 @@ def format_current_conditions(cur, cardinal_directions=True):
 
   doctext = str('Conditions as of {}'.format(prettify_timestamp(cur['timestamp'])))
   # temp_value = sanity_check(cur['temperature']['value'], 'int')
-  doctext = str('{}\nTemperature: {} {}'.format(doctext,
-                                                sanity_check(cur['temperature']['value'], 'int'),
-                                                temp_unit))
+  doctext = quick_doctext(doctext,
+                          'Temperature:',
+                          sanity_check(cur['temperature']['value'], 'int'),
+                          temp_unit)
 
   # dewpoint_value = sanity_check(cur['dewpoint']['value'], 'int')
-  doctext = str('{0}\nDewpoint: {1} {2}'.format(doctext,
-                                                sanity_check(cur['dewpoint']['value'], 'int'),
-                                                temp_unit))
+  doctext = quick_doctext(doctext,
+                          'Dewpoint:',
+                          sanity_check(cur['dewpoint']['value'], 'int'),
+                          temp_unit)
 
   # rh_value = sanity_check(cur['relativeHumidity']['value'], 'int')
-  doctext = str('{}\nRel. Humidity: {}%'.format(doctext,
-                                                sanity_check(cur['relativeHumidity']['value'], 'int')))
+  doctext = quick_doctext(doctext,
+                          'Rel. Humidity:',
+                          sanity_check(cur['relativeHumidity']['value'], 'int'),
+                          '%')
 
   heat_index_value = sanity_check(cur['heatIndex']['value'], 'int')
   if heat_index_value == "None":
     heat_index_string = heat_index_value
   else:
     heat_index_string = str('{} {}'.format(heat_index_value, temp_unit))
-  doctext = str('{}\nHeat Index: {}'.format(doctext, heat_index_string))
+  doctext = quick_doctext(doctext,
+                          'Heat Index:',
+                          heat_index_string,
+                          temp_unit)
 
   pressure_unit = re.sub('unit:', '', cur['barometricPressure']['unitCode'])
-  doctext = str('{}\nPressure: {} {}'.format(doctext,
-                                             sanity_check(cur['barometricPressure']['value']),
-                                             pressure_unit))
-
+  pressure_value = sanity_check(cur['barometricPressure']['value'])
+  print('Pressure value: {0}'.format(pressure_value))
+  if pressure_unit == 'Pa' and pressure_value != "None":
+    pressure_value = float(pressure_value) / 1000.0
+    pressure_unit = 'kPa'
+  doctext = quick_doctext(doctext, 'Pressure:', pressure_value, pressure_unit)
+  
   wind_dir_unit = re.sub('unit:', '', cur['windDirection']['unitCode'])
   if wind_dir_unit == 'degree_(angle)':
     wind_dir_unit = 'degree azimuth'
@@ -128,14 +148,16 @@ def format_current_conditions(cur, cardinal_directions=True):
       wind_string = str('out of the {}'.format(wind_direction(wind_azimuth)))
   else:
     wind_string = str('{} {}'.format(wind_azimuth, wind_dir_unit))
-  doctext = str('{}\nWind Direction: {}'.format(doctext, wind_string))
-
+  
+  doctext = quick_doctext(doctext, 'Wind Direction:', wind_string, '')
+  
   wind_speed_unit = re.sub('unit:', '', cur['windSpeed']['unitCode'])
   wind_speed_value = sanity_check(cur['windSpeed']['value'], 'int')
   if wind_speed_unit == 'm_s-1' and wind_speed_value != 'None':
     wind_speed_value = (float(wind_speed_value) / 1000.0) * 3600.0
     wind_speed_unit = 'km / hr'
-  doctext = str('{}\nWind speed: {} {}'.format(doctext, wind_speed_value, wind_speed_unit))
+
+  doctext = quick_doctext(doctext, 'Wind Speed:', wind_speed_value, wind_speed_unit)
 
   return doctext
 
@@ -569,6 +591,7 @@ def write_forecast(fc_dict, outputdir, filename='forecast.txt'):
   """
   with open(os.path.join(outputdir, filename), 'w') as forecast:
     forecast.write('  Forecast:\n')
+    forecast.write('-'*50 + '\n')
     for i in range(0, 6):
       line = '{0}  {1:3d}  {2:3d}  {3:10s}  {4}'.format(fc_dict['dates'][i],
                                                         int(fc_dict['highs'][i]),
