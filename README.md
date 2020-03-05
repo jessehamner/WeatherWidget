@@ -64,7 +64,10 @@ STATION = 'KDTO'
 - Get the radar image
 - Get the warnings image ("boxes" for overlaying)
 - Get the Hazardous Weather Outlook and parse it
-- Write out files to `/tmp/`
+- Check for weather alerts
+- Get the weather forecast and parse it
+- Get the hydrologic graph for the local river gauge, if any
+- Write out files to `/tmp/` (or where specified in the settings file)
 
 #### bash
 - Run the python script
@@ -78,9 +81,9 @@ The [National Weather Service API](https://www.weather.gov/documentation/service
 currently lists only one endpoint as valid, the `https://api.weather.gov/alerts` endpoint. 
 As of this writing, the "current observations" also works, though I do not know if the coverage is universal.
 
-At present, getting *forecast* information would have to come from 
+An alternate source of forecast information is
 [Dark Sky's API](https://darksky.net/dev/docs/faq) 
-or some similar service.
+.
 
 ## Setting Up Scheduled Jobs
 
