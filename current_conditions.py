@@ -15,29 +15,44 @@ from __future__ import print_function
 import sys
 import os
 import re
+import yaml
 import weather_functions as wf
 
-# TODO move the location params to a YAML file or something
+YEAR = 2020
+MON = "Mar"
+DAY = 4
+
 LON = -97.07
 LAT = 33.16
-ALERT_ZONE = 'TXZ103'
-ALERT_COUNTY = 'TXC121'
-RADAR_STATION = 'FWS'
-NWS_ABBR = 'FWD'
-GOES_SECTOR = 'sp'
-GOES_RES = '2400x2400'
-GOES_SAT = '16'
+
+with open('settings.yml', 'r') as iyaml:
+  all_file = iyaml.read()
+data = yaml.load(all_file, Loader=yaml.Loader)
+ALERT_COUNTIES = data['alert_counties']
+STATION = data['station']
+ALERT_ZONE = data['alert_zone']
+ALERT_COUNTY = data['alert_county']
+RADAR_STATION = data['radar_station']
+NWS_ABBR = data['nws_abbr']
+GOES_SECTOR = data['goes_sector']
+GOES_RES = data['goes_res']
+GOES_SAT = data['goes_sat']
+ALERTS_DICT = data['alerts_dict']
+HWO_SITE = data['hwo_site']
+
 GOES_BANDS = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11',
-              '12', '13', '14', '15', '16', 'AirMass', 'GEOCOLOR']
+              '12', '13', '14', '15', '16', 'AirMass', 'GEOCOLOR',
+              'NightMicrophysics', 'Sandwich', 'DayCloudPhase']
+
 GOES_DOWNLOAD = 'https://cdn.star.nesdis.noaa.gov/GOES{sat}/ABI/SECTOR/{sector}/{band}'
 GOES_IMG = '{year}{doy}{timeHHMM}_GOES{sat}-ABI-{sector}-{band}-{resolution}.jpg'
 GOES_DIR_DATE_FORMAT = 'DD-Mmm-YYYY'
 RIVER_GAUGE_ABBR = 'cart2'
 OUTPUT_DIR = os.path.join(os.environ['HOME'], 'Library/Caches/weatherwidget/')
-OUTPUT_DIR = '/tmp/'
+OUTPUT_DIR = data['output_dir']
 
 HWO_DICT = {
-    'site': 'DDC',
+    'site': HWO_SITE,
     'issuedby': NWS_ABBR,
     'product': 'HWO',
     'format': 'txt',
@@ -54,20 +69,12 @@ FTM_DICT = {
     'glossary': 0
     }
 
-# Alert abbreviations can be found at https://alerts.weather.gov/
-ALERTS_DICT = {'x': 'TXC121',
-               'y': 1
-              }
-
-ALERT_COUNTIES = ['Denton', 'Wise', 'Dallas', 'Tarrant']
-STATION = 'KDTO'
 CUR_URL = 'https://api.weather.gov/stations/{station}/observations/current'
 RADAR_URL = 'https://radar.weather.gov/ridge/RadarImg/N0R/{station}_{image}'
 WARNINGS_URL = 'https://radar.weather.gov/ridge/Warnings/Short/{station}_{warnings}_0.gif'
 HWO_URL = 'https://forecast.weather.gov/product.php'
 ALERTS_URL = 'https://alerts.weather.gov/cap/wwaatmget.php'
 WATER_URL = 'https://water.weather.gov/resources/hydrographs'
-
 FORECAST_URL = os.path.join('https://graphical.weather.gov',
                             'xml/sample_products/browser_interface',
                             'ndfdBrowserClientByDay.php'
@@ -88,8 +95,10 @@ GRAPHICS_LIST = [SHORT_RANGE_COUNTIES, SHORT_RANGE_HIGHWAYS, SHORT_RANGE_TOPO,
                  SHORT_RANGE_MED_CITIES, SHORT_RANGE_LRG_CITIES, SHORT_RANGE_RING,
                  SHORT_RANGE_SML_CITIES, SHORT_RANGE_RIVERS]
 
+
 def main():
   """
+  - Parse user-specified data from YaML
   - Check to see that the needed graphics are available. If not, get them.
   - Get the radar image, plus the legend overlay.
   - Get the warnings boxes graphic
@@ -108,6 +117,10 @@ def main():
   - TODO: use PythonMagick instead of post-processing via shell script
 
   """
+
+  kwargs = dict(resolution=GOES_RES, sat=GOES_SAT, sector=GOES_SECTOR,
+                url=GOES_DOWNLOAD, image=GOES_IMG, bands=GOES_BANDS,
+                year=YEAR, month=MON, day=DAY)
 
   outage_text = wf.check_outage(HWO_URL, FTM_DICT)
   returned_message = wf.parse_outage(outage_text)

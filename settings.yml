@@ -1,0 +1,48 @@
+# YAML
+
+# Current observations
+station: 'KDTO'
+
+# County and Zones maps by state: https://alerts.weather.gov/
+# (Zone maps also available at: https://www.weather.gov/pimar/PubZone )
+alert_zone: 'TXZ103'
+alert_county: 'TXC121'
+
+# Three-letter abbreviations are available at, among other places: 
+# http://weather.rap.ucar.edu/radar/
+radar_station: 'FWS'
+
+# office call signs found at 
+# https://en.wikipedia.org/wiki/List_of_National_Weather_Service_Weather_Forecast_Offices
+# or the WFO SID column at  https://www.roc.noaa.gov/WSR88D/Program/NetworkSites.aspx
+nws_abbr: 'FWD'
+
+# GOES information: https://www.star.nesdis.noaa.gov/GOES/index.php
+goes_sector: 'sp'
+goes_res: '2400x2400'
+goes_sat: '16'
+
+# River gauge abbreviations available at: https://water.weather.gov/ahps/
+river_gauge_abbr: 'cart2'
+
+
+hwo_site: 'DDC'
+
+# Forecast lon/lat values (i.e. your house or office)
+lon: -97.07
+lat: 33.16
+
+output_dir: '/tmp/'
+
+# Alert abbreviations can be found at https://alerts.weather.gov/
+alerts_dict: !!python/dict 
+  'x': "{{ alert_county }}"
+  'y': 1
+
+# Note these counties must be specifically named according to NWS spellings
+alert_counties:
+  - 'Denton'
+  - 'Wise'
+  - 'Dallas'
+  - 'Tarrant'
+

@@ -11,6 +11,7 @@ import os
 import re
 import datetime
 import requests
+# import lxml
 from bs4 import BeautifulSoup
 requests.packages.urllib3.disable_warnings()
 
@@ -133,7 +134,7 @@ def format_current_conditions(cur, cardinal_directions=True):
     pressure_value = float(pressure_value) / 1000.0
     pressure_unit = 'kPa'
   doctext = quick_doctext(doctext, 'Pressure:', pressure_value, pressure_unit)
-  
+
   wind_dir_unit = re.sub('unit:', '', cur['windDirection']['unitCode'])
   if wind_dir_unit == 'degree_(angle)':
     wind_dir_unit = 'degree azimuth'
@@ -148,9 +149,9 @@ def format_current_conditions(cur, cardinal_directions=True):
       wind_string = str('out of the {}'.format(wind_direction(wind_azimuth)))
   else:
     wind_string = str('{} {}'.format(wind_azimuth, wind_dir_unit))
-  
+
   doctext = quick_doctext(doctext, 'Wind Direction:', wind_string, '')
-  
+
   wind_speed_unit = re.sub('unit:', '', cur['windSpeed']['unitCode'])
   wind_speed_value = sanity_check(cur['windSpeed']['value'], 'int')
   if wind_speed_unit == 'm_s-1' and wind_speed_value != 'None':
@@ -162,7 +163,7 @@ def format_current_conditions(cur, cardinal_directions=True):
   return doctext
 
 
-def get_weather_radar(url, station):
+def get_weather_radar(url, station, outputdir='/tmp'):
   """
   Using the NWS radar station abbreviation, retrieve the current radar image
   and world file from the NWS.
@@ -172,7 +173,7 @@ def get_weather_radar(url, station):
   if response1.status_code != 200:
     print('Response from server was not OK: {0}'.format(response1.status_code))
     return None
-  cur1 = open('/tmp/current_image.gfw', 'w')
+  cur1 = open(os.path.join(outputdir, 'current_image.gfw'), 'w')
   cur1.write(response1.text)
   cur1.close()
 
@@ -182,29 +183,30 @@ def get_weather_radar(url, station):
     print('Response from server was not OK: {0}'.format(response2.status_code))
     return None
 
-  cur2 = open('/tmp/current_image.gif', 'wb')
+  cur2 = open(os.path.join(outputdir, 'current_image.gif'), 'wb')
   cur2.write(response2.content)
   cur2.close()
 
   return True
 
 
-def get_warnings_box(url, station):
+def get_warnings_box(url, station, outputdir='/tmp'):
   """
   Retrieve the severe weather graphics boxes (suitable for overlaying)
   from the NWS for the specified locale.
   """
   warnings = 'Warnings'
-  response = requests.get(url.format(station=station, warnings=warnings),
+  response = requests.get(url.format(station=station,
+                                     warnings=warnings),
                           verify=False)
-  cur = open('/tmp/current_warnings.gif', 'wb')
+  cur = open(os.path.join(outputdir, 'current_warnings.gif'), 'wb')
   cur.write(response.content)
   cur.close()
 
   return 0
 
 
-def get_hwo(url, params_dict, outputfile='current_hwo.txt'):
+def get_hwo(url, params_dict, outputfile='current_hwo.txt', outputdir='/tmp'):
   """
   Get the HTML-only Hazardous Weather Outlook. The raw text of this statement
   is available inside
@@ -225,7 +227,7 @@ def get_hwo(url, params_dict, outputfile='current_hwo.txt'):
     if len(hwo_text) > 200:
       #print('{0}'.format(pretag.get_text()))
 
-      cur = open(os.path.join('/tmp/', outputfile), 'w')
+      cur = open(os.path.join(outputdir, outputfile), 'w')
       cur.write(hwo_text)
       cur.close()
       return hwo_text
@@ -395,6 +397,7 @@ def get_current_alerts(url, params_dict, counties=None):
     print('Response from server not OK: {0}'.format(response.status_code))
     return None
 
+  sum_str = '{event_type}, {st_date} - {en_date}}\nSeverity: {sev}  Summary: {summary}\n\n'
   for entry in entries:
     warning_county = is_county_relevant(counties, entry, tagname='areaDesc')
     if warning_county:
@@ -408,7 +411,8 @@ def get_current_alerts(url, params_dict, counties=None):
       event_id = entry.find('id').text
       summary = entry.find('summary').text
       summary = re.sub(r'\*', '\n', summary)
-      warning_summary = '{0}, {1} - {2}\nSeverity: {3}  Summary: {4}\n\n'.format(event_type, startdate, enddate, severity, summary)
+      warning_summary = sum_str.format(event_type, startdate, enddate,
+                                       severity, summary)
       print(warning_summary)
       eventdict = dict(event_type=event_type,
                        startdate=startdate,
@@ -459,7 +463,7 @@ def wind_direction(azimuth):
 
 def get_hydrograph(abbr,
                    hydro_url='https://water.weather.gov/resources/hydrographs/',
-                   output_path='/tmp/'):
+                   output_path='/tmp'):
   """
   Retrieve hydrograph image (png) of the current time and specified location
   Can find these abbreviations at
@@ -618,3 +622,47 @@ def get_dates(bs_object, hourly='24hourly'):
         dates.append(datetime.datetime.strftime(t_time, "%a"))
 
   return dates
+
+
+def get_today_vars():
+  """
+  Get various strings from today's date for use in GOES image retrieval.
+  """
+  today = datetime.datetime.now()
+  return_dict = dict(doy=datetime.datetime.strftime(today, '%j'),
+                     year=datetime.datetime.strftime(today, '%Y'),
+                     mon=datetime.datetime.strftime(today, '%b'),
+                     hour=datetime.datetime.strftime(today, '%H'),
+                     minute=datetime.datetime.strftime(today, '%M')
+                    )
+  return return_dict
+
+
+def get_goes_list(band='NightMicrophysics', **kwargs):
+  """
+  GOES images post every 5 minutes, but there is no guarantee that you will
+  know the minute of the image when concatenating the filename.
+  Therefore, this function pulls a list from the specified directory and
+  returns the list for parsing.
+  """
+  sector = kwargs['goes_sector']
+  url = 'https://cdn.star.nesdis.noaa.gov/GOES16/ABI/SECTOR/{0}/{1}/'.format(sector, band)
+  filelist = BeautifulSoup(requests.get(url).text, 'html')
+  links = filelist.find_all("a", attrs={"href": True})
+  files = []
+  for i in filelist:
+    if re.search('ABI-sp-NightMicrophysics-2400x2400.jpg', i.attrs['href']):
+      files.append(i.attrs['href'])
+
+  return files
+
+
+
+def get_goes_image(**kwargs):
+  """
+  Retrieve current GOES weather imagery. Not complete yet.
+  """
+  url = kwargs['url'].format(sat=kwargs['sat'], sector=kwargs['sector'], band=kwargs['bands'][0])
+  image = kwargs['image'].format(year=kwargs['year'], )
+
+  return True
