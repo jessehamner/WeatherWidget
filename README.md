@@ -36,7 +36,7 @@ regularly use Windows.
 
 The script is a simple library of functions, held together with some glue in 
 main(). For locations other than Fort Worth / DFW, the end-user will need to
-change three abbreviations in the code: one for the 
+change numerous abbreviations in the YaML settings file, including: one for the 
 [weather forecast office](https://en.wikipedia.org/wiki/List_of_National_Weather_Service_Weather_Forecast_Office), 
 one for the 
 [radar station](https://radar.weather.gov/)
@@ -48,11 +48,6 @@ More recently, functions have been added to gather forecast information from
 
 and hydrologic information from 
 [the NWS Advanced Hydrologic Prediction Service](https://water.weather.gov/ahps2/hydrograph.php).
-
-It is necessary, at present, to change code within the `current_conditions.py`
-script, because YaML or JSON parsing of settings/defaults has not been implemented.
-It will be necessary to know numerous abbreviations to get the weather for your
-locale.
 
 ```python
 RADAR_STATION = 'FWS'
