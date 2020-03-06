@@ -12,6 +12,7 @@ import re
 import datetime
 import requests
 # import lxml
+import pytz
 from bs4 import BeautifulSoup
 requests.packages.urllib3.disable_warnings()
 
@@ -624,45 +625,77 @@ def get_dates(bs_object, hourly='24hourly'):
   return dates
 
 
-def get_today_vars():
+def get_today_vars(timezone='America/Chicago'):
   """
   Get various strings from today's date for use in GOES image retrieval.
   """
   today = datetime.datetime.now()
+  local_tz = pytz.timezone(timezone)
   return_dict = dict(doy=datetime.datetime.strftime(today, '%j'),
                      year=datetime.datetime.strftime(today, '%Y'),
+                     day=datetime.datetime.strftime(today, '%d'),
                      mon=datetime.datetime.strftime(today, '%b'),
                      hour=datetime.datetime.strftime(today, '%H'),
-                     minute=datetime.datetime.strftime(today, '%M')
+                     minute=datetime.datetime.strftime(today, '%M'),
+                     timezone=timezone,
+                     offset=local_tz.utcoffset(today).total_seconds()/3600
                     )
   return return_dict
 
 
-def get_goes_list(band='NightMicrophysics', **kwargs):
+def get_goes_list(data, band='NightMicrophysics'):
   """
   GOES images post every 5 minutes, but there is no guarantee that you will
   know the minute of the image when concatenating the filename.
   Therefore, this function pulls a list from the specified directory and
-  returns the list for parsing.
+  returns the list of files from today with the specified resolution for use.
   """
-  sector = kwargs['goes_sector']
-  url = 'https://cdn.star.nesdis.noaa.gov/GOES16/ABI/SECTOR/{0}/{1}/'.format(sector, band)
+  sector = data['goes_sector']
+  sat = data['goes_sat']
+  res = data['goes_res']
+  url = data['goes_url'].format(sat=sat, sector=sector, band=band)
+  # print('Checking url: {0}'.format(url))
   filelist = BeautifulSoup(requests.get(url).text, 'html')
   links = filelist.find_all("a", attrs={"href": True})
   files = []
-  for i in filelist:
-    if re.search('ABI-sp-NightMicrophysics-2400x2400.jpg', i.attrs['href']):
-      files.append(i.attrs['href'])
+  todaystring = '{0}{1}'.format(data['today_vars']['year'], data['today_vars']['doy'])
+  # print('Links: {0}'.format(links))
+  myimage = re.compile('ABI-{0}-{1}-{2}'.format(sector, band, res))
+  # print('Keying on {0}'.format(myimage))
+  for i in links:
+    if i.has_attr("href"):
+      filename = i['href']
+      # print('Checking file: "{0}"'.format(filename))
+    try: 
+      if myimage.search(filename):
+          if re.search(res, filename) and re.search(todaystring, filename):
+            files.append(filename)
+    except KeyError, AttributeError:
+      pass
 
   return files
 
 
-
-def get_goes_image(**kwargs):
+def get_goes_image(data, band='NightMicrophysics'):
   """
   Retrieve current GOES weather imagery. Not complete yet.
   """
-  url = kwargs['url'].format(sat=kwargs['sat'], sector=kwargs['sector'], band=kwargs['bands'][0])
-  image = kwargs['image'].format(year=kwargs['year'], )
 
-  return True
+  url = data['goes_url'].format(sat=data['goes_sat'],
+                             sector=data['goes_sector'],
+                             band=band)
+  
+  image = data['goes_img'].format(year=data['today_vars']['year'],
+                                  doy=data['today_vars']['doy'],
+                                  timeHHMM='1806',
+                                  sat=data['goes_sat'],
+                                  sector=data['goes_sector'],
+                                  band=band,
+                                  resolution=data['goes_res']
+                                 )
+  # image = '20200651806_GOES16-ABI-sp-NightMicrophysics-2400x2400.jpg' 
+  returned_val = requests.get(os.path.join(url, image)) 
+  with open(image, 'wb') as satout:
+    satout.write(bytearray(returned_val.content))
+
+  return image

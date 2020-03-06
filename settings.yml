@@ -25,13 +25,19 @@ goes_sat: '16'
 # River gauge abbreviations available at: https://water.weather.gov/ahps/
 river_gauge_abbr: 'cart2'
 
-
+# Hazardous weather outlook URL path portion (shouldn't need to change):
 hwo_site: 'DDC'
 
 # Forecast lon/lat values (i.e. your house or office)
 lon: -97.07
 lat: 33.16
 
+# Time zone needs to be compatible with the TZ database:
+# https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+timezone: 'America/Chicago'
+
+# Be sure the directory is universally writable, if you plan to schedule this
+# script to run.
 output_dir: '/tmp/'
 
 # Alert abbreviations can be found at https://alerts.weather.gov/

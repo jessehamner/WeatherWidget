@@ -18,16 +18,8 @@ import re
 import yaml
 import weather_functions as wf
 
-YEAR = 2020
-MON = "Mar"
-DAY = 4
-
-LON = -97.07
-LAT = 33.16
-
 with open('settings.yml', 'r') as iyaml:
-  all_file = iyaml.read()
-data = yaml.load(all_file, Loader=yaml.Loader)
+  data = yaml.load(iyaml.read(), Loader=yaml.Loader)
 ALERT_COUNTIES = data['alert_counties']
 STATION = data['station']
 ALERT_ZONE = data['alert_zone']
@@ -39,17 +31,19 @@ GOES_RES = data['goes_res']
 GOES_SAT = data['goes_sat']
 ALERTS_DICT = data['alerts_dict']
 HWO_SITE = data['hwo_site']
+LON = data['lon']
+LAT = data['lat']
+RIVER_GAUGE_ABBR = data['river_gauge_abbr']
+OUTPUT_DIR = data['output_dir']
 
 GOES_BANDS = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11',
               '12', '13', '14', '15', '16', 'AirMass', 'GEOCOLOR',
               'NightMicrophysics', 'Sandwich', 'DayCloudPhase']
 
-GOES_DOWNLOAD = 'https://cdn.star.nesdis.noaa.gov/GOES{sat}/ABI/SECTOR/{sector}/{band}'
+GOES_DOWNLOAD = 'https://cdn.star.nesdis.noaa.gov/GOES{sat}/ABI/SECTOR/{sector}/{band}/'
 GOES_IMG = '{year}{doy}{timeHHMM}_GOES{sat}-ABI-{sector}-{band}-{resolution}.jpg'
 GOES_DIR_DATE_FORMAT = 'DD-Mmm-YYYY'
-RIVER_GAUGE_ABBR = 'cart2'
-OUTPUT_DIR = os.path.join(os.environ['HOME'], 'Library/Caches/weatherwidget/')
-OUTPUT_DIR = data['output_dir']
+# OUTPUT_DIR = os.path.join(os.environ['HOME'], 'Library/Caches/weatherwidget/')
 
 HWO_DICT = {
     'site': HWO_SITE,
@@ -117,11 +111,11 @@ def main():
   - TODO: use PythonMagick instead of post-processing via shell script
 
   """
-
-  kwargs = dict(resolution=GOES_RES, sat=GOES_SAT, sector=GOES_SECTOR,
-                url=GOES_DOWNLOAD, image=GOES_IMG, bands=GOES_BANDS,
-                year=YEAR, month=MON, day=DAY)
-
+  today_vars = wf.get_today_vars(data['timezone'])
+  data['bands'] = GOES_BANDS
+  data['goes_url'] = GOES_DOWNLOAD
+  data['goes_img'] = GOES_IMG
+  data['today_vars'] = today_vars
   outage_text = wf.check_outage(HWO_URL, FTM_DICT)
   returned_message = wf.parse_outage(outage_text)
   outfilepath = os.path.join(OUTPUT_DIR, 'outage.txt')
