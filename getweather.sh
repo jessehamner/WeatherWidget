@@ -6,9 +6,10 @@ ${python_binary} ${HOME}/Dropbox/weatherwidget/current_conditions.py
 convert_binary=`source ${HOME}/.bash_profile; /usr/bin/which convert`
 legendfile=""
 dir="/tmp"
+date_binary=$(/usr/bin/which date)
 
 # echo""
-echo "$(date)"
+echo "Date binary: ${date_binary}"
 # echo "-convert- binary: ${convert_binary}"
 
 if [ "${convert_binary}" == "convert not found" ]; then
@@ -76,7 +77,7 @@ fi
 
 # Timestamp the image with the system time:
 ${convert_binary} -font Courier -pointsize 18 -strokewidth 0.5 -stroke white \
-  -draw "fill white text 530,50 '$(date +%H:%M)'" ${dir}/wow.gif ${dir}/wow.gif
+  -draw "fill white text 530,50 '$(${date_binary} +%H:%M)'" ${dir}/wow.gif ${dir}/wow.gif
 
 # Copy the new time-stamped image to frame 0:
 cp ${dir}/wow.gif ${dir}/wow_0.gif
