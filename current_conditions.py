@@ -18,7 +18,8 @@ import re
 import yaml
 import weather_functions as wf
 
-with open(os.path.join(os.environ['HOME'], 'Dropbox/weatherwidget', 'settings.yml'), 'r') as iyaml:
+SETTINGS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'settings.yml')
+with open(SETTINGS_PATH, 'r') as iyaml:
   data = yaml.load(iyaml.read(), Loader=yaml.Loader)
 ALERT_COUNTIES = data['alert_counties']
 STATION = data['station']
