@@ -317,7 +317,12 @@ def check_outage(url, params_dict):
   html = response.text
   #print('Response text: {0}'.format(html))
   soup = BeautifulSoup(html, 'html.parser')
-  pres = soup.body.find_all('pre')
+  
+  try:
+    pres = soup.body.find_all('pre')
+  except TypeError:
+    return None
+
   for pretag in pres:
     ftm_text = pretag.get_text()
     # print('ftm_text: {0}'.format(ftm_text))

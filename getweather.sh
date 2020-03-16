@@ -8,6 +8,16 @@ legendfile=""
 dir="/tmp"
 date_binary=$(/usr/bin/which date)
 
+function parse_return {
+  rrr=$(echo $1 | tr '\n' ' ' | sed 's/ $//g')
+  r2=$(echo ${rrr} | grep -e "corrupt image" -e "improper image header" -e "no images defined" -e "unable to open image")
+  if [[ "${r2}" != "" ]]; then
+    echo "Error! image is corrupted?"
+    exit
+  fi
+  return 0
+}
+
 # echo""
 echo "Date binary: ${date_binary}"
 # echo "-convert- binary: ${convert_binary}"
@@ -59,12 +69,24 @@ done
 
 # Get the MD5 hash of the backup image (no time stamp):
 sha0=$(shasum ${dir}/wow_00.gif | awk {'print $1'} | tr '\n' ' ' | sed 's/ $//g')
-${convert_binary} -composite ${dir}/current_image.gif   ${dir}/current_warnings.gif  ${dir}/weather.gif
-${convert_binary} -composite ${dir}/weather.gif   ${dir}/bkg2.gif  ${dir}/wow-test.gif
-${convert_binary} -composite ${dir}/wow-test.gif  ${dir}/trim_legend.gif ${dir}/wow.gif
+
+result=`${convert_binary} -composite ${dir}/current_image.gif ${dir}/current_warnings.gif  ${dir}/weather.gif `
+echo "returned text from convert is: ${result}"
+parse_return "${result}"
+result=""
+
+result=$(${convert_binary} -composite ${dir}/weather.gif ${dir}/bkg2.gif  ${dir}/wow-test.gif)
+echo "returned text from convert is: ${result}"
+parse_return "${result}"
+result=""
+
+result=$(${convert_binary} -composite ${dir}/wow-test.gif ${dir}/trim_legend.gif ${dir}/wow.gif)
+echo "returned text from convert is: ${result}"
+parse_return "${result}"
 
 # Copy the potentially new image (no time stamp) to a backup image:
 cp ${dir}/wow.gif ${dir}/wow_00.gif
+
 
 # Make an MD5 hash of the potentially new image:
 sha1=$(shasum ${dir}/wow.gif | awk {'print $1'} | tr '\n' ' ' | sed 's/ $//g')
