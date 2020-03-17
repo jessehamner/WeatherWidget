@@ -313,7 +313,12 @@ def check_outage(url, params_dict):
   The information is identical to the HWO call.
   """
 
-  response = requests.get(url, params=params_dict, verify=False)
+  try:
+    response = requests.get(url, params=params_dict, verify=False)
+  except requests.exceptions.ConnectionError as e:
+    print('ConnectioError: {0}'.format(e))
+    return None
+  
   html = response.text
   #print('Response text: {0}'.format(html))
   soup = BeautifulSoup(html, 'html.parser')

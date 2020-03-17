@@ -71,7 +71,7 @@ done
 sha0=$(shasum ${dir}/wow_00.gif | awk {'print $1'} | tr '\n' ' ' | sed 's/ $//g')
 
 result=`${convert_binary} -composite ${dir}/current_image.gif ${dir}/current_warnings.gif  ${dir}/weather.gif `
-echo "returned text from convert is: ${result}"
+# echo "returned text from convert is: ${result}"
 parse_return "${result}"
 result=""
 
