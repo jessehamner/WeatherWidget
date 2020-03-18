@@ -22,20 +22,12 @@ SETTINGS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'setti
 with open(SETTINGS_PATH, 'r') as iyaml:
   data = yaml.load(iyaml.read(), Loader=yaml.Loader)
 ALERT_COUNTIES = data['alert_counties']
-STATION = data['station']
 ALERT_ZONE = data['alert_zone']
 ALERT_COUNTY = data['alert_county']
-RADAR_STATION = data['radar_station']
-NWS_ABBR = data['nws_abbr']
 GOES_SECTOR = data['goes_sector']
 GOES_RES = data['goes_res']
 GOES_SAT = data['goes_sat']
 ALERTS_DICT = data['alerts_dict']
-HWO_SITE = data['hwo_site']
-LON = data['lon']
-LAT = data['lat']
-RIVER_GAUGE_ABBR = data['river_gauge_abbr']
-OUTPUT_DIR = data['output_dir']
 
 GOES_BANDS = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11',
               '12', '13', '14', '15', '16', 'AirMass', 'GEOCOLOR',
@@ -47,8 +39,8 @@ GOES_DIR_DATE_FORMAT = 'DD-Mmm-YYYY'
 # OUTPUT_DIR = os.path.join(os.environ['HOME'], 'Library/Caches/weatherwidget/')
 
 HWO_DICT = {
-    'site': HWO_SITE,
-    'issuedby': NWS_ABBR,
+    'site': data['hwo_site'],
+    'issuedby': data['nws_abbr'],
     'product': 'HWO',
     'format': 'txt',
     'version': 1,
@@ -57,7 +49,7 @@ HWO_DICT = {
 
 FTM_DICT = {
     'site': 'NWS',
-    'issuedby': RADAR_STATION,
+    'issuedby': data['radar_station'],
     'product': 'FTM',
     'format': 'CI',
     'version': 1,
@@ -119,7 +111,7 @@ def main():
   data['today_vars'] = today_vars
   outage_text = wf.check_outage(HWO_URL, FTM_DICT)
   returned_message = wf.parse_outage(outage_text)
-  outfilepath = os.path.join(OUTPUT_DIR, 'outage.txt')
+  outfilepath = os.path.join(data['output_dir'], 'outage.txt')
   if returned_message:
     print('There is outage text: {0}'.format(returned_message))
     cur = open(outfilepath, 'w')
@@ -133,7 +125,7 @@ def main():
 
   wf.check_graphics(GRAPHICS_LIST, WEATHER_URL_ROOT)
   wf.check_graphics([LEGEND,], LEGEND_URL_ROOT)
-  conditions = wf.get_current_conditions(CUR_URL, STATION)
+  conditions = wf.get_current_conditions(CUR_URL, data['station'])
   sum_con = wf.conditions_summary(conditions)
   if conditions and sum_con:
     nice_con = wf.format_current_conditions(sum_con)
@@ -141,36 +133,44 @@ def main():
     print('ERROR: something went wrong getting the current conditions. Halting.')
     return 1
 
-  with open(os.path.join(OUTPUT_DIR, 'current_conditions.txt'), 'w') as current_conditions:
+  with open(os.path.join(data['output_dir'], 'current_conditions.txt'), 'w') as current_conditions:
     current_conditions.write(nice_con)
   current_conditions.close()
 
-  if wf.get_weather_radar(RADAR_URL, RADAR_STATION) is None:
+  if wf.get_weather_radar(RADAR_URL, data['radar_station']) is None:
     print('Unable to retrieve weather radar image. Halting now.')
     return 1
 
-  wf.get_warnings_box(WARNINGS_URL, RADAR_STATION)
+  wf.get_warnings_box(WARNINGS_URL, data['radar_station'])
   # hwo_statement = wf.get_hwo(HWO_URL, HWO_DICT)
   hwo_today = wf.split_hwo(wf.get_hwo(HWO_URL, HWO_DICT))
   if hwo_today is not None:
     hwo = re.sub('.DAY ONE', 'Hazardous Weather Outlook', hwo_today)
     #print(hwo)
-    with open(os.path.join(OUTPUT_DIR, 'today_hwo.txt'), 'w') as today_hwo:
+    with open(os.path.join(data['output_dir'], 'today_hwo.txt'), 'w') as today_hwo:
       today_hwo.write(hwo)
     today_hwo.close()
 
-  if wf.get_hydrograph(abbr=RIVER_GAUGE_ABBR, hydro_url=WATER_URL).ok:
-    print('Got hydrograph for {0} station, gauge "{1}".'.format(RADAR_STATION, RIVER_GAUGE_ABBR))
+  if wf.get_hydrograph(abbr=data['river_gauge_abbr'], hydro_url=WATER_URL).ok:
+    print('Got hydrograph for {0} station, gauge "{1}".'.format(data['radar_station'], data['river_gauge_abbr']))
   else:
-    print('Unable to retrieve hydrograph for specified gauge ({0}).'.format(RIVER_GAUGE_ABBR))
+    print('Unable to retrieve hydrograph for specified gauge ({0}).'.format(data['river_gauge_abbr']))
     return 1
 
-  forecastxml = wf.get_forecast(lon=LON,
-                                lat=LAT,
+  forecastxml = wf.get_forecast(lon=data['lon'],
+                                lat=data['lat'],
                                 fmt=['24', 'hourly'],
                                 url=FORECAST_URL)
   forecastdict = wf.parse_forecast(forecastxml)
-  wf.write_forecast(fc_dict=forecastdict, outputdir=OUTPUT_DIR)
+  wf.write_forecast(fc_dict=forecastdict, outputdir=data['output_dir'])
+
+  alert_dict = {}
+  print('Getting alerts for the following counties: {0}.'.format(data['alert_counties']))
+  alert_dict = wf.get_current_alerts(ALERTS_URL, data, alert_dict)
+  with open(os.path.join(data['output_dir'], 'alerts_text.txt'), 'w') as current_alerts:
+    for key, value in alert_dict.iteritems():
+      print('Key for this alert entry: {0}'.format(key))
+      current_alerts.write('{0}\n'.format(alert_dict[key]['warning_summary']))
 
   return 0
 

@@ -381,13 +381,14 @@ def is_county_relevant(counties_list, xml_entry, tagname='areaDesc'):
   entry_counties = xml_entry.find(tagname)
   clist = entry_counties.text.split(';')
   for county in clist:
+    print('Checking county {0}'.format(county))
     if county.strip() in counties_list:
       return county.strip()
 
   return None
 
 
-def get_current_alerts(url, params_dict, counties=None):
+def get_current_alerts(url, data_dict, alert_dict):
   """
   Get current watches, warnings, or advisories for a county or zone.
   Check https://alerts.weather.gov/cap/wwaatmget.php?x=TXC121&y=1 as example.
@@ -395,43 +396,80 @@ def get_current_alerts(url, params_dict, counties=None):
   The ATOM and CAP (XML) feeds are updated about every two minutes.
   ATOM XML feed for Texas: https://alerts.weather.gov/cap/tx.php?x=0
   Complete CAP feeds are linked within the ATOM XML feed.
+  
+  Each entry contains a space-delimited list of counties in several formats.
+  Under <cap:areaDesc>, there is an English-language list of semicolon-
+    delimited county names.
+
+  Under <cap:geocode>, there are two <valueName> tags:
+  FIPS6 = three digit state FIPS code (prepended by zero if less than 100),
+    concatenated with the FIPS county code for that state. For instance, 
+    Denton County, Texas is 048121 (Texas is "048")
+
+  UGC = Two-letter alpha state abbreviation, concatenated with a county number
+    that is NOT the FIPS number for that county.
+    Denton County, Texas is TXZ103, for instance.
+  
   """
-  if counties is None:
+  if data_dict['alert_counties'] is None:
+    print('No counties in submitted parameters. Returning -None-')
     return None
 
-  alert_dict = {}
+  params_dict = {'x': data_dict['alert_county'], 'y': 1}
   response = requests.get(url, params=params_dict, verify=False)
-  if response.status_code == 200:
+  if response.status_code == 200 and response.headers['Content-Type'] == 'text/xml':
     # Parse the feed for relevant content:
-    entries = BeautifulSoup(response.text, 'xml').find_all('entry')
+    entries = BeautifulSoup(response.text, 'xml').find('feed').find_all('entry')
   else:
-    print('Response from server not OK: {0}'.format(response.status_code))
+    print('ERROR: Response from NWS alerts server is: {0}'.format(response.status_code))
     return None
 
-  sum_str = '{event_type}, {st_date} - {en_date}}\nSeverity: {sev}  Summary: {summary}\n\n'
+  sum_str = '{sev} {event_type}, {st_date} - {en_date}\nSummary: {summary}\n\n'
   for entry in entries:
-    warning_county = is_county_relevant(counties, entry, tagname='areaDesc')
+    print('Now checking alerts xml.')
+    warning_county = is_county_relevant(data_dict['alert_counties'],
+                                        entry,
+                                        tagname='areaDesc')
     if warning_county:
-      # Warning includes counties we care about:
-      print('Found warning for {0} county.'.format(warning_county))
-      event_type = entry.find('event').text
-      startdate = entry.find('effective').text
-      enddate = entry.find('expires').text
-      category = entry.find('category').text
-      severity = entry.find('severity').text
+      # print('Found warning for {0} county.'.format(warning_county))
+      # print('Text of this warning entry is: {0}'.format(entry.prettify()))
       event_id = entry.find('id').text
       summary = entry.find('summary').text
       summary = re.sub(r'\*', '\n', summary)
-      warning_summary = sum_str.format(event_type, startdate, enddate,
-                                       severity, summary)
-      print(warning_summary)
-      eventdict = dict(event_type=event_type,
-                       startdate=startdate,
-                       enddate=enddate,
-                       severity=severity,
-                       summary=summary,
-                       event_id=event_id)
+      
+      event_type = entry.find( 'event', text=True )
+      if event_type:
+        print('Event_type info: {0}'.format(event_type.text))
+        event_type = event_type.text
+      else:
+        print('No cap:event tags in entry?')
+      
+      startdate = entry.find( 'effective', text=True )
+      if startdate:
+        # print('Startdate: {0}'.format(startdate.text))
+        startdate = startdate.text
+      
+      enddate = entry.find('expires').string
+      category = entry.find('category').string
+      severity = entry.find('severity').text
+      certainty = entry.find('certainty').text
+      warning_summary = sum_str.format(event_type = event_type,
+                                       st_date = startdate,
+                                       en_date = enddate,
+                                       sev = severity,
+                                       summary = summary)
+      # print('Warning summary:\n{0}'.format(warning_summary))
+
+      eventdict = {'event_type': event_type,
+                   'startdate': startdate,
+                   'enddate': enddate,
+                   'severity': severity,
+                   'certainty': certainty,
+                   'summary': summary,
+                   'event_id': event_id,
+                   'warning_summary': warning_summary}
       alert_dict[event_id] = eventdict
+      # print('Event dictionary: {0}'.format(alert_dict[event_id]))
 
   return alert_dict
 
