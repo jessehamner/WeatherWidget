@@ -68,7 +68,11 @@ done
 # Get the MD5 hash of the backup image (no time stamp):
 sha0=$(shasum ${dir}/wow_00.gif | awk {'print $1'} | tr '\n' ' ' | sed 's/ $//g')
 
+# Strip the transparency and add a black background to the radar image:
 result=$(${convert_binary} ${dir}/current_image.gif -background black -alpha remove ${dir}/current_image.gif)
+# echo "returned text from convert is: ${result}"
+parse_return "${result}"
+result=""
 
 result=$(${convert_binary} -composite ${dir}/current_image.gif  ${dir}/current_warnings.gif ${dir}/weather.gif)
 # echo "returned text from convert is: ${result}"
@@ -91,15 +95,15 @@ cp ${dir}/wow.gif ${dir}/wow_00.gif
 # Make an MD5 hash of the potentially new image:
 sha1=$(shasum ${dir}/wow.gif | awk {'print $1'} | tr '\n' ' ' | sed 's/ $//g')
 
+# Timestamp the image with the system time:
+${convert_binary} -font Courier -pointsize 18 -strokewidth 0.5 -stroke white \
+  -draw "fill white text 530,50 '$(${date_binary} +%H:%M)'" ${dir}/wow.gif ${dir}/wow.gif
+
 # Check the two hashes against each other (backup to possibly-new):
 if [[ "${sha0}" == "${sha1}" ]]; then
   echo "Radar image has not changed."
   exit
 fi
-
-# Timestamp the image with the system time:
-${convert_binary} -font Courier -pointsize 18 -strokewidth 0.5 -stroke white \
-  -draw "fill white text 530,50 '$(${date_binary} +%H:%M)'" ${dir}/wow.gif ${dir}/wow.gif
 
 # Copy the new time-stamped image to frame 0:
 cp ${dir}/wow.gif ${dir}/wow_0.gif
