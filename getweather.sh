@@ -4,9 +4,11 @@ python_binary="$(/usr/bin/which python | tr '\n' ' ' | sed 's/ //g')"
 # python_version="$(${python_binary} --version)"
 ${python_binary} ${HOME}/Dropbox/weatherwidget/current_conditions.py
 convert_binary=`source ${HOME}/.bash_profile; /usr/bin/which convert`
+# echo "-convert- binary: ${convert_binary}"
 legendfile=""
 dir="/tmp"
 date_binary=$(/usr/bin/which date)
+echo "Date binary: ${date_binary}"
 
 function parse_return {
   rrr=$(echo $1 | tr '\n' ' ' | sed 's/ $//g')
@@ -17,10 +19,6 @@ function parse_return {
   fi
   return 0
 }
-
-# echo""
-echo "Date binary: ${date_binary}"
-# echo "-convert- binary: ${convert_binary}"
 
 if [ "${convert_binary}" == "convert not found" ]; then
   echo "Error! -convert- command not found."
@@ -70,18 +68,20 @@ done
 # Get the MD5 hash of the backup image (no time stamp):
 sha0=$(shasum ${dir}/wow_00.gif | awk {'print $1'} | tr '\n' ' ' | sed 's/ $//g')
 
-result=`${convert_binary} -composite ${dir}/current_image.gif ${dir}/current_warnings.gif  ${dir}/weather.gif `
+result=$(${convert_binary} ${dir}/current_image.gif -background black -alpha remove ${dir}/current_image.gif)
+
+result=$(${convert_binary} -composite ${dir}/current_image.gif  ${dir}/current_warnings.gif ${dir}/weather.gif)
 # echo "returned text from convert is: ${result}"
 parse_return "${result}"
 result=""
 
 result=$(${convert_binary} -composite ${dir}/weather.gif ${dir}/bkg2.gif  ${dir}/wow-test.gif)
-echo "returned text from convert is: ${result}"
+# echo "returned text from convert is: ${result}"
 parse_return "${result}"
 result=""
 
 result=$(${convert_binary} -composite ${dir}/wow-test.gif ${dir}/trim_legend.gif ${dir}/wow.gif)
-echo "returned text from convert is: ${result}"
+# echo "returned text from convert is: ${result}"
 parse_return "${result}"
 
 # Copy the potentially new image (no time stamp) to a backup image:
