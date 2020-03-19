@@ -22,10 +22,10 @@ def prettify_timestamp(timestamp):
   Make a more user-readable time stamp for current conditions.
   """
   posix_timestamp = datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S+00:00')
-  #print('Input timestamp: {0}'.format(timestamp))
-  #print('Posix timestamp: {0}'.format(posix_timestamp))
+  # print('Input timestamp: {0}'.format(timestamp))
+  # print('Posix timestamp: {0}'.format(posix_timestamp))
   timetext = datetime.datetime.strftime(posix_timestamp, '%Y-%m-%d, %H:%M:%S UTC')
-  #print('Nicely formatted text: {0}'.format(timetext))
+  # print('Nicely formatted text: {0}'.format(timetext))
   return timetext
 
 
@@ -243,14 +243,12 @@ def split_hwo(bodytext):
 
   """
   returntext = ''
-  #print('Raw body text of HWO: \n{0}'.format(bodytext))
+  # print('Raw body text of HWO: \n{0}'.format(bodytext))
 
   dayone = re.search(r'(\.DAY ONE.*?)(\.DAYS TWO THROUGH SEVEN)', bodytext, re.DOTALL)
   if dayone:
     hwotext = re.sub(r'\n\n$', '', dayone.group(1))
 
-  #bodytext = re.sub(r'(\.DAY ONE.*?)\n\n', r'\g<1>\n', bodytext)
-  #bodytext = re.sub(r'(\.SPOTTER INFORMATION STATEMENT.*?)\n\n', r'\g<1>\n', bodytext)
   spotter = re.search(r'(\.SPOTTER INFORMATION STATEMENT.*?)(\s*\$\$)', bodytext, re.DOTALL)
   if spotter:
     spottertext = re.sub(r'\n\n$', '', spotter.group(1))
@@ -318,11 +316,10 @@ def check_outage(url, params_dict):
   except requests.exceptions.ConnectionError as e:
     print('ConnectioError: {0}'.format(e))
     return None
-  
+
   html = response.text
-  #print('Response text: {0}'.format(html))
   soup = BeautifulSoup(html, 'html.parser')
-  
+
   try:
     pres = soup.body.find_all('pre')
   except TypeError:
@@ -353,7 +350,6 @@ def parse_outage(bodytext):
       continue
     if re.search(r'^\s*FTM|^000\s*$|^NOUS', line):
       continue
-    #print('line: {0}'.format(line))
     if re.search('MESSAGE DATE:', line, flags=re.I):
       message_date = re.sub(r'MESSAGE DATE:\s+', '', line, flags=re.I)
       print('Date of issue: {0}'.format(message_date))
@@ -396,20 +392,20 @@ def get_current_alerts(url, data_dict, alert_dict):
   The ATOM and CAP (XML) feeds are updated about every two minutes.
   ATOM XML feed for Texas: https://alerts.weather.gov/cap/tx.php?x=0
   Complete CAP feeds are linked within the ATOM XML feed.
-  
+
   Each entry contains a space-delimited list of counties in several formats.
   Under <cap:areaDesc>, there is an English-language list of semicolon-
     delimited county names.
 
   Under <cap:geocode>, there are two <valueName> tags:
   FIPS6 = three digit state FIPS code (prepended by zero if less than 100),
-    concatenated with the FIPS county code for that state. For instance, 
+    concatenated with the FIPS county code for that state. For instance,
     Denton County, Texas is 048121 (Texas is "048")
 
   UGC = Two-letter alpha state abbreviation, concatenated with a county number
     that is NOT the FIPS number for that county.
     Denton County, Texas is TXZ103, for instance.
-  
+
   """
   if data_dict['alert_counties'] is None:
     print('No counties in submitted parameters. Returning -None-')
@@ -436,28 +432,28 @@ def get_current_alerts(url, data_dict, alert_dict):
       event_id = entry.find('id').text
       summary = entry.find('summary').text
       summary = re.sub(r'\*', '\n', summary)
-      
-      event_type = entry.find( 'event', text=True )
+
+      event_type = entry.find('event', text=True)
       if event_type:
         print('Event_type info: {0}'.format(event_type.text))
         event_type = event_type.text
       else:
         print('No cap:event tags in entry?')
-      
-      startdate = entry.find( 'effective', text=True )
+
+      startdate = entry.find('effective', text=True)
       if startdate:
         # print('Startdate: {0}'.format(startdate.text))
         startdate = startdate.text
-      
+
       enddate = entry.find('expires').string
       category = entry.find('category').string
       severity = entry.find('severity').text
       certainty = entry.find('certainty').text
-      warning_summary = sum_str.format(event_type = event_type,
-                                       st_date = startdate,
-                                       en_date = enddate,
-                                       sev = severity,
-                                       summary = summary)
+      warning_summary = sum_str.format(event_type=event_type,
+                                       st_date=startdate,
+                                       en_date=enddate,
+                                       sev=severity,
+                                       summary=summary)
       # print('Warning summary:\n{0}'.format(warning_summary))
 
       eventdict = {'event_type': event_type,
@@ -469,7 +465,6 @@ def get_current_alerts(url, data_dict, alert_dict):
                    'event_id': event_id,
                    'warning_summary': warning_summary}
       alert_dict[event_id] = eventdict
-      # print('Event dictionary: {0}'.format(alert_dict[event_id]))
 
   return alert_dict
 
@@ -554,7 +549,6 @@ def get_forecast(lon, lat, url, fmt=['24', 'hourly'], days=7):
   payload = {'lon': lon, 'lat': lat, 'format': time_format, 'numDays': days}
 
   retval = requests.get(url=url, params=payload, verify=False)
-  # print('Returned info: {0}'.format(retval.text))
 
   return retval
 
@@ -714,36 +708,55 @@ def get_goes_list(data, band='NightMicrophysics'):
     if i.has_attr("href"):
       filename = i['href']
       # print('Checking file: "{0}"'.format(filename))
-    try: 
+    try:
       if myimage.search(filename):
-          if re.search(res, filename) and re.search(todaystring, filename):
-            files.append(filename)
+        if re.search(res, filename) and re.search(todaystring, filename):
+          files.append(filename)
     except KeyError, AttributeError:
       pass
 
   return files
 
 
-def get_goes_image(data, band='NightMicrophysics'):
+def get_goes_timestamps(data, fileslist):
   """
-  Retrieve current GOES weather imagery. Not complete yet.
+  Extract image timestamps from the date portion of GOES image list.
+  Return a list of those (UTC) timestamps.
+  """
+  band_timestamps = []
+  yeardoy = '{0}{1}'.format(data['today_vars']['year'], data['today_vars']['doy'])
+
+  for filename in fileslist:
+    protostamp = re.search(yeardoy + r'(\d{4})', filename).groups(1)[0]
+    if protostamp:
+      band_timestamps.append(protostamp)
+
+  return band_timestamps
+
+
+def get_goes_image(data, timehhmm, band='NightMicrophysics'):
+  """
+  Retrieve current GOES weather imagery.
   """
 
   url = data['goes_url'].format(sat=data['goes_sat'],
-                             sector=data['goes_sector'],
-                             band=band)
-  
+                                sector=data['goes_sector'],
+                                band=band)
+
   image = data['goes_img'].format(year=data['today_vars']['year'],
                                   doy=data['today_vars']['doy'],
-                                  timeHHMM='1806',
+                                  timeHHMM=timehhmm,
                                   sat=data['goes_sat'],
                                   sector=data['goes_sector'],
                                   band=band,
                                   resolution=data['goes_res']
                                  )
-  # image = '20200651806_GOES16-ABI-sp-NightMicrophysics-2400x2400.jpg' 
-  returned_val = requests.get(os.path.join(url, image)) 
-  with open(image, 'wb') as satout:
+  # image = '20200651806_GOES16-ABI-sp-NightMicrophysics-2400x2400.jpg'
+  returned_val = requests.get(os.path.join(url, image))
+  with open(os.path.join(data['output_dir'], image), 'wb') as satout:
+    satout.write(bytearray(returned_val.content))
+
+  with open(os.path.join(data['output_dir'], 'goes_current.jpg'), 'wb') as satout:
     satout.write(bytearray(returned_val.content))
 
   return image

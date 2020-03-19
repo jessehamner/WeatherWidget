@@ -104,11 +104,10 @@ def main():
   - TODO: use PythonMagick instead of post-processing via shell script
 
   """
-  today_vars = wf.get_today_vars(data['timezone'])
+  data['today_vars'] = wf.get_today_vars(data['timezone'])
   data['bands'] = GOES_BANDS
   data['goes_url'] = GOES_DOWNLOAD
   data['goes_img'] = GOES_IMG
-  data['today_vars'] = today_vars
   outage_text = wf.check_outage(HWO_URL, FTM_DICT)
   returned_message = wf.parse_outage(outage_text)
   outfilepath = os.path.join(data['output_dir'], 'outage.txt')
@@ -133,9 +132,9 @@ def main():
     print('ERROR: something went wrong getting the current conditions. Halting.')
     return 1
 
-  with open(os.path.join(data['output_dir'], 'current_conditions.txt'), 'w') as current_conditions:
-    current_conditions.write(nice_con)
-  current_conditions.close()
+  with open(os.path.join(data['output_dir'], 'current_conditions.txt'), 'w') as curr_con:
+    curr_con.write(nice_con)
+  curr_con.close()
 
   if wf.get_weather_radar(RADAR_URL, data['radar_station']) is None:
     print('Unable to retrieve weather radar image. Halting now.')
@@ -152,9 +151,10 @@ def main():
     today_hwo.close()
 
   if wf.get_hydrograph(abbr=data['river_gauge_abbr'], hydro_url=WATER_URL).ok:
-    print('Got hydrograph for {0} station, gauge "{1}".'.format(data['radar_station'], data['river_gauge_abbr']))
+    print('Got hydrograph for {0} station, gauge "{1}".'.format(data['radar_station'],
+                                                                data['river_gauge_abbr']))
   else:
-    print('Unable to retrieve hydrograph for specified gauge ({0}).'.format(data['river_gauge_abbr']))
+    print('Cannot get hydrograph for specified gauge ({0}).'.format(data['river_gauge_abbr']))
     return 1
 
   forecastxml = wf.get_forecast(lon=data['lon'],
@@ -170,7 +170,14 @@ def main():
   with open(os.path.join(data['output_dir'], 'alerts_text.txt'), 'w') as current_alerts:
     for key, value in alert_dict.iteritems():
       print('Key for this alert entry: {0}'.format(key))
-      current_alerts.write('{0}\n'.format(alert_dict[key]['warning_summary']))
+      current_alerts.write('{0}\n'.format(value['warning_summary']))
+
+  goes_list = wf.get_goes_list(data=data, band='GEOCOLOR')
+  band_timestamps = wf.get_goes_timestamps(data, goes_list)
+  current_timestamp = band_timestamps[-1]
+  current_image = wf.get_goes_image(data, current_timestamp, band='GEOCOLOR')
+  print('retrieved {0}'.format(current_image))
+
 
   return 0
 
