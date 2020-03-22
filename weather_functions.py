@@ -375,7 +375,19 @@ def is_county_relevant(counties_list, xml_entry, tagname='areaDesc'):
   Check to see if an xml tag contains items from a user-specified list.
   """
   entry_counties = xml_entry.find(tagname)
-  clist = entry_counties.text.split(';')
+  if not entry_counties:
+    return None
+
+  try:
+    if not entry_counties.text:
+      return None
+    clist = entry_counties.text.split(';')
+    if not clist:
+      return None
+  except AttributeError as e:
+    print('Attribute Error: returning None.')
+    return None
+
   for county in clist:
     print('Checking county {0}'.format(county))
     if county.strip() in counties_list:

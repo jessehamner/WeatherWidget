@@ -167,10 +167,13 @@ def main():
   alert_dict = {}
   print('Getting alerts for the following counties: {0}.'.format(data['alert_counties']))
   alert_dict = wf.get_current_alerts(ALERTS_URL, data, alert_dict)
-  with open(os.path.join(data['output_dir'], 'alerts_text.txt'), 'w') as current_alerts:
-    for key, value in alert_dict.iteritems():
-      print('Key for this alert entry: {0}'.format(key))
-      current_alerts.write('{0}\n'.format(value['warning_summary']))
+  if not alert_dict:
+    os.remove(os.path.join(data['output_dir'], 'alerts_text.txt'))
+  else: 
+    with open(os.path.join(data['output_dir'], 'alerts_text.txt'), 'w') as current_alerts:
+      for key, value in alert_dict.iteritems():
+        print('Key for this alert entry: {0}'.format(key))
+        current_alerts.write('{0}\n'.format(value['warning_summary']))
 
   goes_list = wf.get_goes_list(data=data, band='GEOCOLOR')
   band_timestamps = wf.get_goes_timestamps(data, goes_list)
