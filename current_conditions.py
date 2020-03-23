@@ -167,8 +167,14 @@ def main():
   alert_dict = {}
   print('Getting alerts for the following counties: {0}.'.format(data['alert_counties']))
   alert_dict = wf.get_current_alerts(ALERTS_URL, data, alert_dict)
+  alertpath = os.path.join(data['output_dir'], 'alerts_text.txt'))
   if not alert_dict:
-    os.remove(os.path.join(data['output_dir'], 'alerts_text.txt'))
+    try:
+      if os.path.exists(alertpath):
+        os.remove(alertpath)
+    except OSError:
+      pass
+  
   else: 
     with open(os.path.join(data['output_dir'], 'alerts_text.txt'), 'w') as current_alerts:
       for key, value in alert_dict.iteritems():
