@@ -167,7 +167,7 @@ def main():
   alert_dict = {}
   print('Getting alerts for the following counties: {0}.'.format(data['alert_counties']))
   alert_dict = wf.get_current_alerts(ALERTS_URL, data, alert_dict)
-  alertpath = os.path.join(data['output_dir'], 'alerts_text.txt'))
+  alertpath = os.path.join(data['output_dir'], 'alerts_text.txt')
   if not alert_dict:
     try:
       if os.path.exists(alertpath):
