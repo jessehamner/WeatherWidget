@@ -6,7 +6,7 @@ https://radar.weather.gov/GIS.html
 https://radar.weather.gov/ridge/Overlays/
 https://mesonet.agron.iastate.edu/GIS/legends/TR0.gif
 
-Jesse Hamner, 2019
+Jesse Hamner, 2019--2020
 
 """
 
@@ -96,7 +96,7 @@ def main():
   - TODO: should run the getweather.sh shell script, that overlays/composites
     the weather graphics. At present, that shell script calls this script
     and runs the overlays with -bash-.
-  - TODO: Acquire multi-band GOES-x imagery from today, checking to see if
+  - Acquire multi-band GOES-x imagery from today, checking to see if
     there is a new image and comparing it to the list of files from today,
     of the specified resolution.
   - TODO: Remove radar and satellite images more than two days old

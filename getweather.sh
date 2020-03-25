@@ -2,13 +2,16 @@
 python_binary="$(/usr/bin/which python | tr '\n' ' ' | sed 's/ //g')"
 # echo "python: ${python_binary}"
 # python_version="$(${python_binary} --version)"
-${python_binary} ${HOME}/Dropbox/weatherwidget/current_conditions.py
+sourcelib="${HOME}/Dropbox/weatherwidget"
+${python_binary} ${sourcelib}/current_conditions.py
 convert_binary=`source ${HOME}/.bash_profile; /usr/bin/which convert`
 # echo "-convert- binary: ${convert_binary}"
 legendfile=""
 dir="/tmp"
 date_binary=$(/usr/bin/which date)
 echo "Date binary: ${date_binary}"
+echo "Path: ${_}"
+
 
 function parse_return {
   rrr=$(echo $1 | tr '\n' ' ' | sed 's/ $//g')
@@ -36,7 +39,7 @@ do
     sleep 1
   else
     echo "${file}.gif is not present in ${dir}. Copying it in."
-    cp ${HOME}/Dropbox/weatherwidget/images/${file}.gif ${dir}/
+    cp ${sourcelib}/images/${file}.gif ${dir}/
   fi
 done
 

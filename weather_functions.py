@@ -125,8 +125,8 @@ def format_current_conditions(cur, cardinal_directions=True):
     heat_index_string = str('{} {}'.format(heat_index_value, temp_unit))
   doctext = quick_doctext(doctext,
                           'Heat Index:',
-                          heat_index_string,
-                          temp_unit)
+                          heat_index_string
+                         )
 
   pressure_unit = re.sub('unit:', '', cur['barometricPressure']['unitCode'])
   pressure_value = sanity_check(cur['barometricPressure']['value'])
@@ -619,7 +619,7 @@ def concat_precip(bs_obj):
       part2 = ' --'
 
     if part1 == '  0%' and part2 == '  0%':
-      thestring = ' 0% '
+      thestring = '  0% '
     else:
       thestring = '{0} /{1}'.format(part1, part2)
 
