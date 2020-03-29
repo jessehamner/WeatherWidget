@@ -42,7 +42,7 @@ def check_graphics(graphics_list, root_url, dest='/tmp', radar='FWS'):
     if os.path.isfile(localpath) is False:
       print('Need to retrieve {0}'.format(filename))
       graphic = requests.get(os.path.join(root_url, suf.format(radar=radar)),
-                             verify=False)
+                             verify=False, timeout=10)
       with open(os.path.join(dest, filename), 'wb') as output:
         output.write(graphic.content)
       output.close()
@@ -54,7 +54,7 @@ def get_current_conditions(url, station):
   Take the JSON object from the NWS station and produce a reduced set of
   information for display.
   """
-  response = requests.get(url.format(station=station), verify=False)
+  response = requests.get(url.format(station=station), verify=False, timeout=10)
   if response.status_code == 200:
     conditions = response.json()
     return conditions
@@ -170,7 +170,7 @@ def get_weather_radar(url, station, outputdir='/tmp'):
   and world file from the NWS.
   """
   response1 = requests.get(url.format(station=station, image='N0R_0.gfw'),
-                           verify=False)
+                           verify=False, timeout=10)
   if response1.status_code != 200:
     print('Response from server was not OK: {0}'.format(response1.status_code))
     return None
@@ -179,7 +179,7 @@ def get_weather_radar(url, station, outputdir='/tmp'):
   cur1.close()
 
   response2 = requests.get(url.format(station=station, image='N0R_0.gif'),
-                           verify=False)
+                           verify=False, timeout=10)
   if response2.status_code != 200:
     print('Response from server was not OK: {0}'.format(response2.status_code))
     return None
@@ -198,8 +198,9 @@ def get_warnings_box(url, station, outputdir='/tmp'):
   """
   warnings = 'Warnings'
   response = requests.get(url.format(station=station,
-                                     warnings=warnings),
-                          verify=False)
+                                     warnings=warnings,
+                                    ),
+                          verify=False, timeout=10)
   cur = open(os.path.join(outputdir, 'current_warnings.gif'), 'wb')
   cur.write(response.content)
   cur.close()
@@ -219,7 +220,7 @@ def get_hwo(url, params_dict, outputfile='current_hwo.txt', outputdir='/tmp'):
     </pre>
   """
 
-  response = requests.get(url, params=params_dict, verify=False)
+  response = requests.get(url, params=params_dict, verify=False, timeout=10)
   html = response.text
   soup = BeautifulSoup(html, 'html.parser')
   pres = soup.body.find_all('pre')
@@ -312,7 +313,7 @@ def check_outage(url, params_dict):
   """
 
   try:
-    response = requests.get(url, params=params_dict, verify=False)
+    response = requests.get(url, params=params_dict, verify=False, timeout=10)
   except requests.exceptions.ConnectionError as e:
     print('ConnectioError: {0}'.format(e))
     return None
@@ -424,7 +425,7 @@ def get_current_alerts(url, data_dict, alert_dict):
     return None
 
   params_dict = {'x': data_dict['alert_county'], 'y': 1}
-  response = requests.get(url, params=params_dict, verify=False)
+  response = requests.get(url, params=params_dict, verify=False, timeout=10)
   if response.status_code == 200 and response.headers['Content-Type'] == 'text/xml':
     # Parse the feed for relevant content:
     entries = BeautifulSoup(response.text, 'xml').find('feed').find_all('entry')
@@ -560,7 +561,7 @@ def get_forecast(lon, lat, url, fmt=['24', 'hourly'], days=7):
   time_format = " ".join(fmt)
   payload = {'lon': lon, 'lat': lat, 'format': time_format, 'numDays': days}
 
-  retval = requests.get(url=url, params=payload, verify=False)
+  retval = requests.get(url=url, params=payload, verify=False, timeout=10)
 
   return retval
 

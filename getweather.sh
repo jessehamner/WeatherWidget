@@ -9,8 +9,8 @@ convert_binary=`source ${HOME}/.bash_profile; /usr/bin/which convert`
 legendfile=""
 dir="/tmp"
 date_binary=$(/usr/bin/which date)
-echo "Date binary: ${date_binary}"
-echo "Path: ${_}"
+# echo "Date binary: ${date_binary}"
+# echo "Path: ${_}"
 
 
 function parse_return {
