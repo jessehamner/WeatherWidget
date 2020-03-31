@@ -29,7 +29,7 @@ def prettify_timestamp(timestamp):
   return timetext
 
 
-def check_graphics(graphics_list, root_url, dest='/tmp', radar='FWS'):
+def check_graphics(graphics_list, root_url, outputdir='/tmp', radar='FWS'):
   """
   Ensure that the needed graphics are available in /tmp/ -- and if needed.
   (re-) download them from the NWS.
@@ -38,12 +38,12 @@ def check_graphics(graphics_list, root_url, dest='/tmp', radar='FWS'):
   for suf in graphics_list:
     filename = '{0}'.format(suf.format(radar=radar))
     filename = filename.split('/')[-1]
-    localpath = os.path.join(dest, filename)
+    localpath = os.path.join(outputdir, filename)
     if os.path.isfile(localpath) is False:
       print('Need to retrieve {0}'.format(filename))
       graphic = requests.get(os.path.join(root_url, suf.format(radar=radar)),
                              verify=False, timeout=10)
-      with open(os.path.join(dest, filename), 'wb') as output:
+      with open(os.path.join(outputdir, filename), 'wb') as output:
         output.write(graphic.content)
       output.close()
   return True
