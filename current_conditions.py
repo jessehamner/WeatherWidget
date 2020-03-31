@@ -122,7 +122,8 @@ def main():
     except OSError:
       print('file does not exist: {0}'.format(outfilepath))
 
-  wf.check_graphics(GRAPHICS_LIST, WEATHER_URL_ROOT)
+  wf.check_graphics(graphics_list=GRAPHICS_LIST, root_url=WEATHER_URL_ROOT,
+                    dest=data['output_dir'], radar=data['radar_station'])
   wf.check_graphics([LEGEND,], LEGEND_URL_ROOT)
   conditions = wf.get_current_conditions(CUR_URL, data['station'])
   sum_con = wf.conditions_summary(conditions)

@@ -321,9 +321,15 @@ def check_outage(url, params_dict):
   html = response.text
   soup = BeautifulSoup(html, 'html.parser')
 
+  if not soup:
+    print('WARNING: no returned data from html request for outages.')
+    return None
+
   try:
     pres = soup.body.find_all('pre')
   except TypeError:
+    return None
+  except AttributeError:
     return None
 
   for pretag in pres:
@@ -425,7 +431,13 @@ def get_current_alerts(url, data_dict, alert_dict):
     return None
 
   params_dict = {'x': data_dict['alert_county'], 'y': 1}
-  response = requests.get(url, params=params_dict, verify=False, timeout=10)
+  
+  try:
+    response = requests.get(url, params=params_dict, verify=False, timeout=10)
+  except e:
+    print('Exception when requesting current alerts: {0}'.format(e))
+    return None
+
   if response.status_code == 200 and response.headers['Content-Type'] == 'text/xml':
     # Parse the feed for relevant content:
     entries = BeautifulSoup(response.text, 'xml').find('feed').find_all('entry')
@@ -710,7 +722,7 @@ def get_goes_list(data, band='NightMicrophysics'):
   res = data['goes_res']
   url = data['goes_url'].format(sat=sat, sector=sector, band=band)
   # print('Checking url: {0}'.format(url))
-  filelist = BeautifulSoup(requests.get(url).text, 'html')
+  filelist = BeautifulSoup(requests.get(url).text, 'html', features="lxml")
   links = filelist.find_all("a", attrs={"href": True})
   files = []
   todaystring = '{0}{1}'.format(data['today_vars']['year'], data['today_vars']['doy'])
