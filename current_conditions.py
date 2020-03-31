@@ -141,9 +141,9 @@ def main():
     print('Unable to retrieve weather radar image. Halting now.')
     return 1
 
-  wf.get_warnings_box(WARNINGS_URL, data['radar_station'])
+  wf.get_warnings_box(WARNINGS_URL, data['radar_station'], outputdir=data['output_dir'])
   # hwo_statement = wf.get_hwo(HWO_URL, HWO_DICT)
-  hwo_today = wf.split_hwo(wf.get_hwo(HWO_URL, HWO_DICT))
+  hwo_today = wf.split_hwo(wf.get_hwo(HWO_URL, HWO_DICT, outputdir=data['output_dir']))
   if hwo_today is not None:
     hwo = re.sub('.DAY ONE', 'Hazardous Weather Outlook', hwo_today)
     #print(hwo)
@@ -151,7 +151,9 @@ def main():
       today_hwo.write(hwo)
     today_hwo.close()
 
-  if wf.get_hydrograph(abbr=data['river_gauge_abbr'], hydro_url=WATER_URL).ok:
+  if wf.get_hydrograph(abbr=data['river_gauge_abbr'],
+                       hydro_url=WATER_URL,
+                       outputdir=data['output_dir']).ok:
     print('Got hydrograph for {0} station, gauge "{1}".'.format(data['radar_station'],
                                                                 data['river_gauge_abbr']))
   else:

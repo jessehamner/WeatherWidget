@@ -532,7 +532,7 @@ def wind_direction(azimuth):
 
 def get_hydrograph(abbr,
                    hydro_url='https://water.weather.gov/resources/hydrographs/',
-                   output_path='/tmp'):
+                   outputdir='/tmp'):
   """
   Retrieve hydrograph image (png) of the current time and specified location
   Can find these abbreviations at
@@ -547,7 +547,7 @@ def get_hydrograph(abbr,
   print('retrieving: {0}'.format(retval.url))
   print('return value: {0}'.format(retval))
   if retval.status_code == 200:
-    cur1 = open(os.path.join(output_path, 'current_hydrograph.png'), 'wb')
+    cur1 = open(os.path.join(outputdir, 'current_hydrograph.png'), 'wb')
     cur1.write(retval.content)
     cur1.close()
 
