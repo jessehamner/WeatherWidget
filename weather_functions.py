@@ -722,7 +722,7 @@ def get_goes_list(data, band='NightMicrophysics'):
   res = data['goes_res']
   url = data['goes_url'].format(sat=sat, sector=sector, band=band)
   # print('Checking url: {0}'.format(url))
-  filelist = BeautifulSoup(requests.get(url).text, 'html', features="lxml")
+  filelist = BeautifulSoup(requests.get(url).text, 'html.parser')
   links = filelist.find_all("a", attrs={"href": True})
   files = []
   todaystring = '{0}{1}'.format(data['today_vars']['year'], data['today_vars']['doy'])

@@ -137,7 +137,7 @@ def main():
     curr_con.write(nice_con)
   curr_con.close()
 
-  if wf.get_weather_radar(RADAR_URL, data['radar_station']) is None:
+  if wf.get_weather_radar(RADAR_URL, data['radar_station'], outputdir=data['output_dir']) is None:
     print('Unable to retrieve weather radar image. Halting now.')
     return 1
 
