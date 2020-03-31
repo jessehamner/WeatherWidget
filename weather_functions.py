@@ -315,7 +315,7 @@ def check_outage(url, params_dict):
   try:
     response = requests.get(url, params=params_dict, verify=False, timeout=10)
   except requests.exceptions.ConnectionError as e:
-    print('ConnectioError: {0}'.format(e))
+    print('ConnectionError: {0}'.format(e))
     return None
 
   html = response.text
