@@ -818,3 +818,46 @@ def high_low_svg(high, low, filename):
 
   return 0
 
+
+def precip_chance_svg(morning, evening, filename):
+  """
+  Take the day's precip chances and produce a color-coded svg of percentages.
+  """
+  colors = ['#baa87d', '#7ae6c0', '#2bb5aa', '#023dbd', '#035740']
+
+  high_coords = (8, 16)
+  low_coords = (2, 38)
+  dimensions = (55, 40)
+  fontcolor = 'white'
+  
+  bgc = colors[int(max(morning, evening)/100.0 * (len(colors) - 1))]
+
+  if not re.search(r'%$', str(evening)):
+    evening = '{0}%'.format(evening)
+  if not re.search(r'%$', str(morning)):
+    morning = '{0}%'.format(morning)
+
+  style1 = '.{stylename} {openbrace} font: bold {fontsize}px sans-serif; fill:{fontcolor}; stroke:#000000; stroke-width:2px; stroke-linecap:butt; stroke-linejoin:miter; stroke-opacity:0.5; {closebrace}'
+  
+  dwg = svgwrite.Drawing(filename, size=dimensions)
+
+  dwg_styles = svgwrite.container.Style(content='.background {fill: ' + bgc + '; stroke: #f0f0f0f0;}')
+  dwg_styles.append(content=style1.format(stylename='morning', openbrace='{',
+                                          fontsize='18', fontcolor='#f2df94', 
+                                          closebrace='}'))
+  dwg_styles.append(content=style1.format(stylename='evening', openbrace='{',
+                                          fontsize='18', fontcolor='#ffd4fb',
+                                          closebrace='}'))
+  dwg.defs.add(dwg_styles)
+  evening_text = svgwrite.text.TSpan(text=evening, insert=high_coords, class_='evening')
+  morning_text = svgwrite.text.TSpan(text=morning, insert=low_coords, class_='morning')
+  frame = svgwrite.shapes.Rect(insert=(0, 0), size=dimensions, class_='background')
+  text_block = svgwrite.text.Text('', x='0', y='0')
+  text_block.add(evening_text)
+  text_block.add(morning_text)
+  dwg.add(frame)
+  dwg.add(text_block)
+  dwg.save(pretty=True)
+  
+  return 0
+
