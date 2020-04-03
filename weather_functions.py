@@ -15,7 +15,7 @@ import requests
 import pytz
 from bs4 import BeautifulSoup
 requests.packages.urllib3.disable_warnings()
-
+import svgwrite
 
 def prettify_timestamp(timestamp):
   """
@@ -785,3 +785,36 @@ def get_goes_image(data, timehhmm, band='NightMicrophysics'):
     satout.write(bytearray(returned_val.content))
 
   return image
+
+
+def high_low_svg(high, low, filename):
+  """
+  Use svgwrite to make a simple graphic with high/low temps for the day's
+  forecast.
+  
+  """
+ 
+  high_coords = (2, 15)
+  low_coords = (2, 31)
+  dimensions = (40, 32)
+  style1 = '.{stylename} {openbrace} font: bold {fontsize}px sans-serif; fill:{fontcolor}; stroke:#000000; stroke-width:1px; stroke-linecap:butt; stroke-linejoin:miter; stroke-opacity:0.7; {closebrace}'
+  
+  dwg = svgwrite.Drawing(filename, size=dimensions)
+  dwg_styles = svgwrite.container.Style(content='.background {fill: #f0f0f0f0; stroke: #f0f0f0f0;}')
+  dwg_styles.append(content=style1.format(stylename='low', openbrace='{',
+                                          fontsize='16', fontcolor='blue', 
+                                          closebrace='}'))
+  dwg_styles.append(content=style1.format(stylename='high', openbrace='{',
+                                          fontsize='18', fontcolor='red',
+                                          closebrace='}'))
+  dwg.defs.add(dwg_styles)
+  high_text = svgwrite.text.TSpan(text=high, insert=high_coords, class_='high')
+  low_text = svgwrite.text.TSpan(text=low, insert=low_coords, class_='low')
+  text_block = svgwrite.text.Text('', x='0', y='0')
+  text_block.add(high_text)
+  text_block.add(low_text)
+  dwg.add(text_block)
+  dwg.save(pretty=True)
+
+  return 0
+
