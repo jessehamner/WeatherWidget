@@ -18,6 +18,8 @@ desktop widgets.
 [ImageMagick](https://imagemagick.org/) is also required. This codebase is generally intended for Mac OS X and Linux,
 but obviously there are Windows versions of all of this software, but I don't
 regularly use Windows.
+[Erik Flowers's weather icons](https://erikflowers.github.io/weather-icons/)
+
 
 ## Quick Start
 
@@ -49,12 +51,9 @@ More recently, functions have been added to gather forecast information from
 and hydrologic information from 
 [the NWS Advanced Hydrologic Prediction Service](https://water.weather.gov/ahps2/hydrograph.php).
 
-```python
-RADAR_STATION = 'FWS'
-NWS_ABBR = 'FWD'
-STATION = 'KDTO'
+The YAML settings file does require a lot of abbreviations and such, but it's
+all pretty well contained in that one file. (Exception: merge_backgrounds.sh still hasn't been adapted for the settings file)
 
-```
 
 ### Basic program flow:
 
@@ -74,16 +73,13 @@ STATION = 'KDTO'
 - Check for an overlay graphic (used in compositing the radar image)
 - Clean up the last observations
 - Use ImageMagick to composite the current radar image and backgrounds
+- Make a radar animation of up to the last 20 radar images
 
 ## Limitations
 
 The [National Weather Service API](https://www.weather.gov/documentation/services-web-api)
 currently lists only one endpoint as valid, the `https://api.weather.gov/alerts` endpoint. 
 As of this writing, the "current observations" also works, though I do not know if the coverage is universal.
-
-An alternate source of forecast information is
-[Dark Sky's API](https://darksky.net/dev/docs/faq) 
-.
 
 ## Setting Up Scheduled Jobs
 
@@ -109,6 +105,15 @@ To use GeekTool, one must also set up a widget ("geeklet").
 
 ### Linux
 
+Add a line to `/etc/crontab` and be sure that the end of the file contains a 
+blank line, or else the last line of the file won't be parsed.
+The line might look like this (though using root is a terrible idea and that's
+an issue I will fix):
+
+```
+# Get weather radar a minute after the image is scheduled to appear:
+3,6,10,15,19,23,27,35,38,43,47,51,55,59 * * * * root  /opt/weatherwidget/getweather.sh
+```
 
 
 ### That other Geeklet

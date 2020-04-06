@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 Weather functions to be used with the NWS radar and weather information
 download script.
@@ -791,12 +792,15 @@ def high_low_svg(high, low, filename):
   """
   Use svgwrite to make a simple graphic with high/low temps for the day's
   forecast.
-  
+  Unicode deg-Celsius is U+2103 (only for UTF-16)
+  Unicode deg-Fahrenheit is U+2109 (only for UTF-16)
+  Unicode degree symbol is U+00B0 ('\xb0') -- same as Latin-1 encoding, but is
+  not available in 1963-standard 7-bit ASCII
   """
  
   high_coords = (2, 15)
-  low_coords = (2, 31)
-  dimensions = (40, 32)
+  low_coords = (2, 36)
+  dimensions = (40, 40)
   style1 = '.{stylename} {openbrace} font: bold {fontsize}px sans-serif; fill:{fontcolor}; stroke:#000000; stroke-width:1px; stroke-linecap:butt; stroke-linejoin:miter; stroke-opacity:0.7; {closebrace}'
   
   dwg = svgwrite.Drawing(filename, size=dimensions)
@@ -808,8 +812,12 @@ def high_low_svg(high, low, filename):
                                           fontsize='18', fontcolor='red',
                                           closebrace='}'))
   dwg.defs.add(dwg_styles)
-  high_text = svgwrite.text.TSpan(text=high, insert=high_coords, class_='high')
-  low_text = svgwrite.text.TSpan(text=low, insert=low_coords, class_='low')
+  high_symbol = (unicode(high) + u'\xb0')
+  low_symbol = (unicode(low) + u'\xb0')
+  high_text = svgwrite.text.TSpan(text=high_symbol,
+                                  insert=high_coords, class_='high')
+  low_text = svgwrite.text.TSpan(text=low_symbol, 
+                                 insert=low_coords, class_='low')
   text_block = svgwrite.text.Text('', x='0', y='0')
   text_block.add(high_text)
   text_block.add(low_text)
@@ -837,7 +845,9 @@ def precip_chance_svg(morning, evening, filename):
   if not re.search(r'%$', str(morning)):
     morning = '{0}%'.format(morning)
 
-  style1 = '.{stylename} {openbrace} font: bold {fontsize}px sans-serif; fill:{fontcolor}; stroke:#000000; stroke-width:2px; stroke-linecap:butt; stroke-linejoin:miter; stroke-opacity:0.5; {closebrace}'
+  style1 = '''.{stylename} {openbrace} font: bold {fontsize}px sans-serif; 
+  fill:{fontcolor}; stroke:#000000; stroke-width:2px; stroke-linecap:butt; 
+  stroke-linejoin:miter; stroke-opacity:0.5; {closebrace}'''
   
   dwg = svgwrite.Drawing(filename, size=dimensions)
 
