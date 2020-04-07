@@ -128,13 +128,14 @@ def main():
   conditions = wf.get_current_conditions(CUR_URL, data['station'])
   sum_con = wf.conditions_summary(conditions)
   if conditions and sum_con:
-    nice_con = wf.format_current_conditions(sum_con)
+    text_conditions, nice_con = wf.format_current_conditions(sum_con)
+    html_table = wf.htable_current_conditions(nice_con, 'current_conditions.html')
   else:
     print('ERROR: something went wrong getting the current conditions. Halting.')
     return 1
 
   with open(os.path.join(data['output_dir'], 'current_conditions.txt'), 'w') as curr_con:
-    curr_con.write(nice_con)
+    curr_con.write(text_conditions)
   curr_con.close()
 
   if wf.get_weather_radar(RADAR_URL, data['radar_station'], outputdir=data['output_dir']) is None:
@@ -162,10 +163,11 @@ def main():
 
   forecastxml = wf.get_forecast(lon=data['lon'],
                                 lat=data['lat'],
-                                fmt=['24', 'hourly'],
+                                fmt=None,
                                 url=FORECAST_URL)
   forecastdict = wf.parse_forecast(forecastxml)
   wf.write_forecast(fc_dict=forecastdict, outputdir=data['output_dir'])
+  wf.make_forecast_icons(forecastdict)
 
   alert_dict = {}
   print('Getting alerts for the following counties: {0}.'.format(data['alert_counties']))

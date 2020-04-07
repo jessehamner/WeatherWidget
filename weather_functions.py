@@ -11,12 +11,12 @@ from __future__ import print_function
 import os
 import re
 import datetime
+import svgwrite
 import requests
 # import lxml
 import pytz
 from bs4 import BeautifulSoup
 requests.packages.urllib3.disable_warnings()
-import svgwrite
 
 def prettify_timestamp(timestamp):
   """
@@ -96,73 +96,75 @@ def format_current_conditions(cur, cardinal_directions=True):
   """
   Take in the dictionary of current conditions and return a text document.
   """
+  ccdict = {}
   temp_unit = 'F'
   if cur['temperature']['unitCode'] == 'unit:degC':
     temp_unit = 'C'
 
+  ordered = ['temperature', 'dewpoint', 'relativeHumidity', 'heatIndex',
+             'barometricPressure', 'windDirection', 'windSpeed']
+
   doctext = str('Conditions as of {}'.format(prettify_timestamp(cur['timestamp'])))
-  # temp_value = sanity_check(cur['temperature']['value'], 'int')
-  doctext = quick_doctext(doctext,
-                          'Temperature:',
-                          sanity_check(cur['temperature']['value'], 'int'),
-                          temp_unit)
 
-  # dewpoint_value = sanity_check(cur['dewpoint']['value'], 'int')
-  doctext = quick_doctext(doctext,
-                          'Dewpoint:',
-                          sanity_check(cur['dewpoint']['value'], 'int'),
-                          temp_unit)
+  key1 = 'temperature'
+  ccdict[key1] = [sanity_check(cur[key1]['value'], 'int'), temp_unit, 'Temperature']
 
-  # rh_value = sanity_check(cur['relativeHumidity']['value'], 'int')
-  doctext = quick_doctext(doctext,
-                          'Rel. Humidity:',
-                          sanity_check(cur['relativeHumidity']['value'], 'int'),
-                          '%')
+  key1 = 'dewpoint'
+  ccdict[key1] = [sanity_check(cur[key1]['value'], 'int'), temp_unit, 'Dewpoint']
 
-  heat_index_value = sanity_check(cur['heatIndex']['value'], 'int')
+  key1 = 'relativeHumidity'
+  ccdict[key1] = [sanity_check(cur[key1]['value'], 'int'), '%', 'Rel. Humidity']
+
+  key1 = 'heatIndex'
+  heat_index_value = sanity_check(cur[key1]['value'], 'int')
   if heat_index_value == "None":
-    heat_index_string = heat_index_value
+    ccdict[key1] = [heat_index_value, '', 'Heat Index']
   else:
-    heat_index_string = str('{} {}'.format(heat_index_value, temp_unit))
-  doctext = quick_doctext(doctext,
-                          'Heat Index:',
-                          heat_index_string
-                         )
+    ccdict[key1] = [heat_index_value, temp_unit, 'Heat Index']
 
-  pressure_unit = re.sub('unit:', '', cur['barometricPressure']['unitCode'])
-  pressure_value = sanity_check(cur['barometricPressure']['value'])
+  key1 = 'barometricPressure'
+  pressure_unit = re.sub('unit:', '', cur[key1]['unitCode'])
+  pressure_value = sanity_check(cur[key1]['value'])
   print('Pressure value: {0}'.format(pressure_value))
+
   if pressure_unit == 'Pa' and pressure_value != "None":
     pressure_value = float(pressure_value) / 1000.0
     pressure_unit = 'kPa'
-  doctext = quick_doctext(doctext, 'Pressure:', pressure_value, pressure_unit)
 
-  wind_dir_unit = re.sub('unit:', '', cur['windDirection']['unitCode'])
+  ccdict[key1] = [pressure_value, pressure_unit, 'Pressure']
+
+  key1 = 'windDirection'
+  wind_dir_unit = re.sub('unit:', '', cur[key1]['unitCode'])
   if wind_dir_unit == 'degree_(angle)':
     wind_dir_unit = 'degree azimuth'
 
-  wind_azimuth = sanity_check(cur['windDirection']['value'], 'int')
+  wind_azimuth = sanity_check(cur[key1]['value'], 'int')
   if wind_azimuth == 'None':
     wind_dir_unit = ''
   if cardinal_directions and wind_azimuth:
     if wind_azimuth == 'None':
-      wind_string = 'No data'
+      ccdict[key1] = ['No data', '', 'Wind Direction']
     else:
-      wind_string = str('out of the {}'.format(wind_direction(wind_azimuth)))
+      ccdict[key1] = ['out of the {}'.format(wind_direction(wind_azimuth)), '', 'Wind Direction']
   else:
-    wind_string = str('{} {}'.format(wind_azimuth, wind_dir_unit))
+    ccdict[key1] = [wind_azimuth, wind_dir_unit, 'Wind Direction']
 
-  doctext = quick_doctext(doctext, 'Wind Direction:', wind_string, '')
-
-  wind_speed_unit = re.sub('unit:', '', cur['windSpeed']['unitCode'])
-  wind_speed_value = sanity_check(cur['windSpeed']['value'], 'int')
+  key1 = 'windSpeed'
+  wind_speed_unit = re.sub('unit:', '', cur[key1]['unitCode'])
+  wind_speed_value = sanity_check(cur[key1]['value'], 'int')
   if wind_speed_unit == 'm_s-1' and wind_speed_value != 'None':
     wind_speed_value = (float(wind_speed_value) / 1000.0) * 3600.0
     wind_speed_unit = 'km / hr'
 
-  doctext = quick_doctext(doctext, 'Wind Speed:', wind_speed_value, wind_speed_unit)
+  ccdict[key1] = [wind_speed_value, wind_speed_unit, 'Wind Speed']
 
-  return doctext
+  for entry in ordered:
+    doctext = quick_doctext(doctext,
+                            '{0}:'.format(ccdict[entry][2]),
+                            ccdict[entry][0], ccdict[entry][1]
+                           )
+
+  return doctext, ccdict
 
 
 def get_weather_radar(url, station, outputdir='/tmp'):
@@ -393,7 +395,7 @@ def is_county_relevant(counties_list, xml_entry, tagname='areaDesc'):
     if not clist:
       return None
   except AttributeError as e:
-    print('Attribute Error: returning None.')
+    print('Attribute Error: {0}. Returning None.'.format(e))
     return None
 
   for county in clist:
@@ -432,7 +434,7 @@ def get_current_alerts(url, data_dict, alert_dict):
     return None
 
   params_dict = {'x': data_dict['alert_county'], 'y': 1}
-  
+
   try:
     response = requests.get(url, params=params_dict, verify=False, timeout=10)
   except e:
@@ -472,7 +474,7 @@ def get_current_alerts(url, data_dict, alert_dict):
         startdate = startdate.text
 
       enddate = entry.find('expires').string
-      category = entry.find('category').string
+      # category = entry.find('category').string
       severity = entry.find('severity').text
       certainty = entry.find('certainty').text
       warning_summary = sum_str.format(event_type=event_type,
@@ -555,7 +557,7 @@ def get_hydrograph(abbr,
   return retval
 
 
-def get_forecast(lon, lat, url, fmt=['24', 'hourly'], days=7):
+def get_forecast(lon, lat, url, fmt=None, days=7):
   """
   https://graphical.weather.gov/xml/sample_products/browser_interface/
   ndfdBrowserClientByDay.php?lat=38.99&lon=-77.01&format=24+hourly&numDays=7
@@ -571,6 +573,8 @@ def get_forecast(lon, lat, url, fmt=['24', 'hourly'], days=7):
   another API?
 
   """
+  if not fmt or fmt is None:
+    fmt = ['24', 'hourly']
   time_format = " ".join(fmt)
   payload = {'lon': lon, 'lat': lat, 'format': time_format, 'numDays': days}
 
@@ -587,31 +591,28 @@ def parse_forecast(rxml):
   bs_object = BeautifulSoup(rxml.text, 'xml')
   params = bs_object.find('parameters')
   temps = params.find_all('temperature')
-  dates = get_dates(bs_object)
-  highs = []
-  lows = []
+  fc_dict = {'highs': [], 'lows': [], 'summaries':[], 'forecasts':[],
+             'precip': [], 'dates': [], 'pcp_pct': []}
+  fc_dict['dates'] = get_dates(bs_object)
   for temp in temps[0].find_all('value'):
-    highs.append(temp.string)
+    fc_dict['highs'].append(temp.string)
   for temp in temps[1].find_all('value'):
-    lows.append(temp.string)
+    fc_dict['lows'].append(temp.string)
 
-  pcp = concat_precip(params)
-  forecasts = []
-  summaries = []
+  fc_dict['precip'] = concat_precip(params)
+  fc_dict['pcp_pct'] = order_precip(params)
   weather = params.find('weather')
   weather_conditions = weather.find_all('weather-conditions')
   for forecast in weather_conditions:
     summary = forecast['weather-summary']
-    summaries.append(summary)
+    fc_dict['summaries'].append(summary)
     if forecast.find_all('value'):
       shortcast = ''
       for value in forecast.find_all('value'):
         shortcast = '{0} {1}'.format(shortcast, concat_forecast(value))
+      fc_dict['forecasts'].append(shortcast)
 
-      forecasts.append(shortcast)
-
-  return dict(highs=highs, lows=lows, precip=pcp, forecasts=forecasts,
-              summaries=summaries, dates=dates)
+  return fc_dict
 
 
 def concat_precip(bs_obj):
@@ -640,6 +641,31 @@ def concat_precip(bs_obj):
     days.append(thestring)
 
   return days
+
+
+def order_precip(bs_obj):
+  """
+  Put tuples of precipitation chances into a list and return it.
+  """
+  rainlist = []
+  thelist = []
+  for rain in bs_obj.find('probability-of-precipitation').find_all('value'):
+    rainlist.append(rain.string)
+
+  for i in range(0, len(rainlist), 2):
+    try:
+      part1 = '{0:3d}'.format(int(rainlist[i]))
+    except TypeError:
+      part1 = ' 0'
+    try:
+      part2 = '{0:3d}'.format(int(rainlist[i+1]))
+    except TypeError:
+      part2 = ' 0'
+    thelist.append((part1, part2))
+
+  return thelist
+
+
 
 
 def concat_forecast(bs_obj):
@@ -738,7 +764,9 @@ def get_goes_list(data, band='NightMicrophysics'):
       if myimage.search(filename):
         if re.search(res, filename) and re.search(todaystring, filename):
           files.append(filename)
-    except KeyError, AttributeError:
+    except KeyError:
+      pass
+    except AttributeError:
       pass
 
   return files
@@ -797,16 +825,18 @@ def high_low_svg(high, low, filename):
   Unicode degree symbol is U+00B0 ('\xb0') -- same as Latin-1 encoding, but is
   not available in 1963-standard 7-bit ASCII
   """
- 
+
   high_coords = (2, 15)
   low_coords = (2, 36)
   dimensions = (40, 40)
-  style1 = '.{stylename} {openbrace} font: bold {fontsize}px sans-serif; fill:{fontcolor}; stroke:#000000; stroke-width:1px; stroke-linecap:butt; stroke-linejoin:miter; stroke-opacity:0.7; {closebrace}'
-  
+  style1 = '''.{stylename} {openbrace} font: bold {fontsize}px sans-serif;
+  fill:{fontcolor}; stroke:#000000; stroke-width:1px; stroke-linecap:butt;
+  stroke-linejoin:miter; stroke-opacity:0.7; {closebrace}'''
+
   dwg = svgwrite.Drawing(filename, size=dimensions)
   dwg_styles = svgwrite.container.Style(content='.background {fill: #f0f0f0f0; stroke: #f0f0f0f0;}')
   dwg_styles.append(content=style1.format(stylename='low', openbrace='{',
-                                          fontsize='16', fontcolor='blue', 
+                                          fontsize='16', fontcolor='blue',
                                           closebrace='}'))
   dwg_styles.append(content=style1.format(stylename='high', openbrace='{',
                                           fontsize='18', fontcolor='red',
@@ -816,7 +846,7 @@ def high_low_svg(high, low, filename):
   low_symbol = (unicode(low) + u'\xb0')
   high_text = svgwrite.text.TSpan(text=high_symbol,
                                   insert=high_coords, class_='high')
-  low_text = svgwrite.text.TSpan(text=low_symbol, 
+  low_text = svgwrite.text.TSpan(text=low_symbol,
                                  insert=low_coords, class_='low')
   text_block = svgwrite.text.Text('', x='0', y='0')
   text_block.add(high_text)
@@ -836,8 +866,8 @@ def precip_chance_svg(morning, evening, filename):
   high_coords = (8, 16)
   low_coords = (2, 38)
   dimensions = (55, 40)
-  fontcolor = 'white'
-  
+  # fontcolor = 'white'
+
   bgc = colors[int(max(morning, evening)/100.0 * (len(colors) - 1))]
 
   if not re.search(r'%$', str(evening)):
@@ -845,15 +875,16 @@ def precip_chance_svg(morning, evening, filename):
   if not re.search(r'%$', str(morning)):
     morning = '{0}%'.format(morning)
 
-  style1 = '''.{stylename} {openbrace} font: bold {fontsize}px sans-serif; 
-  fill:{fontcolor}; stroke:#000000; stroke-width:2px; stroke-linecap:butt; 
+  style1 = '''.{stylename} {openbrace} font: bold {fontsize}px sans-serif;
+  fill:{fontcolor}; stroke:#000000; stroke-width:2px; stroke-linecap:butt;
   stroke-linejoin:miter; stroke-opacity:0.5; {closebrace}'''
-  
+
   dwg = svgwrite.Drawing(filename, size=dimensions)
 
-  dwg_styles = svgwrite.container.Style(content='.background {fill: ' + bgc + '; stroke: #f0f0f0f0;}')
+  dwg_styles = svgwrite.container.Style(content='.background {fill: ' + bgc +
+                                        '; stroke: #f0f0f0f0;}')
   dwg_styles.append(content=style1.format(stylename='morning', openbrace='{',
-                                          fontsize='18', fontcolor='#f2df94', 
+                                          fontsize='18', fontcolor='#f2df94',
                                           closebrace='}'))
   dwg_styles.append(content=style1.format(stylename='evening', openbrace='{',
                                           fontsize='18', fontcolor='#ffd4fb',
@@ -868,6 +899,40 @@ def precip_chance_svg(morning, evening, filename):
   dwg.add(frame)
   dwg.add(text_block)
   dwg.save(pretty=True)
-  
+
   return 0
 
+
+def htable_current_conditions(con_dict, tablefile='current_conditions.html'):
+  """
+  Write out a simple HTML table of the current conditions.
+  """
+
+  try:
+    with open(tablefile, 'w') as htmlout:
+      htmlout.write('<table>\n')
+      for key, value in con_dict.iteritems():
+        print('{0}: {1}'.format(key, value))
+        htmlout.write('<tr><td>{0}</td><td>{1} {2}</td></tr>\n'.format(value[2],
+                                                                       value[0],
+                                                                       value[1])
+                     )
+      htmlout.write('</table>\n')
+    return True
+  except KeyError as e:
+    print('Exception: {0}'.format(e))
+    return False
+
+
+def make_forecast_icons(fc_dict):
+  """
+  Write out SVG icons of the next three days of temps and precip chances.
+  """
+  filelabel = 'today_{fctype}_plus_{day}.svg'
+  for i in range(0, 3):
+    high_low_svg(fc_dict['highs'][i], fc_dict['lows'][i], filelabel.format(fctype='temp', day=i))
+    precip_chance_svg(int(fc_dict['pcp_pct'][i][0]),
+                      int(fc_dict['pcp_pct'][i][1]),
+                      filename=filelabel.format(fctype='precip', day=i))
+
+  return True
