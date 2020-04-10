@@ -816,7 +816,7 @@ def get_goes_image(data, timehhmm, band='NightMicrophysics'):
   return image
 
 
-def high_low_svg(high, low, filename):
+def high_low_svg(high, low, filename, outputdir='/tmp/'):
   """
   Use svgwrite to make a simple graphic with high/low temps for the day's
   forecast.
@@ -833,7 +833,7 @@ def high_low_svg(high, low, filename):
   fill:{fontcolor}; stroke:#000000; stroke-width:1px; stroke-linecap:butt;
   stroke-linejoin:miter; stroke-opacity:0.7; {closebrace}'''
 
-  dwg = svgwrite.Drawing(filename, size=dimensions)
+  dwg = svgwrite.Drawing(os.path.join(outputdir, filename), size=dimensions)
   dwg_styles = svgwrite.container.Style(content='.background {fill: #f0f0f0f0; stroke: #f0f0f0f0;}')
   dwg_styles.append(content=style1.format(stylename='low', openbrace='{',
                                           fontsize='16', fontcolor='blue',
@@ -857,7 +857,7 @@ def high_low_svg(high, low, filename):
   return 0
 
 
-def precip_chance_svg(morning, evening, filename):
+def precip_chance_svg(morning, evening, filename, outputdir='/tmp/'):
   """
   Take the day's precip chances and produce a color-coded svg of percentages.
   """
@@ -879,7 +879,7 @@ def precip_chance_svg(morning, evening, filename):
   fill:{fontcolor}; stroke:#000000; stroke-width:2px; stroke-linecap:butt;
   stroke-linejoin:miter; stroke-opacity:0.5; {closebrace}'''
 
-  dwg = svgwrite.Drawing(filename, size=dimensions)
+  dwg = svgwrite.Drawing(os.path.join(outputdir, filename), size=dimensions)
 
   dwg_styles = svgwrite.container.Style(content='.background {fill: ' + bgc +
                                         '; stroke: #f0f0f0f0;}')
@@ -903,13 +903,15 @@ def precip_chance_svg(morning, evening, filename):
   return 0
 
 
-def htable_current_conditions(con_dict, tablefile='current_conditions.html'):
+def htable_current_conditions(con_dict, 
+                              tablefile='current_conditions.html',
+                              outputdir='/tmp/'):
   """
   Write out a simple HTML table of the current conditions.
   """
 
   try:
-    with open(tablefile, 'w') as htmlout:
+    with open(os.path.join(outputdir, tablefile), 'w') as htmlout:
       htmlout.write('<table>\n')
       for key, value in con_dict.iteritems():
         print('{0}: {1}'.format(key, value))
@@ -924,15 +926,20 @@ def htable_current_conditions(con_dict, tablefile='current_conditions.html'):
     return False
 
 
-def make_forecast_icons(fc_dict):
+def make_forecast_icons(fc_dict, outputdir='/tmp/'):
   """
   Write out SVG icons of the next three days of temps and precip chances.
   """
   filelabel = 'today_{fctype}_plus_{day}.svg'
   for i in range(0, 3):
-    high_low_svg(fc_dict['highs'][i], fc_dict['lows'][i], filelabel.format(fctype='temp', day=i))
+    high_low_svg(fc_dict['highs'][i], fc_dict['lows'][i],
+                 filelabel.format(fctype='temp', day=i),
+                 outputdir=outputdir
+                )
     precip_chance_svg(int(fc_dict['pcp_pct'][i][0]),
                       int(fc_dict['pcp_pct'][i][1]),
-                      filename=filelabel.format(fctype='precip', day=i))
+                      filename=filelabel.format(fctype='precip', day=i),
+                      outputdir=outputdir
+                     )
 
   return True
