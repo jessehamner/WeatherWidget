@@ -92,7 +92,7 @@ def main():
   - Get today's hazardous weather outlook statement and parse it
   - Check for FTM outage notifications
   - Get and parse current weather conditions.
-  - Write out the files to helpful locations.
+  - Cache current data to specified locations.
   - TODO: should run the getweather.sh shell script, that overlays/composites
     the weather graphics. At present, that shell script calls this script
     and runs the overlays with -bash-.
@@ -100,14 +100,17 @@ def main():
     there is a new image and comparing it to the list of files from today,
     of the specified resolution.
   - TODO: Remove radar and satellite images more than two days old
-  - TODO: Make animated gifs of last 36 hours of radar and a few bands of images
+  - TODO: Make animated gifs of last 24 hours of a few bands of images
   - TODO: use PythonMagick instead of post-processing via shell script
+  - TODO: use Flask API as a microservice for JSON data payloads
 
   """
   data['today_vars'] = wf.get_today_vars(data['timezone'])
   data['bands'] = GOES_BANDS
   data['goes_url'] = GOES_DOWNLOAD
   data['goes_img'] = GOES_IMG
+  
+  # Check for outage information
   outage_text = wf.check_outage(HWO_URL, FTM_DICT)
   returned_message = wf.parse_outage(outage_text)
   outfilepath = os.path.join(data['output_dir'], 'outage.txt')
@@ -122,14 +125,19 @@ def main():
     except OSError:
       print('file does not exist: {0}'.format(outfilepath))
 
+  # Check that needed graphics exist
   wf.check_graphics(graphics_list=GRAPHICS_LIST, root_url=WEATHER_URL_ROOT,
                     outputdir=data['output_dir'], radar=data['radar_station'])
   wf.check_graphics([LEGEND,], LEGEND_URL_ROOT, outputdir=data['output_dir'])
+  
+  # Get and digest current conditions
   conditions = wf.get_current_conditions(CUR_URL, data['station'])
   sum_con = wf.conditions_summary(conditions)
   if conditions and sum_con:
     text_conditions, nice_con = wf.format_current_conditions(sum_con)
-    html_table = wf.htable_current_conditions(nice_con, 'current_conditions.html', outputdir=data['output_dir'])
+    html_table = wf.htable_current_conditions(nice_con, 
+                                              'current_conditions.html',
+                                              outputdir=data['output_dir'])
   else:
     print('ERROR: something went wrong getting the current conditions. Halting.')
     return 1
@@ -138,7 +146,8 @@ def main():
     curr_con.write(text_conditions)
   curr_con.close()
 
-  if wf.get_weather_radar(RADAR_URL, data['radar_station'], outputdir=data['output_dir']) is None:
+  if wf.get_weather_radar(RADAR_URL, data['radar_station'],
+                          outputdir=data['output_dir']) is None:
     print('Unable to retrieve weather radar image. Halting now.')
     return 1
 
@@ -186,6 +195,8 @@ def main():
         print('Key for this alert entry: {0}'.format(key))
         current_alerts.write('{0}\n'.format(value['warning_summary']))
 
+  
+  wf.goes_cleanup(data['output_dir'])
   goes_list = wf.get_goes_list(data=data, band='GEOCOLOR')
   band_timestamps = wf.get_goes_timestamps(data, goes_list)
   current_timestamp = band_timestamps[-1]

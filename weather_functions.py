@@ -546,7 +546,7 @@ def get_hydrograph(abbr,
 
   """
   filename = '{0}_hg.png'.format(abbr.lower())
-  retval = requests.get(os.path.join(hydro_url, filename))
+  retval = requests.get(os.path.join(hydro_url, filename), verify=False)
   print('retrieving: {0}'.format(retval.url))
   print('return value: {0}'.format(retval))
   if retval.status_code == 200:
@@ -806,7 +806,7 @@ def get_goes_image(data, timehhmm, band='NightMicrophysics'):
                                   resolution=data['goes_res']
                                  )
   # image = '20200651806_GOES16-ABI-sp-NightMicrophysics-2400x2400.jpg'
-  returned_val = requests.get(os.path.join(url, image))
+  returned_val = requests.get(os.path.join(url, image), verify=False)
   with open(os.path.join(data['output_dir'], image), 'wb') as satout:
     satout.write(bytearray(returned_val.content))
 
@@ -876,7 +876,7 @@ def precip_chance_svg(morning, evening, filename, outputdir='/tmp/'):
     morning = '{0}%'.format(morning)
 
   style1 = '''.{stylename} {openbrace} font: bold {fontsize}px sans-serif;
-  fill:{fontcolor}; stroke:#000000; stroke-width:2px; stroke-linecap:butt;
+  fill:{fontcolor}; stroke:#000000; stroke-width:1px; stroke-linecap:butt;
   stroke-linejoin:miter; stroke-opacity:0.5; {closebrace}'''
 
   dwg = svgwrite.Drawing(os.path.join(outputdir, filename), size=dimensions)
@@ -941,5 +941,35 @@ def make_forecast_icons(fc_dict, outputdir='/tmp/'):
                       filename=filelabel.format(fctype='precip', day=i),
                       outputdir=outputdir
                      )
+
+  return True
+
+
+def goes_cleanup(localpath):
+  """
+  Remove GOES imagery older than two days.
+  GOES image are stored in a format like:
+  YYYYDDDHHMM_GOESNN-ABI-sp-BAND-PIXELSxPIXELS.jpg
+  So at its simplest, take DDD, subtract three, and delete files that match
+  that filename or earlier.
+  Note that on January 1 and 2, the year will need to be changed as well.
+  """
+  
+  thefiles = [a for a in os.listdir(localpath) if re.search('GOES', a)]
+  today_int = int(datetime.datetime.strftime(datetime.datetime.today(), '%j'))
+  cur_year_int = int(datetime.datetime.strftime(datetime.datetime.today(), '%Y'))
+  keepme = []
+
+  for i in range(0,3):
+    # determine appropriate year and day, if needed.
+    leadtag = str('{0}{1}'.format(cur_year_int, (today_int - i)))
+    keepme.extend([a for a in thefiles if re.search(leadtag, a)])
+
+  removeme = [a for a in thefiles if a not in keepme]
+  try:
+    [os.remove(b) for b in [os.path.join(targetdir, a) for a in removeme]]
+  except PermissionError: 
+    print('Permission denied: need privileged access to this directory path.')
+    return False
 
   return True

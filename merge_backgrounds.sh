@@ -1,7 +1,10 @@
 #!/bin/bash
 
 dir="/tmp"
+[ "$1" ] && dir="$1"
+
 radar="FWS"
+[ "$2" ] && radar="$2"
 
 /usr/bin/which convert | grep "convert not found" && exit 1
 echo "Found Imagemagick binary. Moving forward."
