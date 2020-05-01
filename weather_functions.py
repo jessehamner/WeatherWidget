@@ -11,6 +11,7 @@ from __future__ import print_function
 import os
 import re
 import datetime
+import json
 import svgwrite
 import requests
 # import lxml
@@ -683,6 +684,17 @@ def concat_forecast(bs_obj):
   return " ".join(result)
 
 
+def write_forecast_json(fc_dict, outputdir, filename='forecast.json'):
+  """
+  Write out a JSON object of the forecast dictionary.
+  """
+  jsonobject = json.dumps(fc_dict)
+  with open(os.path.join(outputdir, filename), 'w') as jsob:
+    jsob.write(jsonobject)
+
+  return True
+
+
 def write_forecast(fc_dict, outputdir, filename='forecast.txt'):
   """
   Write out a nicely formatted text file using the retrieved and summarized
@@ -945,7 +957,7 @@ def make_forecast_icons(fc_dict, outputdir='/tmp/'):
   return True
 
 
-def goes_cleanup(localpath):
+def goes_cleanup(localpath, data):
   """
   Remove GOES imagery older than two days.
   GOES image are stored in a format like:
@@ -956,8 +968,8 @@ def goes_cleanup(localpath):
   """
   
   thefiles = [a for a in os.listdir(localpath) if re.search('GOES', a)]
-  today_int = int(datetime.datetime.strftime(datetime.datetime.today(), '%j'))
-  cur_year_int = int(datetime.datetime.strftime(datetime.datetime.today(), '%Y'))
+  today_int = int(data['today_vars']['doy'])
+  cur_year_int = int(data['today_vars']['year'])
   keepme = []
 
   for i in range(0,3):
@@ -967,9 +979,9 @@ def goes_cleanup(localpath):
 
   removeme = [a for a in thefiles if a not in keepme]
   try:
-    [os.remove(b) for b in [os.path.join(targetdir, a) for a in removeme]]
-  except PermissionError: 
-    print('Permission denied: need privileged access to this directory path.')
+    [os.remove(b) for b in [os.path.join(localpath, a) for a in removeme]]
+  except Exception as e: 
+    print('Exception! {0}'.format(e))
     return False
 
   return True

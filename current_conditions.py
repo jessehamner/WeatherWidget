@@ -176,6 +176,7 @@ def main():
                                 url=FORECAST_URL)
   forecastdict = wf.parse_forecast(forecastxml)
   wf.write_forecast(fc_dict=forecastdict, outputdir=data['output_dir'])
+  wf.write_forecast_json(fc_dict=forecastdict, outputdir=data['output_dir'])
   wf.make_forecast_icons(forecastdict, outputdir=data['output_dir'])
 
   alert_dict = {}
@@ -196,7 +197,7 @@ def main():
         current_alerts.write('{0}\n'.format(value['warning_summary']))
 
   
-  wf.goes_cleanup(data['output_dir'])
+  wf.goes_cleanup(data['output_dir'], data=data)
   goes_list = wf.get_goes_list(data=data, band='GEOCOLOR')
   band_timestamps = wf.get_goes_timestamps(data, goes_list)
   current_timestamp = band_timestamps[-1]
