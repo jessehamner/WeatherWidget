@@ -136,7 +136,7 @@ class Moon_phase(object):
     while days_into_cycle > cycle:
       days_into_cycle = days_into_cycle - cycle
 
-    print('Place in the cycle: {0}'.format(days_into_cycle))
+    print('Place in the lunar cycle: {0}'.format(days_into_cycle))
     icon_index = int((days_into_cycle / cycle) * 29)
 
     print('Icon should be: {0}'.format(self.phases[str(icon_index)]))

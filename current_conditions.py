@@ -19,26 +19,19 @@ import yaml
 import weather_functions as wf
 from imagery import Imagery
 from moon_phase import Moon_phase
+from alerts import Alerts
 
 
-SETTINGS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'settings.yml')
-with open(SETTINGS_PATH, 'r') as iyaml:
-  data = yaml.load(iyaml.read(), Loader=yaml.Loader)
-ALERT_COUNTIES = data['alert_counties']
-ALERT_ZONE = data['alert_zone']
-ALERT_COUNTY = data['alert_county']
-GOES_SECTOR = data['goes_sector']
-GOES_RES = data['goes_res']
-GOES_SAT = data['goes_sat']
-ALERTS_DICT = data['alerts_dict']
+# Pull settings in from two YAML files:
+SETTINGS_DIR = os.path.dirname(os.path.realpath(__file__))
+data = wf.load_yaml(SETTINGS_DIR, 'settings.yml')
+defaults = wf.load_yaml(SETTINGS_DIR, 'defaults.yml')
+if not (data and defaults):
+  sys.exit('settings files are required and could not be loaded successfully.')
 
-GOES_BANDS = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11',
-              '12', '13', '14', '15', '16', 'AirMass', 'GEOCOLOR',
-              'NightMicrophysics', 'Sandwich', 'DayCloudPhase']
-
-GOES_DOWNLOAD = 'https://cdn.star.nesdis.noaa.gov/GOES{sat}/ABI/SECTOR/{sector}/{band}/'
-GOES_IMG = '{year}{doy}{timeHHMM}_GOES{sat}-ABI-{sector}-{band}-{resolution}.jpg'
-GOES_DIR_DATE_FORMAT = 'DD-Mmm-YYYY'
+data['defaults'] = defaults
+data['goes_url'] = 'https://cdn.star.nesdis.noaa.gov/GOES{sat}/ABI/SECTOR/{sector}/{band}/'
+data['goes_img'] = '{year}{doy}{timeHHMM}_GOES{sat}-ABI-{sector}-{band}-{resolution}.jpg'
 # OUTPUT_DIR = os.path.join(os.environ['HOME'], 'Library/Caches/weatherwidget/')
 
 HWO_DICT = {
@@ -62,14 +55,7 @@ FTM_DICT = {
 CUR_URL = 'https://api.weather.gov/stations/{station}/observations/current'
 RADAR_URL = 'https://radar.weather.gov/ridge/RadarImg/N0R/{station}_{image}'
 WARNINGS_URL = 'https://radar.weather.gov/ridge/Warnings/Short/{station}_{warnings}_0.gif'
-HWO_URL = 'https://forecast.weather.gov/product.php'
-ALERTS_URL = 'https://alerts.weather.gov/cap/wwaatmget.php'
-WATER_URL = 'https://water.weather.gov/resources/hydrographs'
-FORECAST_URL = os.path.join('https://graphical.weather.gov',
-                            'xml/sample_products/browser_interface',
-                            'ndfdBrowserClientByDay.php'
-                           )
-WEATHER_URL_ROOT = 'https://radar.weather.gov/ridge/Overlays'
+
 SHORT_RANGE_COUNTIES = 'County/Short/{radar}_County_Short.gif'
 SHORT_RANGE_HIGHWAYS = 'Highways/Short/{radar}_Highways_Short.gif'
 SHORT_RANGE_MED_CITIES = 'Cities/Short/{radar}_City_250K_Short.gif'
@@ -78,7 +64,6 @@ SHORT_RANGE_SML_CITIES = 'Cities/Short/{radar}_City_25K_Short.gif'
 SHORT_RANGE_RING = 'RangeRings/Short/{radar}_RangeRing_Short.gif'
 SHORT_RANGE_RIVERS = 'Rivers/Short/{radar}_Rivers_Short.gif'
 SHORT_RANGE_TOPO = 'Topo/Short/{radar}_Topo_Short.jpg'
-LEGEND_URL_ROOT = 'https://radar.weather.gov'
 LEGEND = 'Legend/N0R/{radar}_N0R_Legend_0.gif'
 
 GRAPHICS_LIST = [SHORT_RANGE_COUNTIES, SHORT_RANGE_HIGHWAYS, SHORT_RANGE_TOPO,
@@ -108,12 +93,10 @@ def main():
 
   """
   data['today_vars'] = wf.get_today_vars(data['timezone'])
-  data['bands'] = GOES_BANDS
-  data['goes_url'] = GOES_DOWNLOAD
-  data['goes_img'] = GOES_IMG
+  data['bands'] = data['defaults']['goes_bands']
   
   # Check for outage information
-  outage_text = wf.check_outage(HWO_URL, FTM_DICT)
+  outage_text = wf.check_outage(data['defaults']['hwo_url'], FTM_DICT)
   returned_message = wf.parse_outage(outage_text)
   outfilepath = os.path.join(data['output_dir'], 'outage.txt')
   if returned_message:
@@ -128,9 +111,13 @@ def main():
       print('file does not exist: {0}'.format(outfilepath))
 
   # Check that needed graphics exist
-  wf.check_graphics(graphics_list=GRAPHICS_LIST, root_url=WEATHER_URL_ROOT,
-                    outputdir=data['output_dir'], radar=data['radar_station'])
-  wf.check_graphics([LEGEND,], LEGEND_URL_ROOT, outputdir=data['output_dir'])
+  wf.check_graphics(graphics_list=GRAPHICS_LIST,
+                    root_url=data['defaults']['weather_url_root'],
+                    outputdir=data['output_dir'],
+                    radar=data['radar_station'])
+  wf.check_graphics([LEGEND,],
+                    data['defaults']['legend_url_root'],
+                    outputdir=data['output_dir'])
   
   # Get and digest current conditions
   conditions = wf.get_current_conditions(CUR_URL, data['station'])
@@ -158,22 +145,14 @@ def main():
     return 1
 
   wf.get_warnings_box(WARNINGS_URL, data['radar_station'], outputdir=data['output_dir'])
-  # hwo_statement = wf.get_hwo(HWO_URL, HWO_DICT)
-  hwo_today, hwo_dict = wf.split_hwo(wf.get_hwo(HWO_URL, HWO_DICT, outputdir=data['output_dir']))
-  if hwo_today is not None:
-    hwo = re.sub('.DAY ONE', 'Hazardous Weather Outlook', hwo_today)
-    #print(hwo)
-    with open(os.path.join(data['output_dir'], 'today_hwo.txt'), 'w') as today_hwo:
-      today_hwo.write(hwo)
-    today_hwo.close()
+  
+  # Hazardous Weather Outlook and alerts:
+  today_alerts = Alerts(data)
+  today_alerts.get_alerts()
 
-    wf.write_json(some_dict=hwo_dict,
-                  outputdir=data['output_dir'],
-                  filename='hwo.json'
-                 )
-
+  
   if wf.get_hydrograph(abbr=data['river_gauge_abbr'],
-                       hydro_url=WATER_URL,
+                       hydro_url=data['defaults']['water_url'],
                        outputdir=data['output_dir']).ok:
     print('Got hydrograph for {0} station, gauge "{1}".'.format(data['radar_station'],
                                                                 data['river_gauge_abbr']))
@@ -184,7 +163,7 @@ def main():
   forecastxml = wf.get_forecast(lon=data['lon'],
                                 lat=data['lat'],
                                 fmt=None,
-                                url=FORECAST_URL)
+                                url=data['defaults']['forecast_url'])
   forecastdict = wf.parse_forecast(forecastxml)
   wf.write_forecast(fc_dict=forecastdict, outputdir=data['output_dir'])
   wf.write_json(some_dict=forecastdict, 
@@ -193,34 +172,14 @@ def main():
                )
   wf.make_forecast_icons(forecastdict, outputdir=data['output_dir'])
 
-  alert_dict = {}
-  print('Getting alerts for the following counties: {0}.'.format(data['alert_counties']))
-  alert_dict = wf.get_current_alerts(ALERTS_URL, data, alert_dict)
-  alertpath = os.path.join(data['output_dir'], 'alerts_text.txt')
-  if not alert_dict:
-    try:
-      if os.path.exists(alertpath):
-        os.remove(alertpath)
-    except OSError:
-      pass
-  
-  else: 
-    wf.write_json(some_dict=alert_dict,
-                  outputdir=data['output_dir'],
-                  filename='alerts.json')
-    with open(os.path.join(data['output_dir'], 'alerts_text.txt'), 'w') as current_alerts:
-      for key, value in alert_dict.iteritems():
-        print('Key for this alert entry: {0}'.format(key))
-        current_alerts.write('{0}\n'.format(value['warning_summary']))
-
-  
+  # Satellite imagery: 
   current_image = Imagery(band='GEOCOLOR', data=data)
   current_image.get_current_image()
 
+  # Moon phase and icon name for the moon phase:
   moon_icon = Moon_phase(data)
   moon_icon_name = moon_icon.get_moon_phase()
   
-
   return 0
 
 
