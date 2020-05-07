@@ -20,7 +20,7 @@ import weather_functions as wf
 from imagery import Imagery
 from moon_phase import Moon_phase
 from alerts import Alerts
-
+from outage import Outage
 
 # Pull settings in from two YAML files:
 SETTINGS_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -33,24 +33,6 @@ data['defaults'] = defaults
 data['goes_url'] = 'https://cdn.star.nesdis.noaa.gov/GOES{sat}/ABI/SECTOR/{sector}/{band}/'
 data['goes_img'] = '{year}{doy}{timeHHMM}_GOES{sat}-ABI-{sector}-{band}-{resolution}.jpg'
 # OUTPUT_DIR = os.path.join(os.environ['HOME'], 'Library/Caches/weatherwidget/')
-
-HWO_DICT = {
-    'site': data['hwo_site'],
-    'issuedby': data['nws_abbr'],
-    'product': 'HWO',
-    'format': 'txt',
-    'version': 1,
-    'glossary': 0
-    }
-
-FTM_DICT = {
-    'site': 'NWS',
-    'issuedby': data['radar_station'],
-    'product': 'FTM',
-    'format': 'CI',
-    'version': 1,
-    'glossary': 0
-    }
 
 CUR_URL = 'https://api.weather.gov/stations/{station}/observations/current'
 RADAR_URL = 'https://radar.weather.gov/ridge/RadarImg/N0R/{station}_{image}'
@@ -96,19 +78,26 @@ def main():
   data['bands'] = data['defaults']['goes_bands']
   
   # Check for outage information
-  outage_text = wf.check_outage(data['defaults']['hwo_url'], FTM_DICT)
-  returned_message = wf.parse_outage(outage_text)
+  outage_checker = Outage(data) 
+  outage_checker.check_outage()
+  outage_result = outage_checker.parse_outage()
   outfilepath = os.path.join(data['output_dir'], 'outage.txt')
-  if returned_message:
-    print('There is outage text: {0}'.format(returned_message))
-    cur = open(outfilepath, 'w')
-    cur.write(returned_message)
-    cur.close()
-  else:
+  if outage_result is None:
+    print('No outages detected. Proceeding.')
     try:
       os.unlink(outfilepath)
     except OSError:
       print('file does not exist: {0}'.format(outfilepath))
+
+  else:
+    print('There is outage text: {0}'.format(outage_result))
+    try:
+      cur = open(outfilepath, 'w')
+      cur.write(outage_result)
+      cur.close()
+    except OSError as e:
+      print('OSError-- {0}: {1}'.format(outfilepath, e))
+
 
   # Check that needed graphics exist
   wf.check_graphics(graphics_list=GRAPHICS_LIST,

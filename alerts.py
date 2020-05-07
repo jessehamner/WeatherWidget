@@ -57,9 +57,7 @@ class Alerts(object):
                  )
 
     print('Getting alerts for the following counties: {0}.'.format(self.data['alert_counties']))
-    self.alert_dict = wf.get_current_alerts(self.data['defaults']['alerts_url'],
-                                            self.data,
-                                            self.alert_dict)
+    self.alert_dict = self.get_current_alerts()
     alertpath = os.path.join(self.data['output_dir'], self.outputalertsfile)
     if not self.alert_dict:
       try:
@@ -204,9 +202,8 @@ class Alerts(object):
     sum_str = '{sev} {event_type}, {st_date} - {en_date}\nSummary: {summary}\n\n'
     for entry in entries:
       print('Now checking alerts xml.')
-      warning_county = is_county_relevant(self.data['alert_counties'],
-                                          entry,
-                                          tagname='areaDesc')
+      warning_county = self.is_county_relevant(entry,
+                                               tagname='areaDesc')
       if warning_county:
         # print('Found warning for {0} county.'.format(warning_county))
         # print('Text of this warning entry is: {0}'.format(entry.prettify()))
