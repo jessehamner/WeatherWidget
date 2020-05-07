@@ -168,6 +168,18 @@ def format_current_conditions(cur, cardinal_directions=True):
   return doctext, ccdict
 
 
+def write_json(some_dict, outputdir='/tmp', filename='unknown.json'):
+  """
+  Write an individual dictionary to a JSON output file.
+  """
+  with open(os.path.join(outputdir, filename), 'w') as out_obj:
+    try:
+      out_obj.write(json.dumps(some_dict))
+      return True
+    except:
+      return False
+
+
 def get_weather_radar(url, station, outputdir='/tmp'):
   """
   Using the NWS radar station abbreviation, retrieve the current radar image
@@ -247,24 +259,36 @@ def split_hwo(bodytext):
   Return a slightly more compact text block of the two paragraphs.
 
   """
+  hwo_dict = dict(today='', daystwothroughseven='', spotter='')
   returntext = ''
   # print('Raw body text of HWO: \n{0}'.format(bodytext))
 
   dayone = re.search(r'(\.DAY ONE.*?)(\.DAYS TWO THROUGH SEVEN)', bodytext, re.DOTALL)
   if dayone:
     hwotext = re.sub(r'\n\n$', '', dayone.group(1))
+    hwo_dict['today'] = hwotext
+    hwo_dict['today'] = re.sub(r'\.{1,}DAY ONE[\.]{1,}', '', hwo_dict['today'])
+    hwo_dict['today'] = re.sub('\n', ' ', hwo_dict['today'])
+
+    hwo_dict['daystwothroughseven'] = re.sub(r'\n{2,}$', '', dayone.group(2))
+    hwo_dict['daystwothroughseven'] = re.sub(r'\.DAYS TWO THROUGH SEVEN', '',
+                                             hwo_dict['daystwothroughseven'])
+    hwo_dict['daystwothroughseven'] = re.sub('\n', ' ',
+                                             hwo_dict['daystwothroughseven'])
 
   spotter = re.search(r'(\.SPOTTER INFORMATION STATEMENT.*?)(\s*\$\$)', bodytext, re.DOTALL)
   if spotter:
-    spottertext = re.sub(r'\n\n$', '', spotter.group(1))
+    spottext = re.sub(r'\n\n$', '', spotter.group(1))
+    hwo_dict['spotter'] = re.sub(r'\.{1,}SPOTTER INFORMATION STATEMENT[\.]{1,}', '', spottext)
+    hwo_dict['spotter'] = re.sub('\n', ' ', hwo_dict['spotter'])
 
   if hwotext:
     returntext = '{0}{1}\n\n'.format(returntext, hwotext)
-  if spottertext:
-    returntext = '{0}{1}\n\n'.format(returntext, spottertext)
+  if spottext:
+    returntext = '{0}{1}\n\n'.format(returntext, spottext)
 
   returntext = re.sub(r'\n\n$', '', returntext)
-  return returntext
+  return returntext, hwo_dict
 
 
 def print_current_conditions(conditions):
@@ -667,8 +691,6 @@ def order_precip(bs_obj):
   return thelist
 
 
-
-
 def concat_forecast(bs_obj):
   """
   Cycle through tag attrs, filter out the "none" values, and string
@@ -682,17 +704,6 @@ def concat_forecast(bs_obj):
     result.append(bs_obj[i].strip())
 
   return " ".join(result)
-
-
-def write_forecast_json(fc_dict, outputdir, filename='forecast.json'):
-  """
-  Write out a JSON object of the forecast dictionary.
-  """
-  jsonobject = json.dumps(fc_dict)
-  with open(os.path.join(outputdir, filename), 'w') as jsob:
-    jsob.write(jsonobject)
-
-  return True
 
 
 def write_forecast(fc_dict, outputdir, filename='forecast.txt'):
@@ -744,88 +755,11 @@ def get_today_vars(timezone='America/Chicago'):
                      hour=datetime.datetime.strftime(today, '%H'),
                      minute=datetime.datetime.strftime(today, '%M'),
                      timezone=timezone,
-                     offset=local_tz.utcoffset(today).total_seconds()/3600
+                     offset=local_tz.utcoffset(today).total_seconds()/3600,
+                     now=today,
+                     utcnow=datetime.datetime.utcnow()
                     )
   return return_dict
-
-
-def get_goes_list(data, band='NightMicrophysics'):
-  """
-  GOES images post every 5 minutes, but there is no guarantee that you will
-  know the minute of the image when concatenating the filename.
-  Therefore, this function pulls a list from the specified directory and
-  returns the list of files from today with the specified resolution for use.
-  """
-  sector = data['goes_sector']
-  sat = data['goes_sat']
-  res = data['goes_res']
-  url = data['goes_url'].format(sat=sat, sector=sector, band=band)
-  # print('Checking url: {0}'.format(url))
-  filelist = BeautifulSoup(requests.get(url).text, 'html.parser')
-  links = filelist.find_all("a", attrs={"href": True})
-  files = []
-  todaystring = '{0}{1}'.format(data['today_vars']['year'], data['today_vars']['doy'])
-  # print('Links: {0}'.format(links))
-  myimage = re.compile('ABI-{0}-{1}-{2}'.format(sector, band, res))
-  # print('Keying on {0}'.format(myimage))
-  for i in links:
-    if i.has_attr("href"):
-      filename = i['href']
-      # print('Checking file: "{0}"'.format(filename))
-    try:
-      if myimage.search(filename):
-        if re.search(res, filename) and re.search(todaystring, filename):
-          files.append(filename)
-    except KeyError:
-      pass
-    except AttributeError:
-      pass
-
-  return files
-
-
-def get_goes_timestamps(data, fileslist):
-  """
-  Extract image timestamps from the date portion of GOES image list.
-  Return a list of those (UTC) timestamps.
-  """
-  band_timestamps = []
-  yeardoy = '{0}{1}'.format(data['today_vars']['year'], data['today_vars']['doy'])
-
-  for filename in fileslist:
-    protostamp = re.search(yeardoy + r'(\d{4})', filename).groups(1)[0]
-    if protostamp:
-      band_timestamps.append(protostamp)
-
-  return band_timestamps
-
-
-def get_goes_image(data, timehhmm, band='NightMicrophysics'):
-  """
-  Retrieve current GOES weather imagery.
-  """
-
-  url = data['goes_url'].format(sat=data['goes_sat'],
-                                sector=data['goes_sector'],
-                                band=band)
-
-  image = data['goes_img'].format(year=data['today_vars']['year'],
-                                  doy=data['today_vars']['doy'],
-                                  timeHHMM=timehhmm,
-                                  sat=data['goes_sat'],
-                                  sector=data['goes_sector'],
-                                  band=band,
-                                  resolution=data['goes_res']
-                                 )
-  # image = '20200651806_GOES16-ABI-sp-NightMicrophysics-2400x2400.jpg'
-  returned_val = requests.get(os.path.join(url, image), verify=False)
-  with open(os.path.join(data['output_dir'], image), 'wb') as satout:
-    satout.write(bytearray(returned_val.content))
-
-  with open(os.path.join(data['output_dir'], 'goes_current.jpg'), 'wb') as satout:
-    satout.write(bytearray(returned_val.content))
-
-  return image
 
 
 def high_low_svg(high, low, filename, outputdir='/tmp/'):
@@ -873,14 +807,14 @@ def precip_chance_svg(morning, evening, filename, outputdir='/tmp/'):
   """
   Take the day's precip chances and produce a color-coded svg of percentages.
   """
-  colors = ['#baa87d', '#7ae6c0', '#2bb5aa', '#023dbd', '#035740']
+  svg_info = {'high_coords': (8, 16),
+              'low_coords': (2, 38),
+              'dimensions': (55, 40),
+              'colors': ['#baa87d', '#7ae6c0', '#2bb5aa', '#023dbd', '#035740'],
+              'fontcolor': 'white'
+             }
 
-  high_coords = (8, 16)
-  low_coords = (2, 38)
-  dimensions = (55, 40)
-  # fontcolor = 'white'
-
-  bgc = colors[int(max(morning, evening)/100.0 * (len(colors) - 1))]
+  bgc = svg_info['colors'][int(max(morning, evening)/100.0 * (len(svg_info['colors']) - 1))]
 
   if not re.search(r'%$', str(evening)):
     evening = '{0}%'.format(evening)
@@ -891,7 +825,8 @@ def precip_chance_svg(morning, evening, filename, outputdir='/tmp/'):
   fill:{fontcolor}; stroke:#000000; stroke-width:1px; stroke-linecap:butt;
   stroke-linejoin:miter; stroke-opacity:0.5; {closebrace}'''
 
-  dwg = svgwrite.Drawing(os.path.join(outputdir, filename), size=dimensions)
+  dwg = svgwrite.Drawing(os.path.join(outputdir, filename),
+                         size=svg_info['dimensions'])
 
   dwg_styles = svgwrite.container.Style(content='.background {fill: ' + bgc +
                                         '; stroke: #f0f0f0f0;}')
@@ -902,9 +837,15 @@ def precip_chance_svg(morning, evening, filename, outputdir='/tmp/'):
                                           fontsize='18', fontcolor='#ffd4fb',
                                           closebrace='}'))
   dwg.defs.add(dwg_styles)
-  evening_text = svgwrite.text.TSpan(text=evening, insert=high_coords, class_='evening')
-  morning_text = svgwrite.text.TSpan(text=morning, insert=low_coords, class_='morning')
-  frame = svgwrite.shapes.Rect(insert=(0, 0), size=dimensions, class_='background')
+  evening_text = svgwrite.text.TSpan(text=evening,
+                                     insert=svg_info['high_coords'],
+                                     class_='evening')
+  morning_text = svgwrite.text.TSpan(text=morning,
+                                     insert=svg_info['low_coords'],
+                                     class_='morning')
+  frame = svgwrite.shapes.Rect(insert=(0, 0),
+                               size=svg_info['dimensions'],
+                               class_='background')
   text_block = svgwrite.text.Text('', x='0', y='0')
   text_block.add(evening_text)
   text_block.add(morning_text)
@@ -915,7 +856,7 @@ def precip_chance_svg(morning, evening, filename, outputdir='/tmp/'):
   return 0
 
 
-def htable_current_conditions(con_dict, 
+def htable_current_conditions(con_dict,
                               tablefile='current_conditions.html',
                               outputdir='/tmp/'):
   """
@@ -957,31 +898,106 @@ def make_forecast_icons(fc_dict, outputdir='/tmp/'):
   return True
 
 
-def goes_cleanup(localpath, data):
+def bs_pull_table_cell(row, index):
   """
-  Remove GOES imagery older than two days.
-  GOES image are stored in a format like:
-  YYYYDDDHHMM_GOESNN-ABI-sp-BAND-PIXELSxPIXELS.jpg
-  So at its simplest, take DDD, subtract three, and delete files that match
-  that filename or earlier.
-  Note that on January 1 and 2, the year will need to be changed as well.
+  Helper function to sanitize and pull a specific cell from a specific table
+  row.
   """
-  
-  thefiles = [a for a in os.listdir(localpath) if re.search('GOES', a)]
-  today_int = int(data['today_vars']['doy'])
-  cur_year_int = int(data['today_vars']['year'])
-  keepme = []
-
-  for i in range(0,3):
-    # determine appropriate year and day, if needed.
-    leadtag = str('{0}{1}'.format(cur_year_int, (today_int - i)))
-    keepme.extend([a for a in thefiles if re.search(leadtag, a)])
-
-  removeme = [a for a in thefiles if a not in keepme]
   try:
-    [os.remove(b) for b in [os.path.join(localpath, a) for a in removeme]]
-  except Exception as e: 
-    print('Exception! {0}'.format(e))
+    return re.sub('\xa0', '', row.find_all('td')[index].text)
+  except IndexError as e:
+    print('IndexError trying to retrieve table cell {0}: {1}'.format(index, e))
+    print('Row:\n{0}'.format(row))
+    return 'NA'
+
+
+def moon_phase(data):
+  """
+  Using some simple math, compute the moon phase for today, using
+  NOAA's data for new moons in the current year.
+  """
+  thisyear = data['today_vars']['year']
+  new_moon_dict = dict(year={})
+  new_moon_dict['year'][thisyear] = {}
+  url_args = {'year': thisyear, 'data_type': 'phaX1'}
+  tidesandcurrents = 'https://tidesandcurrents.noaa.gov/moon_phases.shtml'
+  moon_table = requests.get(tidesandcurrents, params=url_args,
+                            verify=False, timeout=10)
+
+  if moon_table.status_code != 200:
+    print('Unable to get a proper response from NOAA server. Returning False.')
     return False
 
-  return True
+  soup = BeautifulSoup(moon_table.text, 'html.parser')
+  tables = soup.body.find_all('table')
+  phase_table = tables[0]
+  trows = phase_table.find_all('tr')
+  for row in trows:
+    if row.find_all('th'):
+      continue
+    rowmonth = bs_pull_table_cell(row, 1)
+    rowday = bs_pull_table_cell(row, 2)
+    rowtime = bs_pull_table_cell(row, 3)
+    new_moon_dict['year'][thisyear][rowmonth] = [rowday, rowtime]
+
+  return new_moon_dict
+
+
+def moon_phase_today(moon_dict, data):
+  """
+  Take in a date and determine the moon's phase on that day, using
+  NOAA new moon dates and times as the time-base / sync.
+  """
+  phases = {
+      '1': 'wi-moon-alt-new.svg',
+      '2': 'wi-moon-alt-waxing-crescent-1.svg',
+      '3': 'wi-moon-alt-waxing-crescent-2.svg',
+      '4': 'wi-moon-alt-waxing-crescent-3.svg',
+      '5': 'wi-moon-alt-waxing-crescent-4.svg',
+      '6': 'wi-moon-alt-waxing-crescent-5.svg',
+      '7': 'wi-moon-alt-waxing-crescent-6.svg',
+      '8': 'wi-moon-alt-first-quarter.svg',
+      '9': 'wi-moon-alt-waxing-gibbous-1.svg',
+      '10': 'wi-moon-alt-waxing-gibbous-2.svg',
+      '11': 'wi-moon-alt-waxing-gibbous-3.svg',
+      '12': 'wi-moon-alt-waxing-gibbous-4.svg',
+      '13': 'wi-moon-alt-waxing-gibbous-5.svg',
+      '14': 'wi-moon-alt-waxing-gibbous-6.svg',
+      '15': 'wi-moon-alt-full.svg',
+      '16': 'wi-moon-alt-waning-gibbous-1.svg',
+      '17': 'wi-moon-alt-waning-gibbous-2.svg',
+      '18': 'wi-moon-alt-waning-gibbous-3.svg',
+      '19': 'wi-moon-alt-waning-gibbous-4.svg',
+      '20': 'wi-moon-alt-waning-gibbous-5.svg',
+      '21': 'wi-moon-alt-waning-gibbous-6.svg',
+      '22': 'wi-moon-alt-third-quarter.svg',
+      '23': 'wi-moon-alt-waning-crescent-1.svg',
+      '24': 'wi-moon-alt-waning-crescent-2.svg',
+      '25': 'wi-moon-alt-waning-crescent-3.svg',
+      '26': 'wi-moon-alt-waning-crescent-4.svg',
+      '27': 'wi-moon-alt-waning-crescent-5.svg',
+      '28': 'wi-moon-alt-waning-crescent-6.svg',
+      '29': 'wi-moon-alt-new.svg',
+      }
+
+  today = data['today_vars']['utcnow']
+  year = data['today_vars']['year']
+  mon = data['today_vars']['mon']
+  nextmoonstring = '{0}-{1}-{2} {3}'.format(year, mon,
+                                            moon_dict['year'][year][mon][0],
+                                            moon_dict['year'][year][mon][1])
+  nextnewmoon = datetime.datetime.strptime(nextmoonstring, '%Y-%b-%d %H:%M')
+  difference = nextnewmoon - today
+  cycle = 29.53 # days in an average moon cycle
+
+  place_in_cycle = (datetime.timedelta(29.53) - difference)
+  days_into_cycle = ((place_in_cycle.days * 24) + (place_in_cycle.seconds/3600.0)) / 24
+  while days_into_cycle > cycle:
+    days_into_cycle = days_into_cycle - cycle
+
+  print('Place in the cycle: {0}'.format(days_into_cycle))
+  icon_index = int((days_into_cycle / cycle) * 29)
+
+  print('Icon should be: {0}'.format(phases[str(icon_index)]))
+
+  return phases[str(icon_index)]

@@ -17,6 +17,7 @@ import os
 import re
 import yaml
 import weather_functions as wf
+from imagery import Imagery
 
 SETTINGS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'settings.yml')
 with open(SETTINGS_PATH, 'r') as iyaml:
@@ -99,7 +100,6 @@ def main():
   - Acquire multi-band GOES-x imagery from today, checking to see if
     there is a new image and comparing it to the list of files from today,
     of the specified resolution.
-  - TODO: Remove radar and satellite images more than two days old
   - TODO: Make animated gifs of last 24 hours of a few bands of images
   - TODO: use PythonMagick instead of post-processing via shell script
   - TODO: use Flask API as a microservice for JSON data payloads
@@ -138,6 +138,10 @@ def main():
     html_table = wf.htable_current_conditions(nice_con, 
                                               'current_conditions.html',
                                               outputdir=data['output_dir'])
+    wf.write_json(some_dict=nice_con,
+                  outputdir=data['output_dir'],
+                  filename='current_conditions.json'
+                 )  
   else:
     print('ERROR: something went wrong getting the current conditions. Halting.')
     return 1
@@ -153,13 +157,18 @@ def main():
 
   wf.get_warnings_box(WARNINGS_URL, data['radar_station'], outputdir=data['output_dir'])
   # hwo_statement = wf.get_hwo(HWO_URL, HWO_DICT)
-  hwo_today = wf.split_hwo(wf.get_hwo(HWO_URL, HWO_DICT, outputdir=data['output_dir']))
+  hwo_today, hwo_dict = wf.split_hwo(wf.get_hwo(HWO_URL, HWO_DICT, outputdir=data['output_dir']))
   if hwo_today is not None:
     hwo = re.sub('.DAY ONE', 'Hazardous Weather Outlook', hwo_today)
     #print(hwo)
     with open(os.path.join(data['output_dir'], 'today_hwo.txt'), 'w') as today_hwo:
       today_hwo.write(hwo)
     today_hwo.close()
+
+    wf.write_json(some_dict=hwo_dict,
+                  outputdir=data['output_dir'],
+                  filename='hwo.json'
+                 )
 
   if wf.get_hydrograph(abbr=data['river_gauge_abbr'],
                        hydro_url=WATER_URL,
@@ -176,7 +185,10 @@ def main():
                                 url=FORECAST_URL)
   forecastdict = wf.parse_forecast(forecastxml)
   wf.write_forecast(fc_dict=forecastdict, outputdir=data['output_dir'])
-  wf.write_forecast_json(fc_dict=forecastdict, outputdir=data['output_dir'])
+  wf.write_json(some_dict=forecastdict, 
+                outputdir=data['output_dir'],
+                filename='forecast.json' 
+               )
   wf.make_forecast_icons(forecastdict, outputdir=data['output_dir'])
 
   alert_dict = {}
@@ -191,19 +203,17 @@ def main():
       pass
   
   else: 
+    wf.write_json(some_dict=alert_dict,
+                  outputdir=data['output_dir'],
+                  filename='alerts.json')
     with open(os.path.join(data['output_dir'], 'alerts_text.txt'), 'w') as current_alerts:
       for key, value in alert_dict.iteritems():
         print('Key for this alert entry: {0}'.format(key))
         current_alerts.write('{0}\n'.format(value['warning_summary']))
 
   
-  wf.goes_cleanup(data['output_dir'], data=data)
-  goes_list = wf.get_goes_list(data=data, band='GEOCOLOR')
-  band_timestamps = wf.get_goes_timestamps(data, goes_list)
-  current_timestamp = band_timestamps[-1]
-  current_image = wf.get_goes_image(data, current_timestamp, band='GEOCOLOR')
-  print('retrieved {0}'.format(current_image))
-
+  current_image = Imagery(band='GEOCOLOR', data=data)
+  current_image.get_current_image()
 
   return 0
 
