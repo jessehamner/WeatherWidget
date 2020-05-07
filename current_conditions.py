@@ -18,6 +18,8 @@ import re
 import yaml
 import weather_functions as wf
 from imagery import Imagery
+from moon_phase import Moon_phase
+
 
 SETTINGS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'settings.yml')
 with open(SETTINGS_PATH, 'r') as iyaml:
@@ -214,6 +216,10 @@ def main():
   
   current_image = Imagery(band='GEOCOLOR', data=data)
   current_image.get_current_image()
+
+  moon_icon = Moon_phase(data)
+  moon_icon_name = moon_icon.get_moon_phase()
+  
 
   return 0
 

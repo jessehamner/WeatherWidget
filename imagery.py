@@ -106,10 +106,11 @@ class Imagery(object):
 
     tomorrow_files = self.get_daily_list(localdoy, localyear, links)
     if tomorrow_files:
-      print('Files from tomorrow, UTC: {0}'.format(tomorrow_files))
+      # print('Files from tomorrow, UTC: {0}'.format(tomorrow_files))
       self.today_v['doy'] = localdoy
       self.today_v['year'] = localyear
       files.extend(tomorrow_files)
+      # print('Files from today and tomorrow: {0}'.format(files))
 
     return files
 
@@ -121,11 +122,14 @@ class Imagery(object):
     """
     band_timestamps = []
     yeardoy = '{0}{1}'.format(self.today_v['year'], self.today_v['doy'])
-
+    # print('year-doy combination tag: {0}'.format(yeardoy))
     for filename in self.fileslist:
-      protostamp = re.search(yeardoy + r'(\d{4})', filename).groups(1)[0]
-      if protostamp:
-        band_timestamps.append(protostamp)
+      try:  
+        protostamp = re.search(yeardoy + r'(\d{4})', filename).groups(1)[0]
+        if protostamp:
+          band_timestamps.append(protostamp)
+      except:
+        continue
 
     return band_timestamps
 
