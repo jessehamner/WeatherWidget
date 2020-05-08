@@ -16,6 +16,7 @@ import sys
 import os
 import re
 import yaml
+import numpy as np
 import weather_functions as wf
 from imagery import Imagery
 from moon_phase import Moon_phase
@@ -33,6 +34,7 @@ data['defaults'] = defaults
 data['goes_url'] = 'https://cdn.star.nesdis.noaa.gov/GOES{sat}/ABI/SECTOR/{sector}/{band}/'
 data['goes_img'] = '{year}{doy}{timeHHMM}_GOES{sat}-ABI-{sector}-{band}-{resolution}.jpg'
 # OUTPUT_DIR = os.path.join(os.environ['HOME'], 'Library/Caches/weatherwidget/')
+data['backup_current_obs_url'] = 'https://w1.weather.gov/xml/current_obs/{obs_loc}.xml'
 
 CUR_URL = 'https://api.weather.gov/stations/{station}/observations/current'
 RADAR_URL = 'https://radar.weather.gov/ridge/RadarImg/N0R/{station}_{image}'
@@ -72,6 +74,9 @@ def main():
   - TODO: Make animated gifs of last 24 hours of a few bands of images
   - TODO: use PythonMagick instead of post-processing via shell script
   - TODO: use Flask API as a microservice for JSON data payloads
+  - TODO: backup xml parsing from different URL for current conditions
+  - TODO: METAR string parsing with python-metar
+  - TODO: derived variables with metpy (especially from METAR string vars)
 
   """
   data['today_vars'] = wf.get_today_vars(data['timezone'])
@@ -110,6 +115,9 @@ def main():
   
   # Get and digest current conditions
   conditions = wf.get_current_conditions(CUR_URL, data['station'])
+  backup_obs = wf.get_backup_obs(data, station_abbr=data['station'])
+  conditions = wf.merge_good_observations(backup_obs, conditions)
+
   sum_con = wf.conditions_summary(conditions)
   if conditions and sum_con:
     text_conditions, nice_con = wf.format_current_conditions(sum_con)

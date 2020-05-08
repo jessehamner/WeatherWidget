@@ -57,7 +57,12 @@ def get_current_conditions(url, station):
   Take the JSON object from the NWS station and produce a reduced set of
   information for display.
   """
-  response = requests.get(url.format(station=station), verify=False, timeout=10)
+  try:
+    response = requests.get(url.format(station=station), verify=False, timeout=10)
+  except requests.exceptions.ReadTimeout as e:
+    print('Request timed out. Returning -None-')
+    return None
+
   if response.status_code == 200:
     conditions = response.json()
     return conditions
@@ -92,6 +97,93 @@ def quick_doctext(doctext, indicator, value, unit=''):
   if unit == '%':
     unitspace = ''
   return str('{0}\n{1} {2}{3}{4}'.format(doctext, indicator, value, unitspace, unit))
+
+
+def get_backup_obs(data, station_abbr):
+  """
+  Something strange is happening with the data for at least one location --
+  the raw message contains complete information, but the returned dictionary 
+  has missing data. Trying a backup XML feed from w1.weather.gov.
+  """
+  retpage = requests.get(data['backup_current_obs_url'].format(obs_loc = data['station']))
+  if retpage.status_code != 200:
+    return False
+
+  bsbackup = BeautifulSoup(retpage.text, 'lxml').find('current_observation')
+  return_dict = {}
+  fields = ['location', 'station_id', 'latitude', 'longitude', 'observation_time',
+            'observation_time_rfc822', 'weather', 'temperature_string', 'temp_f',
+            'temp_c', 'relative_humidity', 'wind_string', 'wind_dir', 'wind_degrees',
+            'wind_mph', 'wind_kt', 'pressure_string', 'pressure_mb', 'pressure_in',
+            'dewpoint_string', 'dewpoint_f', 'dewpoint_c', 'visibility_mi',
+            'two_day_history_url', 'ob_url']
+
+  for f in fields:
+    try:
+      return_dict[f] = bsbackup.find(f).text
+    except:
+      return_dict[f] = ''
+
+
+  return return_dict
+
+
+def merge_good_observations(backup_dict, current_conditions):
+  """
+  Find missing data in current_conditions and replace/augment it with
+  data from backup_dict.
+  If all else fails, and if there's a current_conditions['rawMessage'],
+  it should be possible to use python-metar to parse the raw message and
+  fill in remaining gaps.
+  """
+
+  matchup = {'barometricPressure': ['pressure_mb', 'mb'],
+             'dewpoint': ['dewpoint_c', 'unit:degC'],
+             'temperature': ['temp_c', 'unit:degC'],
+             'relativeHumidity': ['relative_humidity', None],
+             'windDirection': ['wind_degrees', None],
+             'windSpeed': ['wind_kt', 'kt']
+             }
+  
+  ccp = current_conditions['properties']
+  for key, alt_key in matchup.iteritems():
+    print('key: {0}\tvalue: {1}'.format(key, alt_key))
+    print('existing value: {0}'.format(ccp[key]['value']))
+    if (ccp[key]['value'] is None) or (ccp[key]['value'] == 'None'):
+      print('Testing {0}'.format(backup_dict[alt_key[0]]))
+      try:
+        if backup_dict[alt_key[0]]:
+          if alt_key[1] is None:
+            ccp[key] = backup_dict[alt_key[0]]
+          # If units are equivalent, ignore and move on:
+          elif alt_key[1] == ccp[key]['unitCode']:
+            ccp[key] = backup_dict[alt_key[0]]
+            continue
+          else:
+          # Must otherwise convert units:
+            # convert wind speed in knots to wind speed in m/sec
+
+            # convert pressure from millibars to Pa (mb x 100 = Pa):
+            if alt_key[1] == 'mb':
+              if ccp[key]['unitCode'] == 'unit:Pa':
+                ccp[key]['value'] = backup_dict[alt_key[0]] * 100
+              if ccp[key]['unitCode'] == 'unit:inHg':
+                ccp[key]['value'] = backup_dict[alt_key[0]] * (1000 / 29.53)
+              
+            if alt_key[1] == 'kt':
+              if ccp[key]['unitCode'] == 'unit:m_s-1':
+                ccp[key]['value'] = backup_dict[alt_key[0]] * 0.514444
+              if ccp[key]['unitCode'] == 'unit:mph':
+                ccp[key]['value'] = backup_dict[alt_key[0]] * 1.15078
+
+      except Exception as e:
+        print('Something barfed: {0}'.format(e))
+        continue
+            
+  return current_conditions
+             
+
+
 
 
 def format_current_conditions(cur, cardinal_directions=True):
@@ -206,6 +298,33 @@ def get_weather_radar(url, station, outputdir='/tmp'):
   cur2.close()
 
   return True
+
+
+def beaufort_scale(forecast_dict = ''):
+  """
+  
+  """
+  b_url = 'https://www.weather.gov/mfl/beaufort'
+  pagerequest = requests.get(b_url)
+  if pagerequest.status_code != 200:
+    print('Response from server was not OK: {0}'.format(pagerequest.status_code))
+    return None
+  beaufort_page = BeautifulSoup(requests.get(b_url).text, 'html')
+  btable = beaufort_page.find('table')
+  tablerows = btable.find_all('tr')
+  dataset = []
+  for i in tablerows:
+      row = []
+      cells = i.find_all('td')
+      for j in cells:
+        if re.search(r'\d{1,}-\d{1,}', j.text):
+          vals = j.text.split('-')
+          row.extend(vals)
+        else:
+          row.append(re.sub('\s{2,}', ' ', j.text))
+      dataset.append(row)
+
+  return dataset
 
 
 def get_warnings_box(url, station, outputdir='/tmp'):
