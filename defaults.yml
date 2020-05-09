@@ -1,0 +1,33 @@
+# YAML
+
+goes_bands:
+  - '01'
+  - '02'
+  - '03'
+  - '04'
+  - '05'
+  - '06'
+  - '07'
+  - '08'
+  - '09'
+  - '10'
+  - '11'
+  - '12'
+  - '13'
+  - '14'
+  - '15'
+  - '16'
+  - 'AirMass'
+  - 'GEOCOLOR'
+  - 'NightMicrophysics'
+  - 'Sandwich'
+  - 'DayCloudPhase'
+
+hwo_url: 'https://forecast.weather.gov/product.php'
+alerts_url: 'https://alerts.weather.gov/cap/wwaatmget.php'
+water_url: 'https://water.weather.gov/resources/hydrographs'
+forecast_url: 'https://graphical.weather.gov/xml/sample_products/browser_interface/ndfdBrowserClientByDay.php'
+weather_url_root: 'https://radar.weather.gov/ridge/Overlays'
+legend_url_root: 'https://radar.weather.gov'
+goes_dir_date_format: 'DD-Mmm-YYYY'
+
