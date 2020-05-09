@@ -272,3 +272,18 @@ class Alerts(object):
         return county.strip()
 
     return None
+
+
+  def parse_alerts(self):
+    """
+    Format alerts into a better architected dictionary.
+    
+
+    """
+    alerts = dict(hwo=dict(spotter='', dayone='', daytwo=''),
+                  alerts=dict(issues=[]),
+                  watches=dict(issues=[]),
+                  warnings=dict(issues=[])
+                 )
+
+    return True

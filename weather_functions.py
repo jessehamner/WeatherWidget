@@ -196,7 +196,7 @@ def format_current_conditions(cur, cardinal_directions=True):
     temp_unit = 'C'
 
   ordered = ['temperature', 'dewpoint', 'relativeHumidity', 'heatIndex',
-             'barometricPressure', 'windDirection', 'windSpeed']
+             'barometricPressure', 'windDirection', 'windSpeed', 'windGust']
 
   doctext = str('Conditions as of {}'.format(prettify_timestamp(cur['timestamp'])))
 
@@ -251,6 +251,14 @@ def format_current_conditions(cur, cardinal_directions=True):
     wind_speed_unit = 'km / hr'
 
   ccdict[key1] = [wind_speed_value, wind_speed_unit, 'Wind Speed']
+
+  key1 = 'windGust'
+  wind_gust_unit = re.sub('unit:', '', cur[key1]['unitCode'])
+  wind_gust_value = sanity_check(cur[key1]['value'], 'int')
+  if wind_gust_unit == 'm_s-1' and wind_gust_value != 'None':
+    wind_gust_value = (float(wind_gust_value) / 1000.0) * 3600.0
+    wind_gust_unit = 'km / hr'
+  ccdict[key1] = [wind_gust_value, wind_gust_unit, 'Wind Gusts']
 
   for entry in ordered:
     doctext = quick_doctext(doctext,
