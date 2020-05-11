@@ -32,26 +32,6 @@ def prettify_timestamp(timestamp):
   return timetext
 
 
-def check_graphics(graphics_list, root_url, outputdir='/tmp', radar='FWS'):
-  """
-  Ensure that the needed graphics are available in /tmp/ -- and if needed.
-  (re-) download them from the NWS.
-  """
-
-  for suf in graphics_list:
-    filename = '{0}'.format(suf.format(radar=radar))
-    filename = filename.split('/')[-1]
-    localpath = os.path.join(outputdir, filename)
-    if os.path.isfile(localpath) is False:
-      print('Need to retrieve {0}'.format(filename))
-      graphic = requests.get(os.path.join(root_url, suf.format(radar=radar)),
-                             verify=False, timeout=10)
-      with open(os.path.join(outputdir, filename), 'wb') as output:
-        output.write(graphic.content)
-      output.close()
-  return True
-
-
 def get_current_conditions(url, station):
   """
   Take the JSON object from the NWS station and produce a reduced set of
@@ -128,6 +108,19 @@ def get_backup_obs(data, station_abbr):
   return return_dict
 
 
+def get_metar(base_url, station):
+  """
+  Hit up https://w1.weather.gov/data/METAR/XXXX.1.txt
+  and pull down the latest current conditions METAR data.
+  """
+  metar = requests.get(os.path.join(base_url, station), 
+                       verify=False, timeout=10)
+  if metar.status_code != 200:
+    print('Response from server was not OK: {0}'.format(response1.status_code))
+    return None
+  return metar.text
+
+
 def merge_good_observations(backup_dict, current_conditions):
   """
   Find missing data in current_conditions and replace/augment it with
@@ -181,9 +174,6 @@ def merge_good_observations(backup_dict, current_conditions):
         continue
             
   return current_conditions
-             
-
-
 
 
 def format_current_conditions(cur, cardinal_directions=True):
@@ -281,33 +271,6 @@ def write_json(some_dict, outputdir='/tmp', filename='unknown.json'):
       return False
 
 
-def get_weather_radar(url, station, outputdir='/tmp'):
-  """
-  Using the NWS radar station abbreviation, retrieve the current radar image
-  and world file from the NWS.
-  """
-  response1 = requests.get(url.format(station=station, image='N0R_0.gfw'),
-                           verify=False, timeout=10)
-  if response1.status_code != 200:
-    print('Response from server was not OK: {0}'.format(response1.status_code))
-    return None
-  cur1 = open(os.path.join(outputdir, 'current_image.gfw'), 'w')
-  cur1.write(response1.text)
-  cur1.close()
-
-  response2 = requests.get(url.format(station=station, image='N0R_0.gif'),
-                           verify=False, timeout=10)
-  if response2.status_code != 200:
-    print('Response from server was not OK: {0}'.format(response2.status_code))
-    return None
-
-  cur2 = open(os.path.join(outputdir, 'current_image.gif'), 'wb')
-  cur2.write(response2.content)
-  cur2.close()
-
-  return True
-
-
 def beaufort_scale(forecast_dict = ''):
   """
   
@@ -333,23 +296,6 @@ def beaufort_scale(forecast_dict = ''):
       dataset.append(row)
 
   return dataset
-
-
-def get_warnings_box(url, station, outputdir='/tmp'):
-  """
-  Retrieve the severe weather graphics boxes (suitable for overlaying)
-  from the NWS for the specified locale.
-  """
-  warnings = 'Warnings'
-  response = requests.get(url.format(station=station,
-                                     warnings=warnings,
-                                    ),
-                          verify=False, timeout=10)
-  cur = open(os.path.join(outputdir, 'current_warnings.gif'), 'wb')
-  cur.write(response.content)
-  cur.close()
-
-  return 0
 
 
 def conditions_summary(conditions):

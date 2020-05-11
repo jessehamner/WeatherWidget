@@ -31,9 +31,13 @@ class Alerts(object):
     self.hwo_text = ''
     self.outputfile = outputfile
     self.outputalertsfile = outputalertsfile
-    self.hwo_dict = dict(today='', daystwothroughseven='', spotter='')
     self.alert_dict = dict()
-    self.hwo_today = ''
+
+    self.alerts = dict(hwo=dict(spotter=[], dayone=[], daytwothroughseven=[], hwo_today=''),
+                       alerts=dict(issues=[]),
+                       watch=dict(issues=[]),
+                       warn=dict(issues=[])
+                      )
 
 
   def get_alerts(self):
@@ -45,16 +49,20 @@ class Alerts(object):
     parse alerts into alerts, (severe) watches, and (severe) warnings
 
     """
-    self.hwo_today, self.hwo_dict = self.split_hwo(self.get_hwo())
-    if self.hwo_today is not None:
-      hwo = re.sub('.DAY ONE', 'Hazardous Weather Outlook', self.hwo_today)
-      with open(os.path.join(self.data['output_dir'], 'today_hwo.txt'), 'w') as today_hwo:
-        today_hwo.write(hwo)
-      today_hwo.close()
-    wf.write_json(some_dict=self.hwo_dict,
-                  outputdir=self.data['output_dir'],
-                  filename='hwo.json'
-                 )
+    nodata = 'No data'
+    self.get_hwo()
+    self.alerts['hwo']['hwo_today'], self.alerts['hwo'] = self.split_hwo()
+    
+    textfilepath = os.path.join(self.data['output_dir'], 'today_hwo.txt')
+    if self.alerts['hwo']['hwo_today'] is None:
+      self.alerts['hwo']['hwo_today'] = ('Hazardous Weather Outlook:\n ' + nodata)
+    self.write_text(filepath=textfilepath, some_text=self.alerts['hwo']['hwo_today'])
+   
+    jsonfilepath = os.path.join(self.data['output_dir'], 'hwo.json')
+    if self.alerts['hwo'] is None:
+      self.alerts['hwo'] = dict(today=[nodata, nodata], spotter=[nodata,nodata],
+                           daystwothroughseven=[nodata, nodata])
+    self.write_json(filepath=jsonfilepath, some_dict=self.alerts['hwo'])
 
     print('Getting alerts for the following counties: {0}.'.format(self.data['alert_counties']))
     self.alert_dict = self.get_current_alerts()
@@ -67,15 +75,44 @@ class Alerts(object):
         pass
 
     else:
-      wf.write_json(some_dict=self.alert_dict,
-                    outputdir=self.data['output_dir'],
-                    filename='alerts.json')
-      with open(alertpath, 'w') as current_alerts:
-        for key, value in self.alert_dict.iteritems():
-          print('Key for this alert entry: {0}'.format(key))
-          current_alerts.write('{0}\n'.format(value['warning_summary']))
+      self.write_json(os.path.join(self.data['output_dir'], 'alerts.json'), self.alert_dict)
+      self.write_dict(filepath = alertpath, some_dict = self.alert_dict) 
 
     return True
+
+
+  def write_text(self, filepath, some_text):
+    """
+    Write a text string out to a file.
+    """
+    with open(filepath, 'w') as text_file:
+      text_file.write(some_text)
+    text_file.close()
+    return True
+
+
+  def write_dict(self, filepath, some_dict):
+    """
+    Write out a dict to a text file.
+    """
+    with open(filepath, 'w') as current_alerts:
+      for key, value in some_dict.iteritems():
+        print('Key for this alert entry: {0}'.format(key))
+        current_alerts.write('{0}\n'.format(value['warning_summary']))
+
+    return True
+
+
+  def write_json(self, filepath, some_dict):
+    """
+    Write out a JSON file of a given dict.
+    """
+    with open(filepath, 'w') as out_obj:
+      try:
+        out_obj.write(json.dumps(some_dict))
+        return True
+      except:
+        return False
 
 
   def get_hwo(self):
@@ -116,34 +153,49 @@ class Alerts(object):
     return None
 
 
-  def split_hwo(self, bodytext):
+  def split_hwo(self):
     """
     Pull out today's hazardous weather outlook and spotter activation notice.
     Return a slightly more compact text block of the two paragraphs.
 
     """
+    bodytext = self.hwo_text
     returntext = ''
     # print('Raw body text of HWO: \n{0}'.format(bodytext))
 
-    dayone = re.search(r'(\.DAY ONE.*?)(\.DAYS TWO THROUGH SEVEN)', bodytext, re.DOTALL)
+    dayone = re.search(r'(\.DAY ONE.*?)(\.DAYS TWO THROUGH SEVEN.*?)', bodytext, re.DOTALL)
     if dayone:
       hwotext = re.sub(r'\n\n$', '', dayone.group(1))
-      self.hwo_dict['today'] = hwotext
-      self.hwo_dict['today'] = re.sub(r'\.{1,}DAY ONE[\.]{1,}', '', self.hwo_dict['today'])
-      self.hwo_dict['today'] = re.sub('\n', ' ', self.hwo_dict['today'])
-      self.hwo_dict['daystwothroughseven'] = re.sub(r'\n{2,}$', '', dayone.group(2))
-      self.hwo_dict['daystwothroughseven'] = re.sub(r'\.DAYS TWO THROUGH SEVEN', '',
-                                                    self.hwo_dict['daystwothroughseven'])
-      self.hwo_dict['daystwothroughseven'] = re.sub('\n', ' ',
-                                                    self.hwo_dict['daystwothroughseven'])
+      hwotext = re.sub(r'\.{1,}DAY ONE[\.]{1,}', '', hwotext)
+      first_sentence = re.search(r'^(.*)\.', hwotext).group(1)
+      # print('First sentence: {0}'.format(first_sentence))
+      hwotext = re.sub('\n', ' ', hwotext)
+      first_info = re.sub(first_sentence, '', hwotext)
+      first_info = re.sub('^\s*\.*', '', first_info)
+      self.alerts['hwo']['today'] = [first_sentence.strip(), first_info.strip()]
+      
+
+    daytwo = re.search('DAYS TWO THROUGH SEVEN(.*)SPOTTER', bodytext, re.DOTALL).group(1)
+    if daytwo:
+      print('DayTwo: {0}'.format(daytwo))
+      daytwo = re.sub(r'\n{1,}', ' ', daytwo)
+      daytwo = re.sub(r'\.{3,}\s*', ' ', daytwo)
+      first_sentence = re.search(r'^(.*?)\.', daytwo).group(1)
+      # print('First sentence: {0}'.format(first_sentence))
+      second_info = re.sub(first_sentence, '', daytwo)
+      second_info = re.sub('^\s*\.*', '', second_info)
+      self.alerts['hwo']['daystwothroughseven'] = [first_sentence.strip(),
+                                                   second_info.strip()]
 
     spotter = re.search(r'(\.SPOTTER INFORMATION STATEMENT.*?)(\s*\$\$)',
                         bodytext, re.DOTALL)
     if spotter:
       spottext = re.sub(r'\n\n$', '', spotter.group(1))
-      self.hwo_dict['spotter'] = re.sub(r'\.{1,}SPOTTER INFORMATION STATEMENT[\.]{1,}',
-                                        '', spottext)
-      self.hwo_dict['spotter'] = re.sub('\n', ' ', self.hwo_dict['spotter'])
+      spottext = re.sub(r'\.{1,}SPOTTER INFORMATION STATEMENT[\.]{1,}',
+                         '', spottext)
+      spottext = re.sub('\n', ' ', spottext)
+      self.alerts['hwo']['spotter'] = ['Spotter Information Statement',
+                                       spottext.strip()]
 
     if hwotext:
       returntext = '{0}{1}\n\n'.format(returntext, hwotext)
@@ -151,8 +203,7 @@ class Alerts(object):
       returntext = '{0}{1}\n\n'.format(returntext, spottext)
 
     returntext = re.sub(r'\n\n$', '', returntext)
-    return returntext, self.hwo_dict
-
+    return returntext, self.alerts['hwo']
 
 
   def get_current_alerts(self):
@@ -274,16 +325,38 @@ class Alerts(object):
     return None
 
 
-  def parse_alerts(self):
+  def classify_alerts(self):
     """
-    Format alerts into a better architected dictionary.
-    
-
+    Some warnings are more urgent than others. This method classifies the
+    warnings according to immediate threat to life and property, but I am
+    not a lawyer and this is really just the way I perceive the usefulness
+    of seeing alerts on a dashboard.
     """
-    alerts = dict(hwo=dict(spotter='', dayone='', daytwo=''),
-                  alerts=dict(issues=[]),
-                  watches=dict(issues=[]),
-                  warnings=dict(issues=[])
-                 )
+    oh_shit = ['Blizzard Warning', 'Ice Storm Warning', 'High Wind Warning',
+               'Severe Thunderstorm Warning', 'Tornado Warning',
+               'Extreme Wind Warning', 'Gale Warning', 'Hurricane Force Wind Warning',
+               'Flash Flood Warning', 'Flood Warning', 'River Flood Warning',
+               'Tropical Storm Warning', 'Hurricane Warning', 'Coastal Flood Warning']
+    be_aware = ['Winter Storm Watch', 'Winter Weather Advisory', 'Freeze Watch',
+                'Freeze Warning', 'Frost Advisory', 'Wind Chill Advisory',
+                'Wind Chill Warning', 'Red Flag Warning', 'Dense Fog Advisory',
+                'High Wind Watch', 'Wind Advisory', 'Severe Thunderstorm Watch',
+                'Tornado Watch', 'Small Craft Advisory', 'Storm Warning',
+                'Special Marine Warning', 'Coastal Flood Watch', 'Flash Flood Watch',
+                'Flood Watch', 'River Flood Watch', 'Excessive Heat Watch',
+                'Excessive Heat Warning', 'Heat Advisory', 'Tropical Storm Watch',
+                'Hurricane Watch']
 
-    return True
+    for alert in self.alert_dict:
+      if alert['event_type'] in oh_shit:
+        self.alerts['warn'].append(alert)
+      elif alert['event_type'] in be_aware:
+        self.alerts['watch'].append(alert)
+      else:
+        print('Unable to classify {0}'.format(alert['event_type']))
+        self.alerts['alerts'].append(alert)
+        continue
+
+    return self.alerts
+
+

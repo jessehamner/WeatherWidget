@@ -22,6 +22,7 @@ from imagery import Imagery
 from moon_phase import Moon_phase
 from alerts import Alerts
 from outage import Outage
+from radar import Radar
 
 # Pull settings in from two YAML files:
 SETTINGS_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -81,7 +82,13 @@ def main():
   """
   data['today_vars'] = wf.get_today_vars(data['timezone'])
   data['bands'] = data['defaults']['goes_bands']
-  
+  data['graphics_list'] = GRAPHICS_LIST
+  data['cur_url'] = CUR_URL
+  data['radar_url'] = RADAR_URL
+  data['warnings_url'] = WARNINGS_URL
+  data['legend_file'] = LEGEND
+    
+
   # Check for outage information
   outage_checker = Outage(data) 
   outage_checker.check_outage()
@@ -103,16 +110,6 @@ def main():
     except OSError as e:
       print('OSError-- {0}: {1}'.format(outfilepath, e))
 
-
-  # Check that needed graphics exist
-  wf.check_graphics(graphics_list=GRAPHICS_LIST,
-                    root_url=data['defaults']['weather_url_root'],
-                    outputdir=data['output_dir'],
-                    radar=data['radar_station'])
-  wf.check_graphics([LEGEND,],
-                    data['defaults']['legend_url_root'],
-                    outputdir=data['output_dir'])
-  
   # Get and digest current conditions
   conditions = wf.get_current_conditions(CUR_URL, data['station'])
   backup_obs = wf.get_backup_obs(data, station_abbr=data['station'])
@@ -136,13 +133,14 @@ def main():
     curr_con.write(text_conditions)
   curr_con.close()
 
-  if wf.get_weather_radar(RADAR_URL, data['radar_station'],
-                          outputdir=data['output_dir']) is None:
+# Get radar image:
+  current_radar = Radar(data)
+  current_radar.check_assets()
+  current_radar.get_radar()
+  current_radar.get_warnings_box()
+  if current_radar.problem:
     print('Unable to retrieve weather radar image. Halting now.')
-    return 1
 
-  wf.get_warnings_box(WARNINGS_URL, data['radar_station'], outputdir=data['output_dir'])
-  
   # Hazardous Weather Outlook and alerts:
   today_alerts = Alerts(data)
   today_alerts.get_alerts()
