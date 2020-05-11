@@ -245,9 +245,13 @@ def format_current_conditions(cur, cardinal_directions=True):
   key1 = 'windGust'
   wind_gust_unit = re.sub('unit:', '', cur[key1]['unitCode'])
   wind_gust_value = sanity_check(cur[key1]['value'], 'int')
-  if wind_gust_unit == 'm_s-1' and wind_gust_value != 'None':
+  if wind_gust_value == 'None' or wind_gust_value is None:
+    wind_gust_unit = ''
+  elif wind_gust_unit == 'm_s-1':
     wind_gust_value = (float(wind_gust_value) / 1000.0) * 3600.0
     wind_gust_unit = 'km / hr'
+  else:
+    pass  
   ccdict[key1] = [wind_gust_value, wind_gust_unit, 'Wind Gusts']
 
   for entry in ordered:

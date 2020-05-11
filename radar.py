@@ -10,6 +10,7 @@ import logging
 import requests
 from bs4 import BeautifulSoup
 import weather_functions as wf
+from PIL import Image
 
 
 class Radar(object):
@@ -144,3 +145,40 @@ class Radar(object):
       output.write(graphic.content)
       output.close()
     return True
+
+
+  def _overlay_composite(self, resultfile='bkg2.png'):
+    """
+    Take list of images in output_dir and overlay them as needed to make
+    the proper radar overlay image.
+    """
+    blist = ['highways', 'ring', 'lrg_cities', 'counties']
+
+    im1 = self._open_transparent('highways')
+    for layer in blist[1:]:
+      temp = self._open_transparent(layer)
+      if temp:
+        im1.paste(temp, (0,0), temp)
+   
+    im1.save(os.path.join(self.data['output_dir'], resultfile))
+    return im1
+
+
+  def _open_transparent(self, layer):
+    """
+
+    """
+    rl = self.data['radar_layers']
+    try:
+      imagename = rl[layer].format(r_abbr = rl['r_abbr']).split('/')[-1]
+      imagepath = os.path.join(self.data['output_dir'], imagename)
+      if not os.path.exists(imagepath):
+        return None
+    except:
+      return None
+
+    try:
+      return Image.open(imagepath).convert('RGBA')
+    except:
+      return None
+
