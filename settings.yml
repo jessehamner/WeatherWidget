@@ -10,7 +10,7 @@ alert_county: 'TXC121'
 
 # Three-letter abbreviations are available at, among other places: 
 # http://weather.rap.ucar.edu/radar/
-radar_station: 'FWS'
+radar_station: &r_abbr 'FWS'
 
 # office call signs found at 
 # https://en.wikipedia.org/wiki/List_of_National_Weather_Service_Weather_Forecast_Offices
@@ -51,4 +51,23 @@ alert_counties:
   - 'Wise'
   - 'Dallas'
   - 'Tarrant'
+
+# Convective outlook resources:
+convective: !!python/dict
+  'url': 'https://www.spc.noaa.gov/products/outlook/'
+  'today': 'day1otlk_0100_prt.gif'
+  'html': 'day1otlk_0100_prt.html'
+  'thumbnail': 'day1otlk_sm.gif'
+
+radar_layers:
+  r_abbr: *r_abbr
+  'counties': 'County/Short/{r_abbr}_County_Short.gif'
+  'highways': 'Highways/Short/{r_abbr}_Highways_Short.gif'
+  'sml_cities': 'Cities/Short/{r_abbr}_City_25K_Short.gif'
+  'med_cities': 'Cities/Short/{r_abbr}_City_250K_Short.gif'
+  'lrg_cities': 'Cities/Short/{r_abbr}_City_1M_Short.gif'
+  'ring': 'RangeRings/Short/{r_abbr}_RangeRing_Short.gif'
+  'rivers': 'Rivers/Short/{r_abbr}_Rivers_Short.gif'
+  'topo': 'Topo/Short/{r_abbr}_Topo_Short.jpg'
+
 

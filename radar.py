@@ -26,10 +26,10 @@ class Radar(object):
                data=''):
     self.data = data
     self.defaults = data['defaults']
-    self.radar_url = data['radar_url']
+    self.radar_url = data['defaults']['radar_url']
     self.station = data['radar_station']
     self.assets_url = data['defaults']['weather_url_root']
-    self.warnings_url = data['warnings_url']
+    self.warnings_url = data['defaults']['warnings_url']
     self.problem = False
 
   def get_radar(self):
@@ -89,8 +89,8 @@ class Radar(object):
     """
 
     """
-    for asset in self.data['graphics_list']:
-      file_url_dir = '{0}'.format(asset.format(radar=self.station))
+    for asset in self.data['radar_layers']:
+      file_url_dir = '{0}'.format(asset.format(r_abbr=self.station))
       filename = file_url_dir.split('/')[-1]
       print('Local file path: {0}'.format(os.path.join(self.data['output_dir'], filename)))
       if not self._check_asset(self.data['output_dir'],
@@ -100,7 +100,7 @@ class Radar(object):
         self.problem = True
 
 
-    file_url_dir = '{0}'.format(self.data['legend_file'].format(radar=self.station))
+    file_url_dir = '{0}'.format(self.defaults['legend_file'].format(radar=self.station))
     filename = file_url_dir.split('/')[-1]
     print('Local legend file path: {0}'.format(os.path.join(self.data['output_dir'], filename)))
     if not self._check_asset(self.data['output_dir'],

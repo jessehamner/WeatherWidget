@@ -30,4 +30,14 @@ forecast_url: 'https://graphical.weather.gov/xml/sample_products/browser_interfa
 weather_url_root: 'https://radar.weather.gov/ridge/Overlays'
 legend_url_root: 'https://radar.weather.gov'
 goes_dir_date_format: 'DD-Mmm-YYYY'
+cur_url: 'https://api.weather.gov/stations/{station}/observations/current'
+warnings_url: 'https://radar.weather.gov/ridge/Warnings/Short/{station}_{warnings}_0.gif'
+radar_url: 'https://radar.weather.gov/ridge/RadarImg/N0R/{station}_{image}'
+goes_url: 'https://cdn.star.nesdis.noaa.gov/GOES{sat}/ABI/SECTOR/{sector}/{band}/'
+goes_img: '{year}{doy}{timeHHMM}_GOES{sat}-ABI-{sector}-{band}-{resolution}.jpg'
+backup_current_obs_url: 'https://w1.weather.gov/xml/current_obs/{obs_loc}.xml'
+legend_file: 'Legend/N0R/{radar}_N0R_Legend_0.gif'
+
+
+
 

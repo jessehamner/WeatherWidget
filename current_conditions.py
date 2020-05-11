@@ -32,28 +32,7 @@ if not (data and defaults):
   sys.exit('settings files are required and could not be loaded successfully.')
 
 data['defaults'] = defaults
-data['goes_url'] = 'https://cdn.star.nesdis.noaa.gov/GOES{sat}/ABI/SECTOR/{sector}/{band}/'
-data['goes_img'] = '{year}{doy}{timeHHMM}_GOES{sat}-ABI-{sector}-{band}-{resolution}.jpg'
 # OUTPUT_DIR = os.path.join(os.environ['HOME'], 'Library/Caches/weatherwidget/')
-data['backup_current_obs_url'] = 'https://w1.weather.gov/xml/current_obs/{obs_loc}.xml'
-
-CUR_URL = 'https://api.weather.gov/stations/{station}/observations/current'
-RADAR_URL = 'https://radar.weather.gov/ridge/RadarImg/N0R/{station}_{image}'
-WARNINGS_URL = 'https://radar.weather.gov/ridge/Warnings/Short/{station}_{warnings}_0.gif'
-
-SHORT_RANGE_COUNTIES = 'County/Short/{radar}_County_Short.gif'
-SHORT_RANGE_HIGHWAYS = 'Highways/Short/{radar}_Highways_Short.gif'
-SHORT_RANGE_MED_CITIES = 'Cities/Short/{radar}_City_250K_Short.gif'
-SHORT_RANGE_LRG_CITIES = 'Cities/Short/{radar}_City_1M_Short.gif'
-SHORT_RANGE_SML_CITIES = 'Cities/Short/{radar}_City_25K_Short.gif'
-SHORT_RANGE_RING = 'RangeRings/Short/{radar}_RangeRing_Short.gif'
-SHORT_RANGE_RIVERS = 'Rivers/Short/{radar}_Rivers_Short.gif'
-SHORT_RANGE_TOPO = 'Topo/Short/{radar}_Topo_Short.jpg'
-LEGEND = 'Legend/N0R/{radar}_N0R_Legend_0.gif'
-
-GRAPHICS_LIST = [SHORT_RANGE_COUNTIES, SHORT_RANGE_HIGHWAYS, SHORT_RANGE_TOPO,
-                 SHORT_RANGE_MED_CITIES, SHORT_RANGE_LRG_CITIES, SHORT_RANGE_RING,
-                 SHORT_RANGE_SML_CITIES, SHORT_RANGE_RIVERS]
 
 
 def main():
@@ -73,21 +52,14 @@ def main():
     there is a new image and comparing it to the list of files from today,
     of the specified resolution.
   - TODO: Make animated gifs of last 24 hours of a few bands of images
-  - TODO: use PythonMagick instead of post-processing via shell script
   - TODO: use Flask API as a microservice for JSON data payloads
-  - TODO: backup xml parsing from different URL for current conditions
   - TODO: METAR string parsing with python-metar
   - TODO: derived variables with metpy (especially from METAR string vars)
-
+  - TODO: get convective outlook graphic(s).
+  - Try python pillow to do graphics overlays
   """
   data['today_vars'] = wf.get_today_vars(data['timezone'])
   data['bands'] = data['defaults']['goes_bands']
-  data['graphics_list'] = GRAPHICS_LIST
-  data['cur_url'] = CUR_URL
-  data['radar_url'] = RADAR_URL
-  data['warnings_url'] = WARNINGS_URL
-  data['legend_file'] = LEGEND
-    
 
   # Check for outage information
   outage_checker = Outage(data) 
@@ -111,7 +83,7 @@ def main():
       print('OSError-- {0}: {1}'.format(outfilepath, e))
 
   # Get and digest current conditions
-  conditions = wf.get_current_conditions(CUR_URL, data['station'])
+  conditions = wf.get_current_conditions(defaults['cur_url'], data['station'])
   backup_obs = wf.get_backup_obs(data, station_abbr=data['station'])
   conditions = wf.merge_good_observations(backup_obs, conditions)
 

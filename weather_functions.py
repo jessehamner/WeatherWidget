@@ -85,7 +85,7 @@ def get_backup_obs(data, station_abbr):
   the raw message contains complete information, but the returned dictionary 
   has missing data. Trying a backup XML feed from w1.weather.gov.
   """
-  retpage = requests.get(data['backup_current_obs_url'].format(obs_loc = data['station']))
+  retpage = requests.get(data['defaults']['backup_current_obs_url'].format(obs_loc = data['station']))
   if retpage.status_code != 200:
     return False
 

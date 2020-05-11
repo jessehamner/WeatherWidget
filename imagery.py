@@ -27,7 +27,7 @@ class Imagery(object):
     self.sat = data['goes_sat']
     self.sector = data['goes_sector']
     self.res = data['goes_res']
-    self.url = data['goes_url'].format(sat=self.sat, sector=self.sector, band=self.band)
+    self.url = data['defaults']['goes_url'].format(sat=self.sat, sector=self.sector, band=self.band)
     self.fileslist = []
     self.today_v = self.data['today_vars']
     self.output_dir = self.data['output_dir']
