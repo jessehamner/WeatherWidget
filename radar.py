@@ -15,7 +15,7 @@ from PIL import Image
 
 class Radar(object):
   """
-  download and parse alerts, hazards, and spotter activation info.
+  download and merge radar imagery and layers.
   radar station abbr: data['radar_station']
   radar url: data['radar_url']
   names of all the files needed to overlay: data['graphics_list']
@@ -147,7 +147,7 @@ class Radar(object):
     return True
 
 
-  def _overlay_composite(self, resultfile='bkg2.png'):
+  def _overlay_composite(self, resultfile='bkg2.gif'):
     """
     Take list of images in output_dir and overlay them as needed to make
     the proper radar overlay image.
@@ -160,7 +160,9 @@ class Radar(object):
       if temp:
         im1.paste(temp, (0,0), temp)
    
-    im1.save(os.path.join(self.data['output_dir'], resultfile))
+    im1.save(os.path.join(self.data['output_dir'], resultfile), 
+             transparency = 0)
+
     return im1
 
 
