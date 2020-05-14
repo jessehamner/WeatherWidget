@@ -24,6 +24,7 @@ class Imagery(object):
     """
     self.band = band
     self.data = data
+    self.defaults = data['defaults']
     self.sat = data['goes_sat']
     self.sector = data['goes_sector']
     self.res = data['goes_res']
@@ -45,12 +46,17 @@ class Imagery(object):
     Done
     """
 
+    self.goes_cleanup()
     try:
-      self.goes_cleanup()
       self.fileslist = self.get_goes_list()
       timestamps = self.get_goes_timestamps()
       current_timestamp = timestamps[-1]
       print('Current timestamp: {0}'.format(current_timestamp))
+    except Exception as e:
+        print('Exception when evaluating current timestamps, {0}:\n{1}'.format(timestamps, e))
+        return False
+
+    try:
       current_image = self.get_goes_image(timehhmm=current_timestamp)
       print('retrieved {0}'.format(current_image))
       return True
@@ -138,14 +144,14 @@ class Imagery(object):
     """
     Retrieve current GOES weather imagery.
     """
-    image = self.data['goes_img'].format(year=self.today_v['year'],
-                                         doy=self.today_v['doy'],
-                                         timeHHMM=timehhmm,
-                                         sat=self.sat,
-                                         sector=self.sector,
-                                         band=self.band,
-                                         resolution=self.res
-                                        )
+    image = self.defaults['goes_img'].format(year=self.today_v['year'],
+                                             doy=self.today_v['doy'],
+                                             timeHHMM=timehhmm,
+                                             sat=self.sat,
+                                             sector=self.sector,
+                                             band=self.band,
+                                             resolution=self.res
+                                            )
     # image = '20200651806_GOES16-ABI-sp-NightMicrophysics-2400x2400.jpg'
     returned_val = requests.get(os.path.join(self.url, image), verify=False)
     with open(os.path.join(self.output_dir, image), 'wb') as satout:

@@ -218,7 +218,11 @@ def format_current_conditions(cur, cardinal_directions=True):
   ccdict[key1] = [pressure_value, pressure_unit, 'Pressure']
 
   key1 = 'windDirection'
-  wind_dir_unit = re.sub('unit:', '', cur[key1]['unitCode'])
+  try:
+    wind_dir_unit = re.sub('unit:', '', cur[key1]['unitCode'])
+  except TypeError as e:
+    print('TypeError when referring to currend conditions: {0}'.format(e))
+
   if wind_dir_unit == 'degree_(angle)':
     wind_dir_unit = 'degree azimuth'
 

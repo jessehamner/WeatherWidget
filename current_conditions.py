@@ -57,6 +57,7 @@ def main():
   - TODO: derived variables with metpy (especially from METAR string vars)
   - TODO: get convective outlook graphic(s).
   - Try python pillow to do graphics overlays
+  - TODO: Drought maps and data: https://www.weather.gov/fwd/drought
   """
   data['today_vars'] = wf.get_today_vars(data['timezone'])
   data['bands'] = data['defaults']['goes_bands']
