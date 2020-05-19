@@ -10,6 +10,7 @@ import os
 import re
 import logging
 import requests
+import json
 from bs4 import BeautifulSoup
 import weather_functions as wf
 
@@ -33,7 +34,7 @@ class Alerts(object):
     self.outputalertsfile = outputalertsfile
     self.alert_dict = dict()
 
-    self.alerts = dict(hwo=dict(spotter=[], dayone=[], daytwothroughseven=[], hwo_today=''),
+    self.alerts = dict(hwo=dict(spotter=[], dayone=[], daystwothroughseven=[], today_text=''),
                        alerts=dict(issues=[]),
                        watch=dict(issues=[]),
                        warn=dict(issues=[])
@@ -51,12 +52,12 @@ class Alerts(object):
     """
     nodata = 'No data'
     self.get_hwo()
-    self.alerts['hwo']['hwo_today'], self.alerts['hwo'] = self.split_hwo()
+    self.split_hwo()
     
     textfilepath = os.path.join(self.data['output_dir'], 'today_hwo.txt')
-    if self.alerts['hwo']['hwo_today'] is None:
-      self.alerts['hwo']['hwo_today'] = ('Hazardous Weather Outlook:\n ' + nodata)
-    self.write_text(filepath=textfilepath, some_text=self.alerts['hwo']['hwo_today'])
+    if not self.alerts['hwo']['today_text']:
+      self.alerts['hwo']['today_text'] = ('Hazardous Weather Outlook:\n ' + nodata)
+    self.write_text(filepath=textfilepath, some_text=self.alerts['hwo']['today_text'])
    
     jsonfilepath = os.path.join(self.data['output_dir'], 'hwo.json')
     if self.alerts['hwo'] is None:
@@ -74,9 +75,8 @@ class Alerts(object):
       except OSError:
         pass
 
-    else:
-      self.write_json(os.path.join(self.data['output_dir'], 'alerts.json'), self.alert_dict)
-      self.write_dict(filepath = alertpath, some_dict = self.alert_dict) 
+    self.write_json(os.path.join(self.data['output_dir'], 'alerts.json'), self.alert_dict)
+    self.write_dict(filepath = alertpath, some_dict = self.alert_dict) 
 
     return True
 
@@ -86,6 +86,7 @@ class Alerts(object):
     Write a text string out to a file.
     """
     with open(filepath, 'w') as text_file:
+      print('writing text to {0}'.format(filepath))
       text_file.write(some_text)
     text_file.close()
     return True
@@ -108,10 +109,13 @@ class Alerts(object):
     Write out a JSON file of a given dict.
     """
     with open(filepath, 'w') as out_obj:
+      print('writing json to {0}'.format(filepath))
       try:
         out_obj.write(json.dumps(some_dict))
+        print('raw dict: {0}'.format(some_dict))
         return True
-      except:
+      except Exception as e:
+        print('Ugh: {0}'.format(e))
         return False
 
 
@@ -172,7 +176,7 @@ class Alerts(object):
       hwotext = re.sub('\n', ' ', hwotext)
       first_info = re.sub(first_sentence, '', hwotext)
       first_info = re.sub('^\s*\.*', '', first_info)
-      self.alerts['hwo']['today'] = [first_sentence.strip(), first_info.strip()]
+      self.alerts['hwo']['dayone'] = [first_sentence.strip(), first_info.strip()]
       
 
     daytwo = re.search('DAYS TWO THROUGH SEVEN(.*)SPOTTER', bodytext, re.DOTALL).group(1)
@@ -197,13 +201,9 @@ class Alerts(object):
       self.alerts['hwo']['spotter'] = ['Spotter Information Statement',
                                        spottext.strip()]
 
-    if hwotext:
-      returntext = '{0}{1}\n\n'.format(returntext, hwotext)
     if spottext:
-      returntext = '{0}{1}\n\n'.format(returntext, spottext)
-
-    returntext = re.sub(r'\n\n$', '', returntext)
-    return returntext, self.alerts['hwo']
+      self.alerts['hwo']['today_text'] = '{0}{1}\n\n'.format(self.alerts['hwo']['dayone'][1], spottext)
+    return True
 
 
   def get_current_alerts(self):
@@ -239,7 +239,7 @@ class Alerts(object):
       response = requests.get(self.data['defaults']['alerts_url'],
                               params=county_params_dict,
                               verify=False, timeout=10)
-    except e:
+    except Exception as e:
       print('Exception when requesting current alerts: {0}'.format(e))
       return None
 

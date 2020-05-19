@@ -138,7 +138,14 @@ def merge_good_observations(backup_dict, current_conditions):
              'windSpeed': ['wind_kt', 'kt']
              }
   
-  ccp = current_conditions['properties']
+  try:
+    ccp = current_conditions['properties']
+  except:
+    try:
+      ccp = current_conditions
+    except:
+      return None
+
   for key, alt_key in matchup.iteritems():
     print('key: {0}\tvalue: {1}'.format(key, alt_key))
     print('existing value: {0}'.format(ccp[key]['value']))
@@ -221,7 +228,8 @@ def format_current_conditions(cur, cardinal_directions=True):
   try:
     wind_dir_unit = re.sub('unit:', '', cur[key1]['unitCode'])
   except TypeError as e:
-    print('TypeError when referring to currend conditions: {0}'.format(e))
+    print('TypeError when referring to current conditions: {0}'.format(e))
+    wind_dir_unit = 'degree_(angle)'
 
   if wind_dir_unit == 'degree_(angle)':
     wind_dir_unit = 'degree azimuth'

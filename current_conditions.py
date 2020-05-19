@@ -23,6 +23,7 @@ from moon_phase import Moon_phase
 from alerts import Alerts
 from outage import Outage
 from radar import Radar
+from obs import WeatherDict, Observation
 
 # Pull settings in from two YAML files:
 SETTINGS_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -53,11 +54,7 @@ def main():
     of the specified resolution.
   - TODO: Make animated gifs of last 24 hours of a few bands of images
   - TODO: use Flask API as a microservice for JSON data payloads
-  - TODO: METAR string parsing with python-metar
   - TODO: derived variables with metpy (especially from METAR string vars)
-  - TODO: get convective outlook graphic(s).
-  - Try python pillow to do graphics overlays
-  - TODO: Drought maps and data: https://www.weather.gov/fwd/drought
   """
   data['today_vars'] = wf.get_today_vars(data['timezone'])
   data['bands'] = data['defaults']['goes_bands']
@@ -85,12 +82,20 @@ def main():
 
   # Get and digest current conditions
   conditions = wf.get_current_conditions(defaults['cur_url'], data['station'])
+  if conditions:
+    print('Current conditions, nearly raw: {0}'.format(conditions))
+  else:
+    print('Unable to retrieve current conditions from primary location. Using backup data source.')
   backup_obs = wf.get_backup_obs(data, station_abbr=data['station'])
+  print('Backup conditions, nearly raw: {0}'.format(backup_obs))
+
   conditions = wf.merge_good_observations(backup_obs, conditions)
 
   sum_con = wf.conditions_summary(conditions)
+
   if conditions and sum_con:
     text_conditions, nice_con = wf.format_current_conditions(sum_con)
+    print('Current conditions from primary source: {0}'.format(nice_con))
     html_table = wf.htable_current_conditions(nice_con, 
                                               'current_conditions.html',
                                               outputdir=data['output_dir'])
