@@ -359,4 +359,3 @@ class Alerts(object):
 
     return self.alerts
 
-

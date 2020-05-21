@@ -14,25 +14,15 @@ from __future__ import print_function
 
 import sys
 import os
-import re
-import yaml
-import numpy as np
 import weather_functions as wf
 from imagery import Imagery
 from moon_phase import Moon_phase
 from alerts import Alerts
-from outage import Outage
 from radar import Radar
 from obs import WeatherDict, Observation
 
 # Pull settings in from two YAML files:
 SETTINGS_DIR = os.path.dirname(os.path.realpath(__file__))
-data = wf.load_yaml(SETTINGS_DIR, 'settings.yml')
-defaults = wf.load_yaml(SETTINGS_DIR, 'defaults.yml')
-if not (data and defaults):
-  sys.exit('settings files are required and could not be loaded successfully.')
-
-data['defaults'] = defaults
 # OUTPUT_DIR = os.path.join(os.environ['HOME'], 'Library/Caches/weatherwidget/')
 
 
@@ -56,29 +46,16 @@ def main():
   - TODO: use Flask API as a microservice for JSON data payloads
   - TODO: derived variables with metpy (especially from METAR string vars)
   """
+  data = wf.load_yaml(SETTINGS_DIR, 'settings.yml')
+  defaults = wf.load_yaml(SETTINGS_DIR, 'defaults.yml')
+  if not (data and defaults):
+    sys.exit('settings files are required and could not be loaded successfully.')
+  data['defaults'] = defaults
   data['today_vars'] = wf.get_today_vars(data['timezone'])
   data['bands'] = data['defaults']['goes_bands']
 
   # Check for outage information
-  outage_checker = Outage(data) 
-  outage_checker.check_outage()
-  outage_result = outage_checker.parse_outage()
-  outfilepath = os.path.join(data['output_dir'], 'outage.txt')
-  if outage_result is None:
-    print('No outages detected. Proceeding.')
-    try:
-      os.unlink(outfilepath)
-    except OSError:
-      print('file does not exist: {0}'.format(outfilepath))
-
-  else:
-    print('There is outage text: {0}'.format(outage_result))
-    try:
-      cur = open(outfilepath, 'w')
-      cur.write(outage_result)
-      cur.close()
-    except OSError as e:
-      print('OSError-- {0}: {1}'.format(outfilepath, e))
+  wf.outage_check(data)
 
   # Get and digest current conditions
   conditions = wf.get_current_conditions(defaults['cur_url'], data['station'])
@@ -96,13 +73,13 @@ def main():
   if conditions and sum_con:
     text_conditions, nice_con = wf.format_current_conditions(sum_con)
     print('Current conditions from primary source: {0}'.format(nice_con))
-    html_table = wf.htable_current_conditions(nice_con, 
+    html_table = wf.htable_current_conditions(nice_con,
                                               'current_conditions.html',
                                               outputdir=data['output_dir'])
     wf.write_json(some_dict=nice_con,
                   outputdir=data['output_dir'],
                   filename='current_conditions.json'
-                 )  
+                 )
   else:
     print('ERROR: something went wrong getting the current conditions. Halting.')
     return 1
@@ -123,7 +100,7 @@ def main():
   today_alerts = Alerts(data)
   today_alerts.get_alerts()
 
-  
+  # Get hydrograph image.
   if wf.get_hydrograph(abbr=data['river_gauge_abbr'],
                        hydro_url=data['defaults']['water_url'],
                        outputdir=data['output_dir']).ok:
@@ -139,20 +116,25 @@ def main():
                                 url=data['defaults']['forecast_url'])
   forecastdict = wf.parse_forecast(forecastxml)
   wf.write_forecast(fc_dict=forecastdict, outputdir=data['output_dir'])
-  wf.write_json(some_dict=forecastdict, 
+  wf.write_json(some_dict=forecastdict,
                 outputdir=data['output_dir'],
-                filename='forecast.json' 
+                filename='forecast.json'
                )
   wf.make_forecast_icons(forecastdict, outputdir=data['output_dir'])
 
-  # Satellite imagery: 
+  # Satellite imagery:
   current_image = Imagery(band='GEOCOLOR', data=data)
   current_image.get_current_image()
 
   # Moon phase and icon name for the moon phase:
   moon_icon = Moon_phase(data)
   moon_icon_name = moon_icon.get_moon_phase()
-  
+
+  # Area forecast discussion:
+  afd_dict = wf.get_afd(outputdir=data['output_dir'],
+                        url=data['defaults']['afd_url'],
+                        site=data['defaults']['nws_abbr'])
+
   return 0
 
 

@@ -12,13 +12,13 @@ import os
 import re
 import datetime
 import json
+from outage import Outage
 import svgwrite
 import requests
 import yaml
 import pytz
 from bs4 import BeautifulSoup
 requests.packages.urllib3.disable_warnings()
-
 
 def prettify_timestamp(timestamp):
   """
@@ -30,6 +30,51 @@ def prettify_timestamp(timestamp):
   timetext = datetime.datetime.strftime(posix_timestamp, '%Y-%m-%d, %H:%M:%S UTC')
   # print('Nicely formatted text: {0}'.format(timetext))
   return timetext
+
+
+def get_afd(outputdir, url, site='FWD', fmt='txt'):
+  """
+  Area forecast discussion. Fairly advanced information and not useful for
+  most dashboards, but nice as a drill-down option.
+  """
+  afdreturn = dict(short_term='', long_term='')
+  #divs = ['Area Forecast Discussion\nNational Weather Service',
+  #        '.SHORT TERM...', '.LONG TERM...', '.AVIATION...',
+  #        '.PRELIMINARY POINT TEMPS/POPS...', 'WATCHES/WARNINGS/ADVISORIES...']
+
+  endmarker = '&&'
+  url = 'https://forecast.weather.gov/product.php'
+ #  ?site={site}&issuedby={site}&product=AFD&format={fmt}&version=1&glossary=0'
+
+  args = {'site':site,
+          'issuedby': site,
+          'product': 'AFD',
+          'format': fmt,
+          'version': '1',
+          'glossary': '0'
+         }
+
+  try:
+    response = requests.get(url, params=args, verify=False, timeout=10)
+  except requests.exceptions.ReadTimeout as e:
+    print('Request timed out. Returning -None-')
+    return None
+
+  if response.status_code != 200:
+    print('Response from server was not OK: {0}'.format(response.status_code))
+    return None
+
+  afd = response.text
+  afdtext = re.sub(r'\n', ' ', afd)
+  afdtext = re.sub(endmarker, '\n', afdtext)
+  short_term = re.search(r'\.SHORT TERM\.\.\.(.*.?)', afdtext).groups(0)[0]
+  long_term = re.search(r'\.LONG TERM\.\.\.(.*.?)', afdtext).groups(0)[0]
+  afdreturn['short_term'] = short_term
+  afdreturn['long_term'] = long_term
+  write_json(afdreturn, outputdir=outputdir, filename='afd.json')
+
+  return afdreturn
+
 
 
 def get_current_conditions(url, station):
@@ -82,10 +127,11 @@ def quick_doctext(doctext, indicator, value, unit=''):
 def get_backup_obs(data, station_abbr):
   """
   Something strange is happening with the data for at least one location --
-  the raw message contains complete information, but the returned dictionary 
+  the raw message contains complete information, but the returned dictionary
   has missing data. Trying a backup XML feed from w1.weather.gov.
   """
-  retpage = requests.get(data['defaults']['backup_current_obs_url'].format(obs_loc = data['station']))
+  url = data['defaults']['backup_current_obs_url'].format(obs_loc=data['station'])
+  retpage = requests.get(url, verify=False, timeout=10)
   if retpage.status_code != 200:
     return False
 
@@ -113,12 +159,40 @@ def get_metar(base_url, station):
   Hit up https://w1.weather.gov/data/METAR/XXXX.1.txt
   and pull down the latest current conditions METAR data.
   """
-  metar = requests.get(os.path.join(base_url, station), 
+  metar = requests.get(os.path.join(base_url, station),
                        verify=False, timeout=10)
   if metar.status_code != 200:
-    print('Response from server was not OK: {0}'.format(response1.status_code))
+    print('Response from server was not OK: {0}'.format(metar.status_code))
     return None
   return metar.text
+
+
+def outage_check(data, filename='outage.txt'):
+  """
+  Quality assurance check on the weather service :-)
+  """
+
+  outage_checker = Outage(data)
+  outage_checker.check_outage()
+  outage_result = outage_checker.parse_outage()
+  outfilepath = os.path.join(data['output_dir'], filename)
+  if outage_result is None:
+    print('No outages detected. Proceeding.')
+    try:
+      os.unlink(outfilepath)
+    except OSError:
+      print('file does not exist: {0}'.format(outfilepath))
+
+  else:
+    print('There is outage text: {0}'.format(outage_result))
+    try:
+      cur = open(outfilepath, 'w')
+      cur.write(outage_result)
+      cur.close()
+    except OSError as e:
+      print('OSError-- {0}: {1}'.format(outfilepath, e))
+
+  return outage_result
 
 
 def merge_good_observations(backup_dict, current_conditions):
@@ -136,8 +210,8 @@ def merge_good_observations(backup_dict, current_conditions):
              'relativeHumidity': ['relative_humidity', None],
              'windDirection': ['wind_degrees', None],
              'windSpeed': ['wind_kt', 'kt']
-             }
-  
+            }
+
   try:
     ccp = current_conditions['properties']
   except:
@@ -169,7 +243,7 @@ def merge_good_observations(backup_dict, current_conditions):
                 ccp[key]['value'] = backup_dict[alt_key[0]] * 100
               if ccp[key]['unitCode'] == 'unit:inHg':
                 ccp[key]['value'] = backup_dict[alt_key[0]] * (1000 / 29.53)
-              
+
             if alt_key[1] == 'kt':
               if ccp[key]['unitCode'] == 'unit:m_s-1':
                 ccp[key]['value'] = backup_dict[alt_key[0]] * 0.514444
@@ -179,7 +253,7 @@ def merge_good_observations(backup_dict, current_conditions):
       except Exception as e:
         print('Something barfed: {0}'.format(e))
         continue
-            
+
   return current_conditions
 
 
@@ -263,7 +337,7 @@ def format_current_conditions(cur, cardinal_directions=True):
     wind_gust_value = (float(wind_gust_value) / 1000.0) * 3600.0
     wind_gust_unit = 'km / hr'
   else:
-    pass  
+    pass
   ccdict[key1] = [wind_gust_value, wind_gust_unit, 'Wind Gusts']
 
   for entry in ordered:
@@ -287,10 +361,11 @@ def write_json(some_dict, outputdir='/tmp', filename='unknown.json'):
       return False
 
 
-def beaufort_scale(forecast_dict = ''):
+def beaufort_scale(forecast_dict=''):
   """
-  
+  Pull in the Beaufort scale information, if needed.
   """
+
   b_url = 'https://www.weather.gov/mfl/beaufort'
   pagerequest = requests.get(b_url)
   if pagerequest.status_code != 200:
@@ -301,15 +376,15 @@ def beaufort_scale(forecast_dict = ''):
   tablerows = btable.find_all('tr')
   dataset = []
   for i in tablerows:
-      row = []
-      cells = i.find_all('td')
-      for j in cells:
-        if re.search(r'\d{1,}-\d{1,}', j.text):
-          vals = j.text.split('-')
-          row.extend(vals)
-        else:
-          row.append(re.sub('\s{2,}', ' ', j.text))
-      dataset.append(row)
+    row = []
+    cells = i.find_all('td')
+    for j in cells:
+      if re.search(r'\d{1,}-\d{1,}', j.text):
+        vals = j.text.split('-')
+        row.extend(vals)
+      else:
+        row.append(re.sub(r'\s{2,}', ' ', j.text))
+    dataset.append(row)
 
   return dataset
 
