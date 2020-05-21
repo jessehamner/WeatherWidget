@@ -133,7 +133,7 @@ def main():
   # Area forecast discussion:
   afd_dict = wf.get_afd(outputdir=data['output_dir'],
                         url=data['defaults']['afd_url'],
-                        site=data['defaults']['nws_abbr'])
+                        site=data['nws_abbr'])
 
   return 0
 
