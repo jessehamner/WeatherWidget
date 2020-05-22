@@ -114,7 +114,7 @@ def main():
                                 lat=data['lat'],
                                 fmt=None,
                                 url=data['defaults']['forecast_url'])
-  forecastdict = wf.parse_forecast(forecastxml)
+  forecastdict = wf.parse_forecast(forecastxml, defaults['icon_match'])
   wf.write_forecast(fc_dict=forecastdict, outputdir=data['output_dir'])
   wf.write_json(some_dict=forecastdict,
                 outputdir=data['output_dir'],

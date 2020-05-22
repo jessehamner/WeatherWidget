@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg version="1.1" 
+     id="compass"
+     xmlns="http://www.w3.org/2000/svg" 
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     x="0px" y="0px"
+	 viewBox="0 0 40 40" 
+     style="enable-background:new 0 0 40 40;"
+     xml:ispace="preserve">
+  <style>
+    circle {
+      fill: white;
+      stroke: black;
+      stroke-width: 3px;
+    }
+    .rot1 {
+      transform-origin: center;
+      transform: rotate(0deg);
+      stroke: black;
+    }
+  </style>
+  <symbol id="whole-icon">
+    <g class="rot1">
+      <circle cx="20" cy="20" r="17" id="ring"/>
+      <path d="M20 7 L 27 30 L 20 26 L 13 30 L 20 7 z" id="arrow" />
+    </g>
+  </symbol>
+  <use xlink:href="#whole-icon"/>
+</svg>

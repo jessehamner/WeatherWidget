@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg version="1.1"
+     id="warning-icon"
+     xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     x="0px" y="0px"
+     viewBox="0 0 50 50"
+     style="enable-background:new 0 0 50 50;"
+     xml:ispace="preserve">
+     <style>
+       circle {
+         stroke: black;
+         stroke-width: 5px;
+       }
+       circle.alert {
+         fill: #aa1111;
+       }
+       circle.important{
+         fill: yellow;
+       }
+       text {
+         text-anchor: middle;
+       }
+       text.alert {
+         font: bold 36px sans-serif;
+         stroke: white;
+         fill: white;
+       }
+       text.important {
+         font: 37px serif;
+         stroke: black;
+         fill: black;
+       }
+     </style>
+     <g> 
+       <circle cx="25" cy="25" r="20" class="alert"/>
+       <text x="24" y="38" class="alert">!</text>
+     </g>
+</svg>

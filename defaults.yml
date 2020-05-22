@@ -1,4 +1,5 @@
 # YAML
+---
 
 goes_bands:
   - '01'
@@ -39,5 +40,33 @@ backup_current_obs_url: 'https://w1.weather.gov/xml/current_obs/{obs_loc}.xml'
 legend_file: 'Legend/N0R/{radar}_N0R_Legend_0.gif'
 afd_url: 'https://forecast.weather.gov/product.php'
 
+icon_match:
+    'wi-day-sunny.svg': ['sunny', 'clear', ]
+    'wi-day-cloudy.svg': ['cloudy']
+    'wi-day-thunderstorm.svg': ['Severe Tstms', 'T-storms', 'Tstorms', 'Chance Thunderstorms', 'Thunderstorms Likely']
+    'wi-thunderstorm.svg': ['Severe Thunderstorm Watch']
+    'wi-thunderstorm.svg': ['Severe Thunderstorm Warning']
+    'wi-storm-showers.svg': ['Showers', 'Storms and Showers']
+    'wi-rain.svg': ['rain', 'rainy', 'chance of a shower']
+    'wi-flood.svg': ['Flood Warning']
+    'wi-tornado.svg': ['Tornado Watch']
+    'wi-tornado.svg': ['Tornado Warning']
+    'wi-gale-warning.svg': ['Gale Warning', 'Wind Advisory', 'Small Craft Advisory']
+    'wi-small-craft-advisory': ['Wind Advisory', 'Small Craft Advisory']
+    'wi-hurricane.svg': ['Hurricane Watch']
+    'wi-hurricane.svg': ['Hurricane Warning']
+    'wi-snow-wind.svg': ['Winter Storm Watch']
+    'wi-snow-wind.svg': ['Winter Storm Warning', 'Blizzard']
+    'wi-snowflake-cold.svg': ['very cold', 'below freezing']
+    'wi-hot.svg': ['hot', 'Heat Advisory']
+    'wi-fire.svg': ['fire', 'burn ban', 'burn']
+    'wi-smoke.svg': ['smoke']
+    'wi-fog.svg': ['fog', 'foggy', 'haze']
+    'wi-day-sprinkle.svg': ['drizzle', 'sprinkle', 'mist', 'misty']
+    'wi-strong-wind.svg': ['windy', 'strong winds', 'blustery', 'straight-line winds', 'winds in excess of']
+    'wi-na.svg': ['None', 'N/A', 'NA']
+
+  
 
 
+...

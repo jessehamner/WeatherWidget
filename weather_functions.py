@@ -493,7 +493,7 @@ def get_forecast(lon, lat, url, fmt=None, days=7):
   return retval
 
 
-def parse_forecast(rxml):
+def parse_forecast(rxml, icon_match):
   """
   Use bs4 to parse the XML returned from the AWS forecast request.
 
@@ -502,7 +502,7 @@ def parse_forecast(rxml):
   params = bs_object.find('parameters')
   temps = params.find_all('temperature')
   fc_dict = {'highs': [], 'lows': [], 'summaries':[], 'forecasts':[],
-             'precip': [], 'dates': [], 'pcp_pct': []}
+             'precip': [], 'dates': [], 'pcp_pct': [], 'icon':[]}
   fc_dict['dates'] = get_dates(bs_object)
   for temp in temps[0].find_all('value'):
     fc_dict['highs'].append(temp.string)
@@ -521,8 +521,25 @@ def parse_forecast(rxml):
       for value in forecast.find_all('value'):
         shortcast = '{0} {1}'.format(shortcast, concat_forecast(value))
       fc_dict['forecasts'].append(shortcast)
-
+      fc_dict['icon'].append(assign_icon(shortcast, icon_match))
   return fc_dict
+
+
+def assign_icon(description, icon_match):
+  """
+  Try to parse the language in forecasts for each to and match to an 
+  appropriate weather SVG icon.
+  """
+  
+  returnvalue = ''
+  for key, value in icon_match.iteritems():
+    for x in value:
+      print('Comparing "{0}" to "{1}"'.format(description.lower(), x.lower()))  
+      if description.lower().find(x.lower()) > 0:
+        returnvalue = key
+        return returnvalue 
+
+  return 'wi-na.svg'
 
 
 def concat_precip(bs_obj):
