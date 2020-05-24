@@ -32,7 +32,11 @@ class Imagery(object):
     self.fileslist = []
     self.today_v = self.data['today_vars']
     self.output_dir = self.data['output_dir']
-    self.goes_current = {'visible': '', 'preferred_band': ''}
+    self.goes_current = {'visible': '',
+                         'preferred_band': '',
+                         'image_html': '',
+                         'id': 'sat_image_thumb'
+                        }
 
 
   def get_current_image(self):
@@ -61,6 +65,7 @@ class Imagery(object):
       current_image = self.get_goes_image(timehhmm=current_timestamp)
       print('retrieved {0}'.format(current_image))
       self.goes_current['preferred_band'] = current_image
+      self.goes_current['image_html'] = '<img src="{0}" alt="Current GOES image">'.format(os.path.join(self.data['image_dir'], current_image))
       wf.write_json(self.goes_current, outputdir=self.output_dir, filename='goes.json')
       return True
     except Exception as e:

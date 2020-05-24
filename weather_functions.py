@@ -208,7 +208,7 @@ def merge_good_observations(backup_dict, current_conditions):
              'dewpoint': ['dewpoint_c', 'unit:degC'],
              'temperature': ['temp_c', 'unit:degC'],
              'relativeHumidity': ['relative_humidity', None],
-             'windDirection': ['wind_degrees', None],
+             'windDirection': ['wind_degrees', 'degree_(angle)'],
              'windSpeed': ['wind_kt', 'kt']
             }
 
@@ -235,8 +235,6 @@ def merge_good_observations(backup_dict, current_conditions):
             continue
           else:
           # Must otherwise convert units:
-            # convert wind speed in knots to wind speed in m/sec
-
             # convert pressure from millibars to Pa (mb x 100 = Pa):
             if alt_key[1] == 'mb':
               if ccp[key]['unitCode'] == 'unit:Pa':
@@ -244,6 +242,7 @@ def merge_good_observations(backup_dict, current_conditions):
               if ccp[key]['unitCode'] == 'unit:inHg':
                 ccp[key]['value'] = backup_dict[alt_key[0]] * (1000 / 29.53)
 
+            # convert wind speed in knots to wind speed in m/sec
             if alt_key[1] == 'kt':
               if ccp[key]['unitCode'] == 'unit:m_s-1':
                 ccp[key]['value'] = backup_dict[alt_key[0]] * 0.514444
@@ -298,6 +297,22 @@ def format_current_conditions(cur, cardinal_directions=True):
 
   ccdict[key1] = [pressure_value, pressure_unit, 'Pressure']
 
+  ccdict = wind_data(ccdict, cur, cardinal_directions=cardinal_directions)
+
+  for entry in ordered:
+    doctext = quick_doctext(doctext,
+                            '{0}:'.format(ccdict[entry][2]),
+                            ccdict[entry][0], ccdict[entry][1]
+                           )
+
+  return doctext, ccdict
+
+
+def wind_data(ccdict, cur, cardinal_directions):
+  """
+  Dealing with the wind data takes a lot of bespoke code. Breaking it out here.
+  """
+  # Wind direction:
   key1 = 'windDirection'
   try:
     wind_dir_unit = re.sub('unit:', '', cur[key1]['unitCode'])
@@ -308,6 +323,7 @@ def format_current_conditions(cur, cardinal_directions=True):
   if wind_dir_unit == 'degree_(angle)':
     wind_dir_unit = 'degree azimuth'
 
+  print('Current wind azimuth: {0}'.format(cur[key1]))
   wind_azimuth = sanity_check(cur[key1]['value'], 'int')
   if wind_azimuth == 'None':
     wind_dir_unit = ''
@@ -319,6 +335,7 @@ def format_current_conditions(cur, cardinal_directions=True):
   else:
     ccdict[key1] = [wind_azimuth, wind_dir_unit, 'Wind Direction']
 
+  # Wind speed, sustained:
   key1 = 'windSpeed'
   wind_speed_unit = re.sub('unit:', '', cur[key1]['unitCode'])
   wind_speed_value = sanity_check(cur[key1]['value'], 'int')
@@ -328,10 +345,11 @@ def format_current_conditions(cur, cardinal_directions=True):
 
   ccdict[key1] = [wind_speed_value, wind_speed_unit, 'Wind Speed']
 
+  # Wind gust speed, if any:
   key1 = 'windGust'
   wind_gust_unit = re.sub('unit:', '', cur[key1]['unitCode'])
   wind_gust_value = sanity_check(cur[key1]['value'], 'int')
-  if wind_gust_value == 'None' or wind_gust_value is None:
+  if not wind_gust_value or wind_gust_value == 'None': 
     wind_gust_unit = ''
   elif wind_gust_unit == 'm_s-1':
     wind_gust_value = (float(wind_gust_value) / 1000.0) * 3600.0
@@ -340,13 +358,7 @@ def format_current_conditions(cur, cardinal_directions=True):
     pass
   ccdict[key1] = [wind_gust_value, wind_gust_unit, 'Wind Gusts']
 
-  for entry in ordered:
-    doctext = quick_doctext(doctext,
-                            '{0}:'.format(ccdict[entry][2]),
-                            ccdict[entry][0], ccdict[entry][1]
-                           )
-
-  return doctext, ccdict
+  return ccdict  
 
 
 def write_json(some_dict, outputdir='/tmp', filename='unknown.json'):

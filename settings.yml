@@ -71,4 +71,5 @@ radar_layers:
   'rivers': 'Rivers/Short/{r_abbr}_Rivers_Short.gif'
   'topo': 'Topo/Short/{r_abbr}_Topo_Short.jpg'
 
+image_dir: 'static/photos'
 ...
