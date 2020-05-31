@@ -526,14 +526,24 @@ def parse_forecast(rxml, icon_match):
   weather = params.find('weather')
   weather_conditions = weather.find_all('weather-conditions')
   for forecast in weather_conditions:
+    # print('forecast: {0}'.format(forecast))
     summary = forecast['weather-summary']
+    print('forecast summary: {0}'.format(summary))
+
     fc_dict['summaries'].append(summary)
+    try:
+      fc_dict['icon'].append(assign_icon(summary, icon_match))
+      print('shortcast: {0}; icon: {1}'.format(summary, fc_dict['icon'][-1]))
+    except ValueError as exc:
+      print('Unable to find forecast summary or create icon: {0}'.format(exc))
+
     if forecast.find_all('value'):
       shortcast = ''
       for value in forecast.find_all('value'):
         shortcast = '{0} {1}'.format(shortcast, concat_forecast(value))
       fc_dict['forecasts'].append(shortcast)
       fc_dict['icon'].append(assign_icon(shortcast, icon_match))
+      print('shortcast: {0}; icon: {1}'.format(shortcast, fc_dict['icon'][-1]))
   return fc_dict
 
 
@@ -547,10 +557,13 @@ def assign_icon(description, icon_match):
   for key, value in icon_match.iteritems():
     for x in value:
       print('Comparing "{0}" to "{1}"'.format(description.lower(), x.lower()))  
-      if description.lower().find(x.lower()) > 0:
+      if description.lower() == x.lower():
         returnvalue = key
-        return returnvalue 
+        return returnvalue
+      else:
+        print(description.lower().find(x.lower()))
 
+  print('Unable to match "{0}"'.format(description.lower()))
   return 'wi-na.svg'
 
 
@@ -822,3 +835,44 @@ def load_yaml(directory, filename):
   except Exception as e:
     print('EXCEPTION -- unable to open yaml settings file: {0}'.format(e))
     return None
+
+
+def classify_alerts(adict):
+  """
+  Classify if a given item in the NWS alerts dictionary belongs in:
+   - Warnings
+   - Watches
+   - Alerts
+  """
+  classifications = {
+                     'alerts': ['special weather statement', 'heat advisory',
+                                'wind advisory', 'winter weather advisory', 
+                                'frost advisory', 'fire weather watch',
+                                'dense fog advisory', 'wind chill advisory'],
+                     'watches': ['winter storm watch', 'freeze watch',
+                                 'high wind watch', 'severe thunderstorm watch',
+                                 'tornado watch', 'hurricane watch', 'flood watch',
+                                 'flash flood watch', 'coastal flood watch',
+                                 'river flood watch', 'excessive heat watch',
+                                 'tropical storm watch'],
+                     'warnings': ['blizzard warning', 'freeze warning', 'tornado warning',
+                                  'severe thunderstorm warning', 'gale warning',
+                                  'red flag warning', 'high wind warning',
+                                  'hurricane force wind warning', 'flood warning',
+                                  'flash flood warning', 'river flood warning',
+                                  'coastal flood warning', 'tropical storm warning',
+                                  'hurricane warning', 'excessive heat warning',
+                                  'storm warning', 'special marine warning']
+                    }
+  for key, value in adict.iteritems():
+    if value['event_type'].lower() in classifications['alerts']:
+      adict[key]['is_alert'] = True
+      continue
+    if value['event_type'].lower() in classifications['watches']:
+      adict[key]['is_watch'] = True
+      continue
+    if value['event_type'].lower() in classifications['warnings']:
+      adict[key]['is_warning'] = True
+      continue
+
+  return adict

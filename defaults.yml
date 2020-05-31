@@ -41,8 +41,8 @@ legend_file: 'Legend/N0R/{radar}_N0R_Legend_0.gif'
 afd_url: 'https://forecast.weather.gov/product.php'
 
 icon_match:
-    'wi-day-sunny.svg': ['sunny', 'clear', ]
-    'wi-day-cloudy.svg': ['cloudy']
+    'wi-day-sunny.svg': ['Sunny', 'Clear', 'Mostly Sunny']
+    'wi-day-cloudy.svg': ['cloudy', 'mostly cloudy', 'increasing clouds']
     'wi-day-thunderstorm.svg': ['Severe Tstms', 'T-storms', 'Tstorms', 'Chance Thunderstorms', 'Thunderstorms Likely']
     'wi-thunderstorm.svg': ['Severe Thunderstorm Watch']
     'wi-thunderstorm.svg': ['Severe Thunderstorm Warning']
