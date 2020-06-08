@@ -18,6 +18,7 @@ import requests
 import yaml
 import pytz
 from bs4 import BeautifulSoup
+from time import sleep
 requests.packages.urllib3.disable_warnings()
 
 def prettify_timestamp(timestamp):
@@ -84,13 +85,24 @@ def get_current_conditions(url, station):
   """
   try:
     response = requests.get(url.format(station=station), verify=False, timeout=10)
+    if response.status_code == 200:
+      conditions = response.json()
+      return conditions
+  except requests.exceptions.ReadTimeout as e:
+    print('Request failed. Sleeping 10 seconds and re-trying.')
+
+  time.sleep(10)
+
+  try:
+    response = requests.get(url.format(station=station), verify=False, timeout=10)
+    if response.status_code == 200:
+      conditions = response.json()
+      return conditions
+
   except requests.exceptions.ReadTimeout as e:
     print('Request timed out. Returning -None-')
     return None
 
-  if response.status_code == 200:
-    conditions = response.json()
-    return conditions
   print('Response from server was not OK: {0}'.format(response.status_code))
   return None
 
@@ -419,7 +431,7 @@ def conditions_summary(conditions):
   return summary
 
 
-def wind_direction(azimuth):
+def wind_direction(azimuth, data):
   """
   Convert "wind coming from an azimuth" to cardinal directions
   """
@@ -429,25 +441,9 @@ def wind_direction(azimuth):
     print('Unable to convert azimuth to a numerical value. Returning None.')
     return None
 
-  plusminus = 11.25
-  azdir = {'0.0': 'N',
-           '22.5': 'NNE',
-           '45.0': 'NE',
-           '67.5': 'ENE',
-           '90.0': 'E',
-           '112.5': 'ESE',
-           '135.0': 'SE',
-           '157.5': 'SSE',
-           '180.0': 'S',
-           '202.5': 'SSW',
-           '225.0': 'SW',
-           '247.5': 'WSW',
-           '270.0': 'W',
-           '292.5': 'WNW',
-           '315.0': 'NW',
-           '337.5': 'NNW'}
+  plusminus = data['defaults']['plusminus'] # 11.25 degrees
 
-  for az_deg, val in azdir.iteritems():
+  for az_deg, val in data['defaults']['azdir'].iteritems():
     az_deg = float(az_deg)
     if (az_deg - plusminus < azimuth) and (az_deg + plusminus >= azimuth):
       return val
@@ -479,74 +475,6 @@ def get_hydrograph(abbr,
   return retval
 
 
-def get_forecast(lon, lat, url, fmt=None, days=7):
-  """
-  https://graphical.weather.gov/xml/sample_products/browser_interface/
-  ndfdBrowserClientByDay.php?lat=38.99&lon=-77.01&format=24+hourly&numDays=7
-
-  These URLs and APIs are subject to change. Refresh times should be no
-  more frequent than 1/hour.
-  Updates occur approximately 45 minutes after the hour, so re-checking
-  on the 0th minute of the hour would be appropriate.
-
-  The returned payload will be XML.
-
-  See also: https://www.weather.gov/documentation/services-web-api for
-  another API?
-
-  """
-  if not fmt or fmt is None:
-    fmt = ['24', 'hourly']
-  time_format = " ".join(fmt)
-  payload = {'lon': lon, 'lat': lat, 'format': time_format, 'numDays': days}
-
-  retval = requests.get(url=url, params=payload, verify=False, timeout=10)
-
-  return retval
-
-
-def parse_forecast(rxml, icon_match):
-  """
-  Use bs4 to parse the XML returned from the AWS forecast request.
-
-  """
-  bs_object = BeautifulSoup(rxml.text, 'xml')
-  params = bs_object.find('parameters')
-  temps = params.find_all('temperature')
-  fc_dict = {'highs': [], 'lows': [], 'summaries':[], 'forecasts':[],
-             'precip': [], 'dates': [], 'pcp_pct': [], 'icon':[]}
-  fc_dict['dates'] = get_dates(bs_object)
-  for temp in temps[0].find_all('value'):
-    fc_dict['highs'].append(temp.string)
-  for temp in temps[1].find_all('value'):
-    fc_dict['lows'].append(temp.string)
-
-  fc_dict['precip'] = concat_precip(params)
-  fc_dict['pcp_pct'] = order_precip(params)
-  weather = params.find('weather')
-  weather_conditions = weather.find_all('weather-conditions')
-  for forecast in weather_conditions:
-    # print('forecast: {0}'.format(forecast))
-    summary = forecast['weather-summary']
-    print('forecast summary: {0}'.format(summary))
-
-    fc_dict['summaries'].append(summary)
-    try:
-      fc_dict['icon'].append(assign_icon(summary, icon_match))
-      print('shortcast: {0}; icon: {1}'.format(summary, fc_dict['icon'][-1]))
-    except ValueError as exc:
-      print('Unable to find forecast summary or create icon: {0}'.format(exc))
-
-    if forecast.find_all('value'):
-      shortcast = ''
-      for value in forecast.find_all('value'):
-        shortcast = '{0} {1}'.format(shortcast, concat_forecast(value))
-      fc_dict['forecasts'].append(shortcast)
-      fc_dict['icon'].append(assign_icon(shortcast, icon_match))
-      print('shortcast: {0}; icon: {1}'.format(shortcast, fc_dict['icon'][-1]))
-  return fc_dict
-
-
 def assign_icon(description, icon_match):
   """
   Try to parse the language in forecasts for each to and match to an 
@@ -565,108 +493,6 @@ def assign_icon(description, icon_match):
 
   print('Unable to match "{0}"'.format(description.lower()))
   return 'wi-na.svg'
-
-
-def concat_precip(bs_obj):
-  """
-  Precip chances come in 12-hour increments. List them together by day.
-  """
-  rainlist = []
-  days = []
-  for rain in bs_obj.find('probability-of-precipitation').find_all('value'):
-    rainlist.append(rain.string)
-  for i in range(0, len(rainlist), 2):
-    try:
-      part1 = '{0:3d}%'.format(int(rainlist[i]))
-    except TypeError:
-      part1 = ' --'
-    try:
-      part2 = '{0:3d}%'.format(int(rainlist[i+1]))
-    except TypeError:
-      part2 = ' --'
-
-    if part1 == '  0%' and part2 == '  0%':
-      thestring = '  0% '
-    else:
-      thestring = '{0} /{1}'.format(part1, part2)
-
-    days.append(thestring)
-
-  return days
-
-
-def order_precip(bs_obj):
-  """
-  Put tuples of precipitation chances into a list and return it.
-  """
-  rainlist = []
-  thelist = []
-  for rain in bs_obj.find('probability-of-precipitation').find_all('value'):
-    rainlist.append(rain.string)
-
-  for i in range(0, len(rainlist), 2):
-    try:
-      part1 = '{0:3d}'.format(int(rainlist[i]))
-    except TypeError:
-      part1 = ' 0'
-    try:
-      part2 = '{0:3d}'.format(int(rainlist[i+1]))
-    except TypeError:
-      part2 = ' 0'
-    thelist.append((part1, part2))
-
-  return thelist
-
-
-def concat_forecast(bs_obj):
-  """
-  Cycle through tag attrs, filter out the "none" values, and string
-  together the results into a quasi-sentence forecast.
-  """
-
-  result = []
-  for i in bs_obj.attrs.keys():
-    if bs_obj[i] == "none":
-      continue
-    result.append(bs_obj[i].strip())
-
-  return " ".join(result)
-
-
-def write_forecast(fc_dict, outputdir, filename='forecast.txt'):
-  """
-  Write out a nicely formatted text file using the retrieved and summarized
-  forecast information.
-  """
-  with open(os.path.join(outputdir, filename), 'w') as forecast:
-    forecast.write('  Forecast:\n')
-    forecast.write('-'*50 + '\n')
-    for i in range(0, 6):
-      line = '{0}  {1:3d}  {2:3d}  {3:10s}  {4}'.format(fc_dict['dates'][i],
-                                                        int(fc_dict['highs'][i]),
-                                                        int(fc_dict['lows'][i]),
-                                                        fc_dict['precip'][i],
-                                                        fc_dict['summaries'][i],
-                                                       )
-      forecast.write('{0}\n'.format(line))
-
-    return True
-
-
-def get_dates(bs_object, hourly='24hourly'):
-  """
-  Get the day of the week from the next seven days' forecast.
-  """
-  dates = []
-  time_layouts = bs_object.find('data').find_all('time-layout')
-  for i in time_layouts:
-    if i['summarization'] == hourly:
-      for j in i.find_all('start-valid-time'):
-        reftime = re.sub(r'-0\d{1}:00$', ' CST', j.string)
-        t_time = datetime.datetime.strptime(reftime, "%Y-%m-%dT%H:%M:%S %Z")
-        dates.append(datetime.datetime.strftime(t_time, "%a"))
-
-  return dates
 
 
 def get_today_vars(timezone='America/Chicago'):
@@ -876,3 +702,4 @@ def classify_alerts(adict):
       continue
 
   return adict
+
