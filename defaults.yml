@@ -39,11 +39,12 @@ goes_img: '{year}{doy}{timeHHMM}_GOES{sat}-ABI-{sector}-{band}-{resolution}.jpg'
 backup_current_obs_url: 'https://w1.weather.gov/xml/current_obs/{obs_loc}.xml'
 legend_file: 'Legend/N0R/{radar}_N0R_Legend_0.gif'
 afd_url: 'https://forecast.weather.gov/product.php'
+forecast_days: 4
 
 icon_match:
     'wi-day-sunny.svg': ['Sunny', 'Clear', 'Mostly Sunny']
-    'wi-day-cloudy.svg': ['cloudy', 'mostly cloudy', 'increasing clouds']
-    'wi-day-thunderstorm.svg': ['Severe Tstms', 'T-storms', 'Tstorms', 'Chance Thunderstorms', 'Thunderstorms Likely']
+    'wi-day-cloudy.svg': ['cloudy', 'mostly cloudy', 'increasing clouds', 'partly sunny']
+    'wi-day-thunderstorm.svg': ['Severe Tstms', 'T-storms', 'Tstorms', 'Chance Thunderstorms', 'Thunderstorms Likely', 'Isolated Thunderstorms']
     'wi-thunderstorm.svg': ['Severe Thunderstorm Watch']
     'wi-thunderstorm.svg': ['Severe Thunderstorm Warning']
     'wi-storm-showers.svg': ['Showers', 'Storms and Showers']
@@ -67,6 +68,43 @@ icon_match:
     'wi-na.svg': ['None', 'N/A', 'NA']
 
   
+circle_css:
+    'fill': 'white'
+    'stroke': 'black'
+    'stroke-width': '3px'
 
+rot1_css:
+    'transform-origin': 'center'
+    'stroke': 'black'
+    'transform': 'rotate(0deg)'
+
+wind_compass:
+    'viewbox': '0 0 40 40'
+    'height': 100
+    'width': 100
+    'id_label': 'wind_direction'
+    'raw_svg_header': '<?xml version="1.0" encoding="utf-8"?>'
+    'raw_svg_footer': '<use xlink:href="#whole-icon"/></svg>'
+    'symbol': '<symbol id="whole-icon"> <g class="rot1"> <circle cx="20" cy="20" r="17" id="ring"/>'
+
+azdir:
+    '0.0': 'N'
+    '22.5': 'NNE'
+    '45.0': 'NE',
+    '67.5': 'ENE',
+    '90.0': 'E',
+    '112.5': 'ESE',
+    '135.0': 'SE',
+    '157.5': 'SSE',
+    '180.0': 'S',
+    '202.5': 'SSW',
+    '225.0': 'SW',
+    '247.5': 'WSW',
+    '270.0': 'W',
+    '292.5': 'WNW',
+    '315.0': 'NW',
+    '337.5': 'NNW'
+    
+plusminus: 11.25
 
 ...
