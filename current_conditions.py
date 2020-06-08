@@ -20,6 +20,7 @@ from moon_phase import Moon_phase
 from alerts import Alerts
 from radar import Radar
 from obs import WeatherDict, Observation
+from forecast import Forecast
 
 # Pull settings in from two YAML files:
 SETTINGS_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -110,12 +111,11 @@ def main():
     print('Cannot get hydrograph for specified gauge ({0}).'.format(data['river_gauge_abbr']))
     return 1
 
-  forecastxml = wf.get_forecast(lon=data['lon'],
-                                lat=data['lat'],
-                                fmt=None,
-                                url=data['defaults']['forecast_url'])
-  forecastdict = wf.parse_forecast(forecastxml, defaults['icon_match'])
-  wf.write_forecast(fc_dict=forecastdict, outputdir=data['output_dir'])
+  forecast_obj = Forecast(data=data)
+  forecast_obj.get_forecast()
+  forecastdict = forecast_obj.parse_forecast()
+  forecast.write_forecast(outputdir=data['output_dir'])
+
   wf.write_json(some_dict=forecastdict,
                 outputdir=data['output_dir'],
                 filename='forecast.json'
