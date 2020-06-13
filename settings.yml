@@ -72,4 +72,16 @@ radar_layers:
   'topo': 'Topo/Short/{r_abbr}_Topo_Short.jpg'
 
 image_dir: 'static/photos'
+
+units:
+  # Distance: miles, kilometers
+  'distance': 'miles'
+  # Temperature: F, C
+  'temperature': 'F'
+  # Velocity: kph, mph, m_s-1
+  'velocity': 'mph'
+  # Pressure: inHg, Pa, mb, kPa
+  'pressure': 'kPa'
+  # Percent (TODO) either as 0-100 or 0-1
+  'percent': '%'
 ...
