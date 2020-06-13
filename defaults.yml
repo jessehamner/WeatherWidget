@@ -90,21 +90,78 @@ wind_compass:
 azdir:
     '0.0': 'N'
     '22.5': 'NNE'
-    '45.0': 'NE',
-    '67.5': 'ENE',
-    '90.0': 'E',
-    '112.5': 'ESE',
-    '135.0': 'SE',
-    '157.5': 'SSE',
-    '180.0': 'S',
-    '202.5': 'SSW',
-    '225.0': 'SW',
-    '247.5': 'WSW',
-    '270.0': 'W',
-    '292.5': 'WNW',
-    '315.0': 'NW',
+    '45.0': 'NE'
+    '67.5': 'ENE'
+    '90.0': 'E'
+    '112.5': 'ESE'
+    '135.0': 'SE'
+    '157.5': 'SSE'
+    '180.0': 'S'
+    '202.5': 'SSW'
+    '225.0': 'SW'
+    '247.5': 'WSW'
+    '270.0': 'W'
+    '292.5': 'WNW'
+    '315.0': 'NW'
     '337.5': 'NNW'
     
 plusminus: 11.25
+
+warnings:
+ - 'Blizzard Warning'
+ - 'Ice Storm Warning'
+ - 'High Wind Warning'
+ - 'Severe Thunderstorm Warning'
+ - 'Tornado Warning'
+ - 'Extreme Wind Warning'
+ - 'Gale Warning'
+ - 'Hurricane Force Wind Warning'
+ - 'Flash Flood Warning'
+ - 'Flood Warning'
+ - 'River Flood Warning'
+ - 'Tropical Storm Warning'
+ - 'Hurricane Warning'
+ - 'Coastal Flood Warning'
+ - 'Special Weather Statement'
+
+watches:
+ - 'Winter Storm Watch'
+ - 'Winter Weather Advisory'
+ - 'Freeze Watch'
+ - 'Freeze Warning'
+ - 'Frost Advisory'
+ - 'Wind Chill Advisory'
+ - 'Wind Chill Warning'
+ - 'Red Flag Warning'
+ - 'Dense Fog Advisory'
+ - 'High Wind Watch'
+ - 'Wind Advisory'
+ - 'Severe Thunderstorm Watch'
+ - 'Tornado Watch'
+ - 'Small Craft Advisory'
+ - 'Storm Warning'
+ - 'Special Marine Warning'
+ - 'Coastal Flood Watch'
+ - 'Flash Flood Watch'
+ - 'Flood Watch'
+ - 'River Flood Watch'
+ - 'Excessive Heat Watch'
+ - 'Excessive Heat Warning'
+ - 'Heat Advisory'
+ - 'Tropical Storm Watch'
+ - 'Hurricane Watch'
+
+alerts:
+ - 'special weather statement'
+ - 'heat advisory'
+ - 'winter weather advisory'
+ - 'wind advisory'
+ - 'frost advisory'
+ - 'fire weather watch'  
+ - 'dense fog advisory'
+ - 'wind chill advisory'
+ - 'air quality alert'
+
+missing: -9999.99
 
 ...
