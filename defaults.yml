@@ -42,7 +42,7 @@ afd_url: 'https://forecast.weather.gov/product.php'
 forecast_days: 4
 
 icon_match:
-    'wi-day-sunny.svg': ['Sunny', 'Clear', 'Mostly Sunny']
+    'wi-day-sunny.svg': ['Sunny', 'Clear', 'Mostly Sunny', 'Becoming Sunny']
     'wi-day-cloudy.svg': ['cloudy', 'mostly cloudy', 'increasing clouds', 'partly sunny']
     'wi-day-thunderstorm.svg': ['Severe Tstms', 'T-storms', 'Tstorms', 'Chance Thunderstorms', 'Thunderstorms Likely', 'Isolated Thunderstorms']
     'wi-thunderstorm.svg': ['Severe Thunderstorm Watch']
@@ -162,6 +162,33 @@ alerts:
  - 'wind chill advisory'
  - 'air quality alert'
 
-missing: -9999.99
+missing: -9999.9
+
+beaufort_fields:
+ - 'scale'
+ - 'low_mph'
+ - 'high_mph'
+ - 'low_knots'
+ - 'high_knots'
+ - 'desc'
+ - 'spec_sea'
+ - 'spec_land'
+
+beaufort_scale:
+  '0': ['0', '1', '0', '1', 'Calm', 'Sea like a mirror.', 'Calm; smoke rises vertically.']
+  '1': ['1', '3', '1', '3', 'Light Air', 'Ripples with the appearance of scales are formed, but without foam crests.', 'Direction of wind shown by smoke drift, but not by wind vanes.']
+  '2': ['4', '7', '4', '6', 'Light Breeze', 'Small wavelets, still short, but more pronounced. Crests have a glassy appearance and do not break.', 'Wind felt on face; leaves rustle; ordinary vanes moved by wind.']
+  '3': ['8', '12', '7', '10', 'Gentle Breeze', 'Large wavelets. Crests begin to break. Foam of glassy appearance. Perhaps scattered white horses.', 'Leaves and small twigs in constant motion; wind extends light flag.']
+  '4': ['13', '18', '11', '16', 'Moderate Breeze', 'Small waves, becoming larger; fairly frequent white horses.', 'Raises dust and loose paper; small branches are moved.']
+  '5': ['19', '24', '17', '21', 'Fresh Breeze', 'Moderate waves, taking a more pronounced long form; many white horses are formed.', 'Small trees in leaf begin to sway; crested wavelets form on inland waters.']
+  '6': ['25', '31', '22', '27', 'Strong Breeze', 'Large waves begin to form; the white foam crests are more extensive everywhere.', 'Large branches in motion; whistling heard in telegraph wires; umbrellas used with difficulty.']
+  '7': ['32', '38', '28', '33', 'Near Gale', 'Sea heaps up and white foam from breaking waves begins to be blown in streaks along the direction of the wind.', 'Whole trees in motion; inconvenience felt when walking against the wind.']
+  '8': ['39', '46', '34', '40', 'Gale', 'Moderately high waves of greater length; edges of crests begin to break into spindrift. The foam is blown in well-marked streaks along the direction of the wind.', 'Breaks twigs off trees; generally impedes progress.']
+  '9': ['47', '54', '41', '47', 'Severe Gale', 'High waves. Dense streaks of foam along the direction of the wind. Crests of waves begin to topple, tumble and roll over. Spray may affect visibility', 'Slight structural damage occurs (chimney-pots and slates removed)']
+  '10': ['55', '63', '48', '55', 'Storm', 'Very high waves with long overhanging crests. The resulting foam, in great patches, is blown in dense white streaks along the direction of the wind. On the whole the surface of the sea takes on a white appearance. The tumbling of the sea becomes heavy and shock-like. Visibility affected.', 'Seldom experienced inland; trees uprooted; considerable structural damage occurs.']
+  '11': ['64', '72', '56', '63', 'Violent Storm', 'Exceptionally high waves (small and medium-size ships might be for a time lost to view behind the waves). The sea is completely covered with long white patches of foam lying along the direction of the wind. Everywhere the edges of the wave crests are blown into froth. Visibility affected.', 'Very rarely experienced; accompanied by wide-spread damage.']
+  '12': ['72', '83', '64', '71', 'Hurricane', 'The air is filled with foam and spray. Sea completely white with driving spray; visibility very seriously affected.', 'see Saffir-Simpson Hurricane Scale']
+
+
 
 ...
