@@ -5,39 +5,37 @@ obs.py: download and consolidate current conditions data for a given location.
 from __future__ import print_function
 
 import os
+import sys
 import re
 import logging
-import requests
 from bs4 import BeautifulSoup
 import weather_functions as wf
-
 
 class WeatherDict(object):
   """
   A dictionary capable of holding relevant data for current weather
   observations.
   """
-  
+
   def __init__(self, data=''):
     self.data = data
-    self.obs = dict(temperature=dict(units='', value='', label=''),
-                    dewpoint=dict(units='', value='', label=''),        
-                    humidity=dict(units='%', value='', label=''),
-                    pressure=dict(units='', value='', label=''),
+    self.obs = dict(temperature=dict(units='', value='', label='Temperature'),
+                    dewpoint=dict(units='', value='', label='Dewpoint'),
+                    humidity=dict(units='%', value='', label='Rel. Humidity'),
+                    pressure=dict(units='', value='', label='Pressure'),
                     weather='',
-                    wind=dict(units='', value='', label=''),
-                    wind_direction=dict(units='', value='', label=''),
-                    gusts=dict(units='', value='', label=''),
-                    windchill=dict(units='', value='', label=''),
-                    heatindex=dict(units='', value='', label=''),
-                    location=dict(lon=0.0, lat=0.0, zip=00000, state='', label=''),
+                    wind=dict(units='', value='', label='Wind Speed'),
+                    wind_direction=dict(units='degrees', value='', label='Wind Direction'),
+                    gusts=dict(units='', value='', label='Gusts'),
+                    windchill=dict(units='', value='', label='Wind Chill'),
+                    heatindex=dict(units='', value='', label='Heat Index'),
+                    location=dict(lon=0.0, lat=0.0, zip=00000, state='', label='Location'),
                     wind_cardinal='',
                     textdescription='',
                     metar='',
                     timestamp='',
                     beaufort='',
                    )
-
 
 
 class Observation(object):
@@ -48,14 +46,14 @@ class Observation(object):
 
   def __init__(self, data=''):
     self.data = data
-    self.defaults = data['defaults']
-    self.problem = False
-    self.observations = WeatherData(data=data) 
-    self.backup_obs = WeatherData(data=data)
-    self.conditions = ''
+    self.backup_obs = WeatherDict(data=data)
     self.metar = ''
-    self.con1 = WeatherDict()
-    self.con2 = WeatherDict()
+    self.con1 = WeatherDict(data=data)
+    self.con2 = WeatherDict(data=data)
+    self.matchup = ['pressure', 'dewpoint', 'temperature', 'humidity',
+                    'wind_direction', 'heatindex', 'windchill', 'wind',
+                    'gusts']
+    self.textonly = ['weather', 'metar', 'textdescription', 'timestamp']
 
 
   def get_current_conditions(self):
@@ -63,69 +61,75 @@ class Observation(object):
     Take the JSON object from the NWS station and produce a reduced set of
     information for display.
     """
-    try:
-      response = requests.get(self.defaults['cur_url'].format(station=self.data['station']),
-                              verify=False, timeout=10)
-    except requests.exceptions.ReadTimeout as e:
-      print('Request timed out. Returning -None-')
-      self.problem = True
-      return None
+    other = {'textDescription': 'textdescription',
+             'rawMessage': 'metar',
+             'timestamp': 'timestamp',
+             'presentWeather': 'weather'
+            }
 
-    if response.status_code == 200:
-      try:
-        self.observations = response.json()
-        return self.observations
-      except Exception as e:
-        self.problem = True
-        print('Unable to decode JSON: {0}'.format(e))
-        return None
-    print('Response from server was not OK: {0}'.format(response.status_code))
-    self.problem = True
-    return None
+    useful = {'heatIndex': ['heatindex', 'temperature'],
+              'relativeHumidity': ['humidity', 'percent'],
+              'temperature': ['temperature', 'temperature'],
+              'dewpoint': ['dewpoint', 'temperature'],
+              'barometricPressure': ['pressure', 'pressure'],
+              'windChill': ['windchill', 'temperature'],
+              'windSpeed': ['wind', 'velocity'],
+              'windGust': ['gusts', 'velocity']
+             }
+    cur_url = self.data['defaults']['cur_url'].format(station=self.data['station'])
+    returned_json = wf.make_request(url=cur_url)
+    if 'properties' in returned_json.keys():
+      tempdict = returned_json['properties']
+      con1 = self.con1.obs
+      for key, val in useful.iteritems():
+        from_unit = re.sub(r'unit:\s*', '', tempdict[key]['unitCode'])
+        from_unit = re.sub(r'^deg', '', from_unit)
+        from_value = wf.sanity_check(tempdict[key]['value'])
+
+        if from_value is None or from_value == self.data['defaults']['missing']:
+          con1[val[0]]['value'] = 'None'
+          con1[val[0]]['units'] = ''
+        else:
+          print('Converting {0} to {1} for {2} data'.format(from_unit,
+                                                            self.data['units'][val[1]],
+                                                            val[0])
+               )
+          sys.stdout.write('{0} Input: {1}'.format(val[0], from_value))
+          con1[val[0]]['value'] = wf.convert_units(value=from_value,
+                                                   from_unit=from_unit,
+                                                   to_unit=self.data['units'][val[1]])
+          sys.stdout.write('\tOutput: {0}'.format(con1[val[0]]['value']))
+          con1[val[0]]['units'] = self.data['units'][val[1]]
+          sys.stdout.write('\tUnits: {0}\n'.format(self.data['units'][val[1]]))
+
+      for key, val in other.iteritems():
+        con1[val] = tempdict[key]
+
+      con1['wind_direction'] = {'value': tempdict['windDirection']['value'],
+                                'units': 'degrees',
+                                'label': 'Wind Direction'
+                               }
+      wdstring = self.wind_direction(con1['wind_direction']['value'])
+      con1['wind_cardinal'] = 'Out of the {0}'.format(wdstring)
+      con1['beaufort'] = wf.beaufort_scale(self.data,
+                                           speed=con1['wind']['value'],
+                                           units=con1['wind']['units'])
+    return con1
 
 
-  def sanity_check(self, value, numtype='float'):
-    """
-    Check for an actual value in the argument. If it has one, return a
-    formatted text string.
-    If it has no value, return a text string of "None".
-    """
-    # print('Input value: {0}'.format(value))
-    if numtype != 'float':
-      try:
-        return str('{0:.0f}'.format(float(value)))
-      except TypeError:
-        return 'None'
-  
-    try:
-      return str('{0:6.2f}'.format(float(value)))
-    except TypeError:
-      return 'None'
-
-
-  def quick_doctext(self, doctext, indicator, value, unit=''):
-    """
-    Convenience function to standardize the output format of a string.
-    """
-    unitspace = ' '
-    if unit == '%':
-      unitspace = ''
-    return str('{0}\n{1} {2}{3}{4}'.format(doctext, indicator, value, unitspace, unit))
-
-
-  def get_backup_obs(self):
+  def get_backup_obs(self, use_json=False):
     """
     Something strange is happening with the data for at least one location --
     the raw message contains complete information, but the returned dictionary
     has missing data. Trying a backup XML feed from w1.weather.gov.
     """
-    url = self.data['defaults']['backup_current_obs_url'].format(obs_loc = self.data['station'])
-    retpage = requests.get(url, verify=False, timeout=10)
-    if retpage.status_code != 200:
-      return False
+    url = self.data['defaults']['backup_current_obs_url'].format(obs_loc=self.data['station'])
+    retpage = wf.make_request(url=url, use_json=use_json)
+    if not retpage:
+      self.backup_obs.obs = None
+      return None
+    bsbackup = BeautifulSoup(retpage, 'lxml').find('current_observation')
 
-    bsbackup = BeautifulSoup(retpage.text, 'lxml').find('current_observation')
-  
     fields = ['location', 'station_id', 'latitude', 'longitude', 'observation_time',
               'observation_time_rfc822', 'weather', 'temperature_string', 'temp_f',
               'temp_c', 'relative_humidity', 'wind_string', 'wind_dir', 'wind_degrees',
@@ -133,60 +137,78 @@ class Observation(object):
               'dewpoint_string', 'dewpoint_f', 'dewpoint_c', 'visibility_mi',
               'two_day_history_url', 'ob_url']
 
-    for f in fields:
+    for field in fields:
       try:
-        self.backup_obs[f] = bsbackup.find(f).text
-      except:
-        self.backup_obs[f] = ''
+        self.backup_obs.obs[field] = bsbackup.find(field).text
+      except Exception as exc:
+        print('Exception: {0}'.format(exc))
+        self.backup_obs.obs[field] = ''
 
-    self.con2['location'] = {'lon': self.backup_obs['longitude'],
-                             'lat': self.backup_obs['latitude'],
-                             'label': self.backup_obs['location']
-                            }
+    con2 = self.con2.obs
+    units = self.data['units']
+    con2['location'] = {'lon': self.backup_obs.obs['longitude'],
+                        'lat': self.backup_obs.obs['latitude'],
+                        'label': self.backup_obs.obs['location']
+                       }
 
-    self.con2['temperature'] = {'value': self.backup_obs['temp_c'], 
-                                'units': 'C',
-                                'label': 'Temperature'
-                               }
+    converted_temp1 = wf.convert_units(value=self.backup_obs.obs['temp_c'],
+                                       from_unit='C',
+                                       to_unit=units['temperature'])
+    con2['temperature'] = {'value': converted_temp1,
+                           'units': units['temperature'],
+                           'label': 'Temperature'
+                          }
 
-    self.con2['dewpoint'] = {'value': self.backup_obs['dewpoint_c'], 
-                             'units': 'C',
-                             'label': 'Dewpoint'
-                            }
+    converted_temp2 = wf.convert_units(value=self.backup_obs.obs['dewpoint_c'],
+                                       from_unit='C',
+                                       to_unit=units['temperature'])
+    con2['dewpoint'] = {'value': converted_temp2,
+                        'units': units['temperature'],
+                        'label': 'Dewpoint'
+                       }
 
-    self.con2['humidity'] = {'value': self.backup_obs['relative_humidity'], 
-                             'units': '%',
-                             'label': 'Rel. Humidity'
-                            }
+    con2['humidity'] = {'value': self.backup_obs.obs['relative_humidity'],
+                        'units': '%',
+                        'label': 'Rel. Humidity'
+                       }
 
-    self.con2['pressure'] = {'value': self.backup_obs['pressure_mb'], 
-                             'units': 'mb',
-                             'label': 'Pressure'
-                            }
+    converted_p1 = wf.convert_units(value=self.backup_obs.obs['pressure_mb'],
+                                    from_unit='mb',
+                                    to_unit=units['pressure'])
+    con2['pressure'] = {'value': converted_p1,
+                        'units': units['pressure'],
+                        'label': 'Pressure'
+                       }
 
-    self.con2['weather'] = self.backup_obs['weather']
+    con2['weather'] = self.backup_obs.obs['weather']
 
-    self.con2['wind'] = {'value': self.backup_obs['wind_kt'], 
-                         'units': 'kt',
-                         'label': 'Wind Speed'
-                        }
+    converted_windspeed = wf.convert_units(value=self.backup_obs.obs['wind_kt'],
+                                           from_unit='kt',
+                                           to_unit=units['velocity'])
+    con2['wind'] = {'value': converted_windspeed,
+                    'units': units['velocity'],
+                    'label': 'Wind Speed'
+                   }
 
-    self.con2['wind_direction'] = {'value': self.backup_obs['wind_degrees'], 
-                                   'units': 'degrees',
-                                   'label': 'Wind Direction'
-                                  }
-
-    self.con2['wind_cardinal'] = 'Out of the {0}'.format(wind_direction(self.backup_obs['wind_degrees']))
-
-    self.con2['timestamp'] = self.backup_obs['observation_time_rfc822']
-
-    self.con2['windchill'] = {'value': self.wind_chill(self.backup_obs['temp_f'],
-                                                       self.backup_obs['wind_mph']),
-                              'units': 'F',
-                              'label': 'Wind Chill'
+    con2['beaufort'] = wf.beaufort_scale(self.data,
+                                         speed=con2['wind']['value'],
+                                         units=con2['wind']['units']
+                                        )
+    con2['wind_direction'] = {'value': self.backup_obs.obs['wind_degrees'],
+                              'units': 'degrees',
+                              'label': 'Wind Direction'
                              }
 
-    return self.backup_obs 
+    wind_dir = self.wind_direction(self.backup_obs.obs['wind_degrees'])
+    con2['wind_cardinal'] = 'Out of the {0}'.format(wind_dir)
+    con2['timestamp'] = self.backup_obs.obs['observation_time_rfc822']
+    con2['windchill'] = {'value': self.wind_chill(self.backup_obs.obs['temp_f'],
+                                                  self.backup_obs.obs['wind_mph']),
+                         'units': 'F',
+                         'label': 'Wind Chill'
+                        }
+
+    return self.con2.obs
 
 
   def wind_chill(self, temp_f, wind_mph):
@@ -194,40 +216,38 @@ class Observation(object):
     Really should use MetPy for this.
 
     The NWS wind chill formula uses deg-F and mph.
-    It has four components: 
-    
+    It has four components:
+
     35.74
     + (0.6215 * temp_f)
     - (35.75 * (wind_mph ** 0.16))
     + (0.4275 * temp_f * (wind_mph ** 0.16))
 
     """
-    try: 
-      windchill = 35.74 + (0.6215 * temp_f)
-    except:
+    if temp_f == self.data['defaults']['missing']:
       return None
-      
     try:
-      windchill = windchill - (35.75 * (wind_mph ** 0.16)) + (0.4275 * temp_f * (wind_mph ** 0.16))
-      return windchill
-    except:
+      wind_ch = 35.74 + (0.6215 * temp_f)
+    except Exception as exc:
       return None
-    
+
+    try:
+      wind_ch = wind_ch - (35.75 * (wind_mph ** 0.16)) + (0.4275 * temp_f * (wind_mph ** 0.16))
+      return wind_ch
+    except Exception as exc:
+      print('Exception! {0}'.format(exc))
+      return None
 
 
-
-  def get_metar(self, base_url, station):
+  def get_metar(self):
     """
     Hit up https://w1.weather.gov/data/METAR/XXXX.1.txt
     and pull down the latest current conditions METAR data.
     """
-    metar = requests.get(os.path.join(base_url, station),
-                         verify=False, timeout=10)
-    if metar.status_code != 200:
-      print('Response from server was not OK: {0}'.format(response1.status_code))
-      return None
-    self.metar = metar.text
-    return metar.text
+    combined_url = os.path.join(self.data['defaults']['metar_url'],
+                                '{0}.1.txt'.format(self.data['station'])
+                               )
+    return wf.make_request(url=combined_url, use_json=False, payload=False)
 
 
   def merge_good_observations(self):
@@ -239,205 +259,77 @@ class Observation(object):
     fill in remaining gaps.
     """
 
-    matchup = {'barometricPressure': ['pressure_mb', 'mb'],
-               'dewpoint': ['dewpoint_c', 'unit:degC'],
-               'temperature': ['temp_c', 'unit:degC'],
-               'relativeHumidity': ['relative_humidity', None],
-               'windDirection': ['wind_degrees', None],
-               'windSpeed': ['wind_kt', 'kt']
-               }
-
-    ccp = self.observations['properties']
-    for key, alt_key in matchup.iteritems():
-      print('key: {0}\tvalue: {1}'.format(key, alt_key))
+    ccp = self.con1.obs
+    con2 = self.con2.obs
+    for key in self.matchup:
+      print('key: {0}'.format(key))
       print('existing value: {0}'.format(ccp[key]['value']))
       if (ccp[key]['value'] is None) or (ccp[key]['value'] == 'None'):
-        print('Testing {0}'.format(self.backup_obs[alt_key[0]]))
+        print('Testing {0}'.format(con2[key]['value']))
         try:
-          if self.backup_obs[alt_key[0]]:
-            if alt_key[1] is None:
-              ccp[key] = self.backup_obs[alt_key[0]]
-            # If units are equivalent, ignore and move on:
-            elif alt_key[1] == ccp[key]['unitCode']:
-              ccp[key] = self.backup_obs[alt_key[0]]
-              continue
-            else:
-            # Must otherwise convert units:
-              # convert wind speed in knots to wind speed in m/sec
+          if con2[key]['value']:
+            ccp[key] = con2[key]
 
-              # convert pressure from millibars to Pa (mb x 100 = Pa):
-              if alt_key[1] == 'mb':
-                if ccp[key]['unitCode'] == 'unit:Pa':
-                  ccp[key]['value'] = self.backup_obs[alt_key[0]] * 100
-                if ccp[key]['unitCode'] == 'unit:inHg':
-                  ccp[key]['value'] = self.backup_obs[alt_key[0]] * (1000 / 29.53)
-
-              if alt_key[1] == 'kt':
-                if ccp[key]['unitCode'] == 'unit:m_s-1':
-                  ccp[key]['value'] = self.backup_obs[alt_key[0]] * 0.514444
-                if ccp[key]['unitCode'] == 'unit:mph':
-                  ccp[key]['value'] = self.backup_obs[alt_key[0]] * 1.15078
-
-        except Exception as e:
-          print('Something barfed: {0}'.format(e))
+        except Exception as exc:
+          print('Something barfed: {0}'.format(exc))
           continue
 
-    return self.observations
+    for key in self.textonly:
+      if ccp[key] is None or ccp[key] == 'None':
+        if con2[key]:
+          ccp[key] = con2[key]
+
+    return self.con1.obs
 
 
-  def format_current_conditions(self, cur, cardinal_directions=True):
+  def format_current_conditions(self):
     """
     Take in the dictionary of current conditions and return a text document.
     """
-    ccdict = {}
-    temp_unit = 'F'
-    if cur['temperature']['unitCode'] == 'unit:degC':
-      temp_unit = 'C'
+    cur = self.con1.obs
+    ordered = ['temperature', 'dewpoint', 'humidity', 'heatindex', 'windchill',
+               'pressure', 'wind_direction', 'wind', 'gusts']
 
-    ordered = ['temperature', 'dewpoint', 'relativeHumidity', 'heatIndex',
-               'barometricPressure', 'windDirection', 'windSpeed', 'windGust']
-
-    doctext = str('Conditions as of {}'.format(prettify_timestamp(cur['timestamp'])))
-    key1 = 'temperature'
-    ccdict[key1] = [sanity_check(cur[key1]['value'], 'int'), temp_unit, 'Temperature']
-    self.con1['temperature'] = ccdict[key1]
-
-    key1 = 'dewpoint'
-    ccdict[key1] = [sanity_check(cur[key1]['value'], 'int'), temp_unit, 'Dewpoint']
-    self.con1['dewpoint'] = ccdict[key1]
-
-    key1 = 'relativeHumidity'
-    ccdict[key1] = [sanity_check(cur[key1]['value'], 'int'), '%', 'Rel. Humidity']
-    self.con1['humidity'] = ccdict[key1]
-
-    key1 = 'heatIndex'
-    heat_index_value = sanity_check(cur[key1]['value'], 'int')
-    if heat_index_value == "None":
-      ccdict[key1] = [heat_index_value, '', 'Heat Index']
-    else:
-      ccdict[key1] = [heat_index_value, temp_unit, 'Heat Index']
-    self.con1['heatindex'] = ccdict[key1]
-
-
-    key1 = 'barometricPressure'
-    pressure_unit = re.sub('unit:', '', cur[key1]['unitCode'])
-    pressure_value = sanity_check(cur[key1]['value'])
-    print('Pressure value: {0}'.format(pressure_value))
- 
-    if pressure_unit == 'Pa' and pressure_value != "None":
-      pressure_value = float(pressure_value) / 1000.0
-      pressure_unit = 'kPa'
- 
-    ccdict[key1] = [pressure_value, pressure_unit, 'Pressure']
-    self.con1['pressure'] = ccdict[key1]
- 
-    key1 = 'windDirection'
-    wind_dir_unit = re.sub('unit:', '', cur[key1]['unitCode'])
-    if wind_dir_unit == 'degree_(angle)':
-      wind_dir_unit = 'degree azimuth'
- 
-    wind_azimuth = sanity_check(cur[key1]['value'], 'int')
-    if wind_azimuth == 'None':
-      wind_dir_unit = ''
-    if cardinal_directions and wind_azimuth:
-      if wind_azimuth == 'None':
-        ccdict[key1] = ['No data', '', 'Wind Direction']
-      else:
-        ccdict[key1] = ['out of the {}'.format(wind_direction(wind_azimuth)), '', 'Wind Direction']
-    else:
-      ccdict[key1] = [wind_azimuth, wind_dir_unit, 'Wind Direction']
- 
-    self.con1['wind_direction'] = ccdict[key1]
-    self.con1['wind_cardinal'] = 'Out of the {0}'.format(wind_direction(wind_azimuth))
-    
-
-    key1 = 'windSpeed'
-    wind_speed_unit = re.sub('unit:', '', cur[key1]['unitCode'])
-    wind_speed_value = sanity_check(cur[key1]['value'], 'int')
-    if wind_speed_unit == 'm_s-1' and wind_speed_value != 'None':
-      wind_speed_value = (float(wind_speed_value) / 1000.0) * 3600.0
-      wind_speed_unit = 'km / hr'
- 
-    ccdict[key1] = [wind_speed_value, wind_speed_unit, 'Wind Speed']
-    self.con1['wind'] = ccdict[key1]
- 
-    key1 = 'windGust'
-    wind_gust_unit = re.sub('unit:', '', cur[key1]['unitCode'])
-    wind_gust_value = sanity_check(cur[key1]['value'], 'int')
-    if wind_gust_value == 'None' or wind_gust_value is None:
-      wind_gust_unit = ''
-    elif wind_gust_unit == 'm_s-1':
-      wind_gust_value = (float(wind_gust_value) / 1000.0) * 3600.0
-      wind_gust_unit = 'km / hr'
-    else:
-      wind_gust_unit = '--'
-      if not wind_gust_value:
-        wind_gust_value = 'No Data'
-
-    ccdict[key1] = [wind_gust_value, wind_gust_unit, 'Wind Gusts']
-    self.con1['gusts'] = ccdict[key1]
- 
+    doctext = str('Conditions as of {0}'.format(wf.prettify_timestamp(cur['timestamp'])))
     for entry in ordered:
-      doctext = quick_doctext(doctext,
-                              '{0}:'.format(ccdict[entry][2]),
-                              ccdict[entry][0], ccdict[entry][1]
-                             )
- 
-    return doctext, ccdict
+      print('Checking key: {0}'.format(entry))
+      print('Stored dict: {0}'.format(cur[entry]))
+      doctext = wf.quick_doctext(doctext,
+                                 '{0}:'.format(cur[entry]['label']),
+                                 cur[entry]['value'], cur[entry]['units']
+                                )
+
+    doctext = wf.quick_doctext(doctext,
+                               '{0}:'.format('Weather'),
+                               cur['weather'],
+                               ''
+                              )
+    doctext = wf.quick_doctext(doctext,
+                               '{0}:'.format('Wind'),
+                               cur['wind_cardinal'],
+                               ''
+                              )
+    return doctext, cur
 
 
-  def write_json(some_dict, outputdir='/tmp', filename='unknown.json'):
-    """
-    Write an individual dictionary to a JSON output file.
-    """
-    with open(os.path.join(outputdir, filename), 'w') as out_obj:
-      try:
-        out_obj.write(json.dumps(some_dict))
-        return True
-      except:
-        return False
-
-
-  def beaufort_scale(forecast_dict = ''):
-    """
-  
-    """
-    b_url = 'https://www.weather.gov/mfl/beaufort'
-    pagerequest = requests.get(b_url)
-    if pagerequest.status_code != 200:
-      print('Response from server was not OK: {0}'.format(pagerequest.status_code))
-      return None
-    beaufort_page = BeautifulSoup(requests.get(b_url).text, 'html')
-    btable = beaufort_page.find('table')
-    tablerows = btable.find_all('tr')
-    dataset = []
-    for i in tablerows:
-        row = []
-        cells = i.find_all('td')
-        for j in cells:
-          if re.search(r'\d{1,}-\d{1,}', j.text):
-            vals = j.text.split('-')
-            row.extend(vals)
-          else:
-            row.append(re.sub('\s{2,}', ' ', j.text))
-        dataset.append(row)
- 
-    return dataset
-
-
-  def conditions_summary(conditions):
+  def conditions_summary(self):
     """
     Return a dict of consumer-level observations, say, for display on a
     smart mirror or tablet.
     """
-    keys = ['timestamp', 'dewpoint', 'barometricPressure', 'windDirection',
-            'windSpeed', 'windGust', 'precipitationLastHour', 'temperature',
-            'relativeHumidity', 'heatIndex']
+    keys = ['dewpoint', 'pressure', 'wind_direction',
+            'wind', 'gusts', 'temperature',
+            'humidity', 'heatindex']
     summary = dict()
+    summary['timestamp'] = self.con1.obs['timestamp']
     for key in keys:
+      trump = self.con1.obs[key]  # because it's a tiny dict, that's why
       try:
-        summary[key] = conditions['properties'][key]
-      except:
+        summary[key] = '{0}: {1} {2}'.format(trump['label'],
+                                             trump['value'],
+                                             trump['units'])
+      except Exception as exc:
+        print('Exception: {0}'.format(exc))
         summary[key] = 'none'
 
     return summary
@@ -445,37 +337,22 @@ class Observation(object):
 
   def wind_direction(self, azimuth):
     """
-    Convert "wind coming from an azimuth" to cardinal directions
+    Converts 'wind coming from an azimuth' to cardinal directions.
     """
     try:
       azimuth = float(azimuth)
-    except:
-      print('Unable to convert azimuth to a numerical value. Returning None.')
+    except Exception as exc:
+      print('Cannot convert azimuth to numeric. Returning None. ({0})'.format(exc))
       return None
 
-    plusminus = 11.25
-    azdir = {'0.0': 'N',
-             '22.5': 'NNE',
-             '45.0': 'NE',
-             '67.5': 'ENE',
-             '90.0': 'E',
-             '112.5': 'ESE',
-             '135.0': 'SE',
-             '157.5': 'SSE',
-             '180.0': 'S',
-             '202.5': 'SSW',
-             '225.0': 'SW',
-             '247.5': 'WSW',
-             '270.0': 'W',
-             '292.5': 'WNW',
-             '315.0': 'NW',
-             '337.5': 'NNW'}
+    plusminus = self.data['defaults']['plusminus']  # 11.25
+    azdir = self.data['defaults']['azdir']
 
     for az_deg, val in azdir.iteritems():
       az_deg = float(az_deg)
       if (az_deg - plusminus < azimuth) and (az_deg + plusminus >= azimuth):
         return val
-  
+
     return 'None'
 
 
@@ -483,11 +360,11 @@ class Observation(object):
     """
     Write out a simple HTML table of the current conditions.
     """
-  
+
     try:
       with open(os.path.join(self.data['output_dir'], tablefile), 'w') as htmlout:
         htmlout.write('<table>\n')
-        for key, value in self.observations['properties'].iteritems():
+        for key, value in self.con1.obs.iteritems():
           print('{0}: {1}'.format(key, value))
           htmlout.write('<tr><td>{0}</td><td>{1} {2}</td></tr>\n'.format(value[2],
                                                                          value[0],
@@ -495,23 +372,6 @@ class Observation(object):
                        )
         htmlout.write('</table>\n')
       return True
-    except KeyError as e:
-      print('Exception: {0}'.format(e))
+    except KeyError as exc:
+      print('Exception: {0}'.format(exc))
       return False
-
-
-  def wind_direction_icon(self, sourcepath='static/icons/weather-icons-master/svg'):
-    """
-    Generate the html for the appropriately rotated SVG file for 
-    the wind direction.
-    """
-
-    filename = 'wi-wind-deg.svg'
-    fp = os.path.join(sourcepath, filename)
-    
-
-    img_html = '''<img src="{0}" width="40" height="40" fill="white"
-        transform="rotate(100,20,20)" />'''.format(fp)
-    print(img_html)
-
-    return img_html
