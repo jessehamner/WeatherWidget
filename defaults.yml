@@ -43,8 +43,11 @@ forecast_days: 4
 metar_url: 'https://w1.weather.gov/data/METAR/'
 
 icon_match:
-    'wi-day-sunny.svg': ['Sunny', 'Clear', 'Mostly Sunny', 'Becoming Sunny']
-    'wi-day-cloudy.svg': ['cloudy', 'mostly cloudy', 'increasing clouds', 'partly sunny']
+    'wi-day-sunny.svg': ['sunny', 'clear', 'mostly sunny', 'becoming sunny']
+    'wi-day-cloudy.svg': ['cloudy', 'mostly cloudy', 'partly sunny']
+    'wi-cloud-down.svg': ['decreasing clouds']
+    'wi-cloud-up.svg': ['increasing clouds']
+    'wi-day-sprinkle.svg': ['Slight Chance Thunderstorms']
     'wi-day-thunderstorm.svg': ['Severe Tstms', 'T-storms', 'Tstorms', 'Chance Thunderstorms', 'Thunderstorms Likely', 'Isolated Thunderstorms']
     'wi-thunderstorm.svg': ['Severe Thunderstorm Watch']
     'wi-thunderstorm.svg': ['Severe Thunderstorm Warning']
