@@ -40,6 +40,7 @@ backup_current_obs_url: 'https://w1.weather.gov/xml/current_obs/{obs_loc}.xml'
 legend_file: 'Legend/N0R/{radar}_N0R_Legend_0.gif'
 afd_url: 'https://forecast.weather.gov/product.php'
 forecast_days: 4
+metar_url: 'https://w1.weather.gov/data/METAR/'
 
 icon_match:
     'wi-day-sunny.svg': ['Sunny', 'Clear', 'Mostly Sunny', 'Becoming Sunny']
@@ -61,7 +62,7 @@ icon_match:
     'wi-snowflake-cold.svg': ['very cold', 'below freezing']
     'wi-hot.svg': ['hot', 'Heat Advisory']
     'wi-fire.svg': ['fire', 'burn ban', 'burn']
-    'wi-smoke.svg': ['smoke']
+    'wi-smoke.svg': ['smoke', 'air quality alert']
     'wi-fog.svg': ['fog', 'foggy', 'haze']
     'wi-day-sprinkle.svg': ['drizzle', 'sprinkle', 'mist', 'misty']
     'wi-strong-wind.svg': ['windy', 'strong winds', 'blustery', 'straight-line winds', 'winds in excess of']
