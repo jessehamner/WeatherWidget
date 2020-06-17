@@ -10,7 +10,9 @@ import logging
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
-from weather_functions import write_json, assign_icon
+from weather_functions import write_json
+from weathersvg import assign_icon
+
 
 class DayForecast(object):
   """
