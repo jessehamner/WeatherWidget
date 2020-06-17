@@ -21,6 +21,7 @@ from alerts import Alerts
 from radar import Radar
 from obs import WeatherDict, Observation
 from forecast import Forecast
+import weathersvg as wsvg
 
 # Pull settings in from two YAML files:
 SETTINGS_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -59,20 +60,15 @@ def main():
   wf.outage_check(data)
 
   # Get and digest current conditions
-  conditions = wf.get_current_conditions(defaults['cur_url'], data['station'])
-  if conditions:
-    print('Current conditions, nearly raw: {0}'.format(conditions))
-  else:
-    print('Unable to retrieve current conditions from primary location. Using backup data source.')
-  backup_obs = wf.get_backup_obs(data, station_abbr=data['station'])
-  print('Backup conditions, nearly raw: {0}'.format(backup_obs))
+  right_now = Observation(data)
+  right_now.get_current_conditions()
+  right_now.get_backup_obs(use_json=False)  
+  right_now.merge_good_observations() 
+  print('Merged current conditions: {0}'.format(right_now.con1.obs))
+  sum_con = right_now.conditions_summary()
 
-  conditions = wf.merge_good_observations(backup_obs, conditions)
-
-  sum_con = wf.conditions_summary(conditions)
-
-  if conditions and sum_con:
-    text_conditions, nice_con = wf.format_current_conditions(sum_con)
+  if right_now.con1.obs and sum_con:
+    text_conditions, nice_con = right_now.format_current_conditions()
     print('Current conditions from primary source: {0}'.format(nice_con))
     html_table = wf.htable_current_conditions(nice_con,
                                               'current_conditions.html',
@@ -85,9 +81,7 @@ def main():
     print('ERROR: something went wrong getting the current conditions. Halting.')
     return 1
 
-  with open(os.path.join(data['output_dir'], 'current_conditions.txt'), 'w') as curr_con:
-    curr_con.write(text_conditions)
-  curr_con.close()
+  wf.write_text(os.path.join(data['output_dir'], 'current_conditions.txt'), text_conditions)
 
 # Get radar image:
   current_radar = Radar(data)
@@ -105,22 +99,24 @@ def main():
   if wf.get_hydrograph(abbr=data['river_gauge_abbr'],
                        hydro_url=data['defaults']['water_url'],
                        outputdir=data['output_dir']).ok:
-    print('Got hydrograph for {0} station, gauge "{1}".'.format(data['radar_station'],
-                                                                data['river_gauge_abbr']))
+    print('Requesting hydrograph for station {0}, gauge "{1}".'.format(data['radar_station'],
+                                                                       data['river_gauge_abbr']))
   else:
-    print('Cannot get hydrograph for specified gauge ({0}).'.format(data['river_gauge_abbr']))
+    print('...Failed.')
     return 1
 
   forecast_obj = Forecast(data=data)
   forecast_obj.get_forecast()
   forecastdict = forecast_obj.parse_forecast()
-  forecast.write_forecast(outputdir=data['output_dir'])
-
+  forecast_obj.write_forecast(outputdir=data['output_dir'])
+  # Area forecast discussion:
+  afd_dict = forecast_obj.get_afd()
+  
   wf.write_json(some_dict=forecastdict,
                 outputdir=data['output_dir'],
                 filename='forecast.json'
                )
-  wf.make_forecast_icons(forecastdict, outputdir=data['output_dir'])
+  wsvg.make_forecast_icons(forecastdict, outputdir=data['output_dir'])
 
   # Satellite imagery:
   current_image = Imagery(band='GEOCOLOR', data=data)
@@ -129,11 +125,6 @@ def main():
   # Moon phase and icon name for the moon phase:
   moon_icon = Moon_phase(data)
   moon_icon_name = moon_icon.get_moon_phase()
-
-  # Area forecast discussion:
-  afd_dict = wf.get_afd(outputdir=data['output_dir'],
-                        url=data['defaults']['afd_url'],
-                        site=data['nws_abbr'])
 
   return 0
 
