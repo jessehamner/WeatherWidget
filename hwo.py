@@ -10,7 +10,6 @@ import re
 import logging
 import requests
 from bs4 import BeautifulSoup
-import weather_functions as wf
 
 
 class HWO(object):
@@ -24,12 +23,13 @@ class HWO(object):
     """
     self.data = data
     self.outputfile = outputfile
-    self.hwodict=dict(spotter=[],
-                      dayone=[],
-                      daystwothroughseven=[],
-                      today_text='',
-                      has_spotter=False
-                      )
+    self.hwo_text = ''
+    self.hwodict = dict(spotter=[],
+                        dayone=[],
+                        daystwothroughseven=[],
+                        today_text='',
+                        has_spotter=False
+                       )
 
 
   def get_hwo(self):
@@ -101,7 +101,7 @@ class HWO(object):
       second_info = re.sub(first_sentence, '', daytwo)
       second_info = re.sub(r'^\s*\.*', '', second_info)
       self.hwodict['daystwothroughseven'] = [first_sentence.strip(),
-                                                   second_info.strip()]
+                                             second_info.strip()]
 
     spotter = re.search(r'(\.SPOTTER INFORMATION STATEMENT.*?)(\s*\$\$)',
                         bodytext, re.DOTALL)
@@ -111,13 +111,12 @@ class HWO(object):
                         '', spottext)
       spottext = re.sub('\n', ' ', spottext)
       self.hwodict['spotter'] = ['Spotter Information Statement',
-                                       spottext.strip()]
+                                 spottext.strip()]
 
     if spottext:
       self.hwodict['today_text'] = '{0}{1}\n\n'.format(self.hwodict['dayone'][1],
-                                                             spottext)
+                                                       spottext)
       if re.search('Spotter activation is not expected at this time', spottext):
         return True
       self.hwodict['has_spotter'] = True
     return True
-
