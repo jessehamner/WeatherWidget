@@ -1,0 +1,12 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Vim
+.swp
+
+# Mac OS X
+Icon*
+.DS_Store
+.dropbox
