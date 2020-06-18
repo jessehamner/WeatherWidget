@@ -76,9 +76,9 @@ def high_low_svg(high, low, filename, outputdir='/tmp/'):
   high_coords = (2, 15)
   low_coords = (2, 36)
   dimensions = (40, 40)
-  style1 = '''.{stylename} {openbrace} font: bold {fontsize}px sans-serif;
-  fill:{fontcolor}; stroke:#000000; stroke-width:1px; stroke-linecap:butt;
-  stroke-linejoin:miter; stroke-opacity:0.7; {closebrace}'''
+  style1 = '.{stylename} {openbrace} font: bold {fontsize}px sans-serif;\
+  fill:{fontcolor}; stroke:#000000; stroke-width:1px; stroke-linecap:butt;\
+  stroke-linejoin:miter; stroke-opacity:0.7; {closebrace}'
 
   dwg = svgwrite.Drawing(os.path.join(outputdir, filename), size=dimensions)
   dwg_styles = svgwrite.container.Style(content='.background {fill: #f0f0f0f0; stroke: #f0f0f0f0;}')
