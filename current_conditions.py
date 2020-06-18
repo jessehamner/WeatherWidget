@@ -16,7 +16,7 @@ import sys
 import os
 import weather_functions as wf
 from imagery import Imagery
-from moon_phase import Moon_phase
+from moon_phase import MoonPhase
 from alerts import Alerts
 from radar import Radar
 from obs import WeatherDict, Observation
@@ -62,8 +62,8 @@ def main():
   # Get and digest current conditions
   right_now = Observation(data)
   right_now.get_current_conditions()
-  right_now.get_backup_obs(use_json=False)  
-  right_now.merge_good_observations() 
+  right_now.get_backup_obs(use_json=False)
+  right_now.merge_good_observations()
   print('Merged current conditions: {0}'.format(right_now.con1.obs))
   sum_con = right_now.conditions_summary()
 
@@ -111,7 +111,11 @@ def main():
   forecast_obj.write_forecast(outputdir=data['output_dir'])
   # Area forecast discussion:
   afd_dict = forecast_obj.get_afd()
-  
+  wf.write_json(some_dict=afd_dict,
+                outputdir=data['output_dir'],
+                filename='afd.json'
+               )
+
   wf.write_json(some_dict=forecastdict,
                 outputdir=data['output_dir'],
                 filename='forecast.json'
@@ -123,7 +127,7 @@ def main():
   current_image.get_current_image()
 
   # Moon phase and icon name for the moon phase:
-  moon_icon = Moon_phase(data)
+  moon_icon = MoonPhase(data)
   moon_icon_name = moon_icon.get_moon_phase()
 
   return 0
