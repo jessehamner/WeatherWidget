@@ -130,16 +130,18 @@ def assign_icon(description, icon_match):
   """
 
   returnvalue = ''
+  description = description.strip()
+  description = description.lower()
+  description = re.sub(r'\s+', ' ', description)
+  print('Finding icon for "{0}"'.format(description))
   for key, value in icon_match.iteritems():
     for val in value:
-      print('Comparing "{0}" to "{1}"'.format(description.lower(), val.lower()))
-      if description.lower() == val.lower():
+      if description == val.lower().strip():
         returnvalue = key
+        print('Matched "{0}"'.format(val.lower()))
         return returnvalue
-      else:
-        print(description.lower().find(val.lower()))
 
-  print('Unable to match "{0}"'.format(description.lower()))
+  print('Unable to match "{0}"'.format(description))
   return 'wi-na.svg'
 
 
