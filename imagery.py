@@ -57,9 +57,9 @@ class Imagery(object):
       timestamps = self.get_goes_timestamps()
       current_timestamp = timestamps[-1]
       print('Current timestamp: {0}'.format(current_timestamp))
-    except Exception as e:
-        print('Exception when evaluating current timestamps, {0}:\n{1}'.format(timestamps, e))
-        return False
+    except Exception as exc:
+      print('Exception when evaluating current timestamps, {0}:\n{1}'.format(timestamps, exc))
+      return False
 
     try:
       current_image = self.get_goes_image(timehhmm=current_timestamp)
@@ -68,8 +68,8 @@ class Imagery(object):
       self.goes_current['image_html'] = '<img src="{0}" alt="Current GOES image">'.format(os.path.join(self.data['image_dir'], current_image))
       wf.write_json(self.goes_current, outputdir=self.output_dir, filename='goes.json')
       return True
-    except Exception as e:
-      print('Exception: {0}'.format(e))
+    except Exception as exc:
+      print('Exception: {0}'.format(exc))
       return False
 
 
@@ -138,11 +138,12 @@ class Imagery(object):
     yeardoy = '{0}{1}'.format(self.today_v['year'], self.today_v['doy'])
     # print('year-doy combination tag: {0}'.format(yeardoy))
     for filename in self.fileslist:
-      try:  
+      try:
         protostamp = re.search(yeardoy + r'(\d{4})', filename).groups(1)[0]
         if protostamp:
           band_timestamps.append(protostamp)
-      except:
+      except Exception as exc:
+        print('Exception: {0}'.format(exc))
         continue
 
     return band_timestamps
@@ -193,8 +194,8 @@ class Imagery(object):
     removeme = [a for a in thefiles if a not in keepme]
     try:
       [os.remove(b) for b in [os.path.join(self.output_dir, a) for a in removeme]]
-    except Exception as e:
-      print('Exception! {0}'.format(e))
+    except Exception as exc:
+      print('Exception! {0}'.format(exc))
       return False
 
     return True
