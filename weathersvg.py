@@ -3,6 +3,8 @@ weathersvg.py: a series of utilities to produce small SVG outputs
 of useful weather data.
 """
 
+from __future__ import print_function
+
 import os
 import re
 import svgwrite
@@ -123,75 +125,80 @@ def make_forecast_icons(fc_dict, outputdir='/tmp/'):
 
 def assign_icon(description, icon_match):
   """
-  Try to parse the language in forecasts for each to and match to an 
+  Try to parse the language in forecasts for each to and match to an
   appropriate weather SVG icon.
   """
-  
+
   returnvalue = ''
   for key, value in icon_match.iteritems():
-    for x in value:
-      print('Comparing "{0}" to "{1}"'.format(description.lower(), x.lower()))  
-      if description.lower() == x.lower():
+    for val in value:
+      print('Comparing "{0}" to "{1}"'.format(description.lower(), val.lower()))
+      if description.lower() == val.lower():
         returnvalue = key
         return returnvalue
       else:
-        print(description.lower().find(x.lower()))
+        print(description.lower().find(val.lower()))
 
   print('Unable to match "{0}"'.format(description.lower()))
   return 'wi-na.svg'
 
 
-  def css_string(self, css_dict):
-    """
-    Convenience function to format a dict into a css_friendly string.
-    """
-    stylestring = '{'
-    for key, value in css_dict.iteritems():
-      stylestring = '{0}{1}:{2}; '.format(stylestring, key, value)
-    stylestring = stylestring + '}'
-    return stylestring
+def css_string(css_dict):
+  """
+  Convenience function to format a dict into a css_friendly string.
+  """
+  stylestring = '{'
+  for key, value in css_dict.iteritems():
+    stylestring = '{0}{1}:{2}; '.format(stylestring, key, value)
+  stylestring = stylestring + '}'
+  return stylestring
 
 
-  def draw_compass_svg(self, degrees, data):
-    """
-    Drawing raw SVG via text and python.
-    """
-    wcd = data['defaults']['wind_compass']
-    # raw_svg_header = '<?xml version="1.0" encoding="utf-8"?>'
+def draw_compass_svg(degrees, data):
+  """
+  Drawing raw SVG via text and python.
+  """
+  wcd = data['defaults']['wind_compass']
+  # raw_svg_header = '<?xml version="1.0" encoding="utf-8"?>'
 
-    svg_invocation = '<svg height="{height}" width="{width}" version="1.1" id="{id_label}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="{viewbox}" style="enable-background:new {viewbox};" xml:ispace="preserve">'
+  svg_invocation = '''<svg height="{height}" width="{width}" version="1.1" id="{id_label}"
+  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+  x="0px" y="0px" viewBox="{viewbox}"
+  style="enable-background:new {viewbox};" xml:ispace="preserve">'''
 
-    circle_css = data['defaults']['circle_css']
-    rot1_css = data['defaults']['rot1_css']
-    rot1_css['transform'] = 'rotate({0}deg)'.format(degrees)
+  circle_css = data['defaults']['circle_css']
+  rot1_css = data['defaults']['rot1_css']
+  rot1_css['transform'] = 'rotate({0}deg)'.format(degrees)
 
-    svg_css = '<style>circle {0} .rot1 {1}</style>'.format(self.css_string(circle_css),
-                                                           self.css_string(rot1_css))
+  svg_css = '<style>circle {0} .rot1 {1}</style>'.format(css_string(circle_css),
+                                                         css_string(rot1_css))
 
-    # symbol = '<symbol id="whole-icon"> <g class="rot1"> <circle cx="20" cy="20" r="17" id="ring"/> <path d="M20 7 L 27 30 L 20 26 L 13 30 L 20 7 z" id="arrow" /></g> </symbol>'
-    # raw_svg_footer = '<use xlink:href="#whole-icon"/></svg>'
+  # symbol = '<symbol id="whole-icon"> <g class="rot1">
+  # <circle cx="20" cy="20" r="17" id="ring"/>
+  # <path d="M20 7 L 27 30 L 20 26 L 13 30 L 20 7 z" id="arrow" /></g> </symbol>'
+  # raw_svg_footer = '<use xlink:href="#whole-icon"/></svg>'
 
-    svg_string = '{0}{1}{2}{3}'.format(svg_invocation.format(height=wcd['height'],
-                                                             width=wcd['width'],
-                                                             id_label=wcd['id_label'],
-                                                             viewbox=wcd['viewbox']),
-                                       svg_css, wcd['symbol'], wcd['raw_svg_footer'])
+  svg_string = '{0}{1}{2}{3}'.format(svg_invocation.format(height=wcd['height'],
+                                                           width=wcd['width'],
+                                                           id_label=wcd['id_label'],
+                                                           viewbox=wcd['viewbox']),
+                                     svg_css, wcd['symbol'], wcd['raw_svg_footer'])
     # print(svg_string)
-    return svg_string
+  return svg_string
 
 
-  def wind_direction_icon(self, sourcepath='static/icons/weather-icons-master/svg'):
-    """
-    Generate the html for the appropriately rotated SVG file for
-    the wind direction.
-    """
+def wind_direction_icon(heading, sourcepath='static/icons/weather-icons-master/svg'):
+  """
+  Generate the html for the appropriately rotated SVG file for
+  the wind direction.
+  """
 
-    filename = 'wi-wind-deg.svg'
-    filepath = os.path.join(sourcepath, filename)
+  filename = 'wi-wind-deg.svg'
+  filepath = os.path.join(sourcepath, filename)
 
 
-    img_html = '''<img src="{0}" width="40" height="40" fill="white"
-        transform="rotate(100,20,20)" />'''.format(filepath)
-    print(img_html)
+  img_html = '''<img src="{0}" width="40" height="40" fill="white"
+      transform="rotate({1},20,20)" />'''.format(filepath, int(heading))
+  print(img_html)
 
-    return img_html
+  return img_html
