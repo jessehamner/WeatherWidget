@@ -136,6 +136,11 @@ class Forecast(object):
     afdtext = re.sub(endmarker, '\n', afdtext)
     short_term = re.search(r'\.SHORT TERM\.\.\.(.*.?)', afdtext).groups(0)[0]
     long_term = re.search(r'\.LONG TERM\.\.\.(.*.?)', afdtext).groups(0)[0]
+    short_term = re.sub(r'^\s+', '', short_term)
+    short_term = re.sub(r'\s+$', '', short_term)
+    short_term = re.sub(r'\`', "'", short_term)
+    long_term = re.sub(r'\s+\/NEW\/\s+', '', long_term)
+    long_term = re.sub(r'\s+$', '', long_term)
     afdreturn['short_term'] = short_term
     afdreturn['long_term'] = long_term
     write_json(afdreturn, outputdir=self.data['output_dir'], filename='afd.json')
