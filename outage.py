@@ -5,7 +5,6 @@ library.
 
 from __future__ import print_function
 
-import os
 import re
 import logging
 import datetime
@@ -23,8 +22,7 @@ class Outage(object):
     """
     self.data = data
     self.defaults = data['defaults']
-    self.ftm_params = {
-                       'site': 'NWS',
+    self.ftm_params = {'site': 'NWS',
                        'issuedby': data['radar_station'],
                        'product': 'FTM',
                        'format': 'CI',
@@ -34,7 +32,7 @@ class Outage(object):
     self.ftm_text = ''
     self.return_text = ''
 
-  
+
   def check_outage(self):
     """
     Check a webpage for information about any outages at the radar site.
@@ -50,8 +48,8 @@ class Outage(object):
       response = requests.get(self.defaults['hwo_url'],
                               params=self.ftm_params,
                               verify=False, timeout=10)
-    except requests.exceptions.ConnectionError as e:
-      print('ConnectionError: {0}'.format(e))
+    except requests.exceptions.ConnectionError as exc:
+      print('ConnectionError: {0}'.format(exc))
       return None
 
     html = response.text
@@ -111,4 +109,3 @@ class Outage(object):
       self.return_text = re.sub('  ', ' ', self.return_text)
       return self.return_text.strip()
     return None
-
