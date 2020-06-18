@@ -5,18 +5,17 @@ and for assigning a weather icon for that phase.
 
 from __future__ import print_function
 
-import os
 import re
 import logging
-import requests
 import datetime
+import requests
 from bs4 import BeautifulSoup
 
 
-class Moon_phase(object):
+class MoonPhase(object):
   """
-  While the length of an average lunar cycle is 29.53 days, to avoid 
-  propagation errors, this class retrieves a table from NOAA that shows the 
+  While the length of an average lunar cycle is 29.53 days, to avoid
+  propagation errors, this class retrieves a table from NOAA that shows the
   new moon days and times for the year, and thus the code resets to a known
   precise zero each month.
   """
@@ -63,7 +62,7 @@ class Moon_phase(object):
 
     self.new_moon_dict = dict(year={})
 
-  
+
   def get_moon_phase(self):
     """
     run methods in the correct order.
@@ -80,8 +79,8 @@ class Moon_phase(object):
     """
     try:
       return re.sub('\xa0', '', row.find_all('td')[index].text)
-    except IndexError as e:
-      print('IndexError trying to retrieve table cell {0}: {1}'.format(index, e))
+    except IndexError as exc:
+      print('IndexError trying to retrieve table cell {0}: {1}'.format(index, exc))
       print('Row:\n{0}'.format(row))
       return 'NA'
 
