@@ -5,11 +5,8 @@ radar.py: download and perform image tasks on radar imagery.
 from __future__ import print_function
 
 import os
-import re
 import logging
 import requests
-from bs4 import BeautifulSoup
-import weather_functions as wf
 from PIL import Image
 
 
@@ -19,7 +16,7 @@ class Radar(object):
   radar station abbr: data['radar_station']
   radar url: data['radar_url']
   names of all the files needed to overlay: data['graphics_list']
-  
+
 
   """
 
@@ -80,24 +77,24 @@ class Radar(object):
       cur.write(response.content)
       cur.close()
       return True
-    except Exception as e:
-      print('Exception: {0}'.format(e))
+    except Exception as exc:
+      print('Exception: {0}'.format(exc))
       self.problem = True
       return False
 
 
   def check_assets(self):
     """
-
+    Confirm that layer images from NWS already exist where they should be.
     """
     for asset in self.data['radar_layers']:
       file_url_dir = '{0}'.format(asset.format(r_abbr=self.station))
       filename = file_url_dir.split('/')[-1]
       print('Local file path: {0}'.format(os.path.join(self.data['output_dir'], filename)))
       if not self._check_asset(self.data['output_dir'],
-                           filename=filename,
-                           url_dir=file_url_dir,
-                           url=self.assets_url):
+                               filename=filename,
+                               url_dir=file_url_dir,
+                               url=self.assets_url):
         self.problem = True
 
 
@@ -127,7 +124,7 @@ class Radar(object):
         print('Unable to get the file. Returning False.')
         self.problem = True
         return False
-    
+
     else:
       print('{0} is where it should be (in {1})'.format(filename, outputdir))
       return True
@@ -158,29 +155,30 @@ class Radar(object):
     for layer in blist[1:]:
       temp = self._open_transparent(layer)
       if temp:
-        im1.paste(temp, (0,0), temp)
-   
-    im1.save(os.path.join(self.data['output_dir'], resultfile), 
-             transparency = 0)
+        im1.paste(temp, (0, 0), temp)
+
+    im1.save(os.path.join(self.data['output_dir'], resultfile),
+             transparency=0)
 
     return im1
 
 
   def _open_transparent(self, layer):
     """
-
+    Open the image and enable transparent layers.
     """
-    rl = self.data['radar_layers']
+    rad_l = self.data['radar_layers']
     try:
-      imagename = rl[layer].format(r_abbr = rl['r_abbr']).split('/')[-1]
+      imagename = rad_l[layer].format(r_abbr=rad_l['r_abbr']).split('/')[-1]
       imagepath = os.path.join(self.data['output_dir'], imagename)
       if not os.path.exists(imagepath):
         return None
-    except:
+    except Exception as exc:
+      print('Exception: {0}'.format(exc))
       return None
 
     try:
       return Image.open(imagepath).convert('RGBA')
-    except:
+    except Exception as exc:
+      print('Exception: {0}'.format(exc))
       return None
-
