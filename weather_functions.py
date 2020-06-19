@@ -17,6 +17,7 @@ from outage import Outage
 import requests
 import yaml
 import pytz
+from time import sleep
 from bs4 import BeautifulSoup
 requests.packages.urllib3.disable_warnings()
 
@@ -408,6 +409,9 @@ def make_request(url, retries=1, payload=False, use_json=True):
         response = requests.get(url, verify=False, timeout=10)
       except requests.exceptions.ReadTimeout as exc:
         print('Request timed out: {0}. Returning -None-'.format(exc))
+        sleep(2)
+        retries = retries - 1
+        continue
 
     if response.status_code == 200:
       if use_json is True:
