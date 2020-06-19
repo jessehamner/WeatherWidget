@@ -24,14 +24,12 @@ class Imagery(object):
     """
     self.band = band
     self.data = data
-    self.defaults = data['defaults']
-    self.sat = data['goes_sat']
-    self.sector = data['goes_sector']
     self.res = data['goes_res']
-    self.url = data['defaults']['goes_url'].format(sat=self.sat, sector=self.sector, band=self.band)
+    self.url = data['defaults']['goes_url'].format(sat=data['goes_sat'],
+                                                   sector=data['goes_sector'],
+                                                   band=self.band)
     self.fileslist = []
     self.today_v = self.data['today_vars']
-    self.output_dir = self.data['output_dir']
     self.goes_current = {'visible': '',
                          'preferred_band': '',
                          'image_html': '',
@@ -52,9 +50,15 @@ class Imagery(object):
     """
 
     self.goes_cleanup()
+    image_html = '<img src="{img}" alt="Current GOES image">'
     try:
       self.fileslist = self.get_goes_list()
       timestamps = self.get_goes_timestamps()
+    except Exception as exc:
+      print('Exception when determining current timestamps:\n{0}'.format(exc))
+      return False
+
+    try:
       current_timestamp = timestamps[-1]
       print('Current timestamp: {0}'.format(current_timestamp))
     except Exception as exc:
@@ -63,28 +67,32 @@ class Imagery(object):
 
     try:
       current_image = self.get_goes_image(timehhmm=current_timestamp)
+      img_path = os.path.join(self.data['image_dir'], current_image)
       print('retrieved {0}'.format(current_image))
       self.goes_current['preferred_band'] = current_image
-      self.goes_current['image_html'] = '<img src="{0}" alt="Current GOES image">'.format(os.path.join(self.data['image_dir'], current_image))
-      wf.write_json(self.goes_current, outputdir=self.output_dir, filename='goes.json')
+      self.goes_current['image_html'] = image_html.format(img=img_path)
+      wf.write_json(self.goes_current,
+                    outputdir=self.data['output_dir'],
+                    filename='goes.json')
       return True
     except Exception as exc:
       print('Exception: {0}'.format(exc))
       return False
 
 
-  def get_daily_list(self, doy, year, links):
+  def get_daily_list(self, localyear, localdoy, links):
     """
     Get the image list for a given day of the year.
 
     """
     filelist = []
-    todaystring = '{0}{1}'.format(year, doy)
-    myimage = re.compile('ABI-{0}-{1}-{2}'.format(self.sector, self.band, self.res))
-    for i in links:
-      if i.has_attr("href"):
-        filename = i['href']
-        # print('Checking file: "{0}"'.format(filename))
+    todaystring = '{0}{1}'.format(localyear, localdoy)
+    print('Today-string for GOES imagery: {0}'.format(todaystring))
+    myimage = re.compile('ABI-{0}-{1}-{2}'.format(self.data['goes_sector'], self.band, self.res))
+    for link in links:
+      if link.has_attr("href"):
+        filename = link['href']
+        #print('Checking file: "{0}"'.format(filename))
       try:
         if myimage.search(filename):
           if re.search(self.res, filename) and re.search(todaystring, filename):
@@ -103,28 +111,30 @@ class Imagery(object):
     know the minute of the image when concatenating the filename.
     Therefore, this function pulls a list from the specified directory and
     returns the list of files from today with the specified resolution for use.
+    At midnight UTC, it becomes necessary to consider the previous (UTC!) day's
+    images, at least for a few minutes. And, on New Year's Eve, it will be
+    necessary to consider the previous *year* for a few minutes: so, corner
+    cases require less elegant programming, ha ha.
     """
-    # print('Checking url: {0}'.format(url))
+    print('Checking url: {0}'.format(self.url))
     filelist = BeautifulSoup(requests.get(self.url).text, 'html.parser')
     links = filelist.find_all("a", attrs={"href": True})
     files = []
 
-    localdoy = int(self.today_v['doy'])
-    localyear = int(self.today_v['year'])
-    files.extend(self.get_daily_list(localdoy, localyear, links))
-    if localdoy > 364:
-      localyear = localyear + 1
-      localdoy = 1
+    localdoy = int(self.today_v['utcdoy'])
+    localyear = int(self.today_v['utcyear'])
+    print('UTC year: {0}; UTC day-of-the-year: {1}'.format(localyear, localdoy))
+    files.extend(self.get_daily_list(localyear, localdoy, links))
+    if localdoy == 1:
+      localdoy = 365  # TODO check for leap year with timedelta instead
+      localyear = localyear - 1
     else:
-      localdoy = localdoy + 1
+      localdoy = localdoy - 1
 
-    tomorrow_files = self.get_daily_list(localdoy, localyear, links)
-    if tomorrow_files:
-      # print('Files from tomorrow, UTC: {0}'.format(tomorrow_files))
-      self.today_v['doy'] = localdoy
-      self.today_v['year'] = localyear
-      files.extend(tomorrow_files)
-      # print('Files from today and tomorrow: {0}'.format(files))
+    additional_files = self.get_daily_list(localyear, localdoy, links)
+    if additional_files:
+      print('Files from previous day, UTC: {0}'.format(additional_files))
+      files.extend(additional_files)
 
     return files
 
@@ -135,13 +145,13 @@ class Imagery(object):
     Return a list of those (UTC) timestamps.
     """
     band_timestamps = []
-    yeardoy = '{0}{1}'.format(self.today_v['year'], self.today_v['doy'])
-    # print('year-doy combination tag: {0}'.format(yeardoy))
+    yeardoy = '{0}{1}'.format(self.today_v['year'], self.today_v['utcdoy'])
+    print('year-doy combination tag: {0}'.format(yeardoy))
     for filename in self.fileslist:
       try:
-        protostamp = re.search(yeardoy + r'(\d{4})', filename).groups(1)[0]
+        protostamp = re.search(yeardoy + r'(\d{4})', filename)
         if protostamp:
-          band_timestamps.append(protostamp)
+          band_timestamps.append(protostamp.groups(1)[0])
       except Exception as exc:
         print('Exception: {0}'.format(exc))
         continue
@@ -153,20 +163,20 @@ class Imagery(object):
     """
     Retrieve current GOES weather imagery.
     """
-    image = self.defaults['goes_img'].format(year=self.today_v['year'],
-                                             doy=self.today_v['doy'],
-                                             timeHHMM=timehhmm,
-                                             sat=self.sat,
-                                             sector=self.sector,
-                                             band=self.band,
-                                             resolution=self.res
-                                            )
+    image = self.data['defaults']['goes_img'].format(year=self.today_v['year'],
+                                                     doy=self.today_v['doy'],
+                                                     timeHHMM=timehhmm,
+                                                     sat=self.data['goes_sat'],
+                                                     sector=self.data['goes_sector'],
+                                                     band=self.band,
+                                                     resolution=self.res
+                                                    )
     # image = '20200651806_GOES16-ABI-sp-NightMicrophysics-2400x2400.jpg'
     returned_val = requests.get(os.path.join(self.url, image), verify=False)
-    with open(os.path.join(self.output_dir, image), 'wb') as satout:
+    with open(os.path.join(self.data['output_dir'], image), 'wb') as satout:
       satout.write(bytearray(returned_val.content))
 
-    with open(os.path.join(self.output_dir, 'goes_current.jpg'), 'wb') as satout:
+    with open(os.path.join(self.data['output_dir'], 'goes_current.jpg'), 'wb') as satout:
       satout.write(bytearray(returned_val.content))
 
     return image
@@ -181,7 +191,7 @@ class Imagery(object):
     that filename or earlier.
     Note that on January 1 and 2, the year will need to be changed as well.
     """
-    thefiles = [a for a in os.listdir(self.output_dir) if re.search('GOES', a)]
+    thefiles = [a for a in os.listdir(self.data['output_dir']) if re.search('GOES', a)]
     today_int = int(self.today_v['doy'])
     cur_year_int = int(self.today_v['year'])
     keepme = []
@@ -193,7 +203,7 @@ class Imagery(object):
 
     removeme = [a for a in thefiles if a not in keepme]
     try:
-      [os.remove(b) for b in [os.path.join(self.output_dir, a) for a in removeme]]
+      [os.remove(b) for b in [os.path.join(self.data['output_dir'], a) for a in removeme]]
     except Exception as exc:
       print('Exception! {0}'.format(exc))
       return False
