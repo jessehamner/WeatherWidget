@@ -12,14 +12,12 @@ import os
 import re
 import datetime
 import json
-import time
 
 from outage import Outage
 import requests
 import yaml
 import pytz
 from bs4 import BeautifulSoup
-import weathersvg as wsvg
 requests.packages.urllib3.disable_warnings()
 
 def prettify_timestamp(timestamp):
@@ -143,7 +141,7 @@ def write_text(filepath, some_text):
   return True
 
 
-def pull_beaufort_scale(forecast_dict=''):
+def pull_beaufort_scale():
   """
   Pull in the Beaufort scale information, if needed.
   """
@@ -183,8 +181,9 @@ def conditions_summary(conditions):
   for key in keys:
     try:
       summary[key] = conditions['properties'][key]
-    except:
+    except Exception as exc:
       summary[key] = 'none'
+      print('Error trying to read summary for key {0}: {1}'.format(key, exc))
 
   return summary
 
@@ -195,8 +194,8 @@ def wind_direction(azimuth, data):
   """
   try:
     azimuth = float(azimuth)
-  except:
-    print('Unable to convert azimuth to a numerical value. Returning None.')
+  except Exception as exc:
+    print('Unable to convert azimuth to a numerical value: {0}.\nReturning None.'.format(exc))
     return None
 
   plusminus = data['defaults']['plusminus'] # 11.25 degrees
@@ -238,6 +237,7 @@ def get_today_vars(timezone='America/Chicago'):
   Get various strings from today's date for use in GOES image retrieval.
   """
   today = datetime.datetime.now()
+  utcnow = datetime.datetime.utcnow()
   local_tz = pytz.timezone(timezone)
   return_dict = dict(doy=datetime.datetime.strftime(today, '%j'),
                      year=datetime.datetime.strftime(today, '%Y'),
@@ -248,7 +248,9 @@ def get_today_vars(timezone='America/Chicago'):
                      timezone=timezone,
                      offset=local_tz.utcoffset(today).total_seconds()/3600,
                      now=today,
-                     utcnow=datetime.datetime.utcnow()
+                     utcnow=utcnow,
+                     utcdoy=datetime.datetime.strftime(utcnow, '%j'),
+                     utcyear=datetime.datetime.strftime(utcnow, '%Y')
                     )
   return return_dict
 
@@ -379,15 +381,13 @@ def beaufort_scale(data, speed, units='mph'):
   Gusts are NOT used to determine scale rank.
   """
   blist = data['defaults']['beaufort_scale']
-  b_keys = data['defaults']['beaufort_fields']
   print('input speed value: {0} {1}'.format(speed, units))
   if units != 'mph':
-    speed = convert_units(speed, from_units=units, to_units='mph')
+    speed = convert_units(speed, from_unit=units, to_unit='mph')
   print('output speed value: {0} mph'.format(speed))
 
   for i in blist.keys():
     if float(blist[i][0]) <= speed and speed <= float(blist[i][1]):
-
       return i
 
   return None
@@ -426,13 +426,3 @@ def make_request(url, retries=1, payload=False, use_json=True):
     retries = retries - 1
 
   return None
-
-
-def quick_doctext(doctext, indicator, value, unit=''):
-  """
-  Convenience function to standardize the output format of a string.
-  """
-  unitspace = ' '
-  if unit == '%':
-    unitspace = ''
-  return str('{0}\n{1} {2}{3}{4}'.format(doctext, indicator, value, unitspace, unit))
