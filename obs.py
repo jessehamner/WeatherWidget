@@ -110,7 +110,11 @@ class Observation(object):
                                 'label': 'Wind Direction'
                                }
       wdstring = self.wind_direction(con1['wind_direction']['value'])
-      con1['wind_cardinal'] = 'Out of the {0}'.format(wdstring)
+      if wdstring is None or wdstring == 'None':
+        con1['wind_cardinal'] = 'No Data'
+      else:
+        con1['wind_cardinal'] = 'Out of the {0}'.format(wdstring)
+      
       con1['beaufort'] = wf.beaufort_scale(self.data,
                                            speed=con1['wind']['value'],
                                            units=con1['wind']['units'])
@@ -200,7 +204,11 @@ class Observation(object):
                              }
 
     wind_dir = self.wind_direction(self.backup_obs.obs['wind_degrees'])
-    con2['wind_cardinal'] = 'Out of the {0}'.format(wind_dir)
+    if wind_dir == 'None' or wind_dir is None:
+      con2['wind_cardinal'] = 'No data'
+    else:
+      con2['wind_cardinal'] = 'Out of the {0}'.format(wind_dir)
+    
     con2['timestamp'] = self.backup_obs.obs['observation_time_rfc822']
     con2['windchill'] = {'value': self.wind_chill(self.backup_obs.obs['temp_f'],
                                                   self.backup_obs.obs['wind_mph']),
@@ -342,7 +350,7 @@ class Observation(object):
     try:
       azimuth = float(azimuth)
     except Exception as exc:
-      print('Cannot convert azimuth to numeric. Returning None. ({0})'.format(exc))
+      print('Cannot convert azimuth {0} to numeric. Returning None. ({1})'.format(azimuth, exc))
       return None
 
     plusminus = self.data['defaults']['plusminus']  # 11.25
