@@ -51,7 +51,7 @@ icon_match:
     'wi-day-thunderstorm.svg': ['Severe Tstms', 'T-storms', 'Tstorms', 'Chance Thunderstorms', 'Thunderstorms Likely', 'Isolated Thunderstorms', 'Thunderstorm', 'Thunderstorms']
     'wi-thunderstorm.svg': ['Severe Thunderstorm Watch', 'Severe Thunderstorm Warning']
     'wi-storm-showers.svg': ['Showers', 'Storms and Showers']
-    'wi-rain.svg': ['rain', 'rainy', 'chance of a shower', 'heavy rain', 'light rain', 'rain shower']
+    'wi-rain.svg': ['rain', 'rainy', 'heavy rain', 'light rain', 'rain shower']
     'wi-flood.svg': ['Flood Warning', 'flash flood warning', 'flash flood', 'flooding']
     'wi-tornado.svg': ['Tornado Watch', 'Tornado Warning']
     'wi-gale-warning.svg': ['Gale Warning', 'Wind Advisory', 'Small Craft Advisory']
@@ -63,7 +63,7 @@ icon_match:
     'wi-fire.svg': ['fire', 'burn ban', 'burn']
     'wi-smoke.svg': ['smoke', 'air quality alert']
     'wi-fog.svg': ['fog', 'foggy', 'haze']
-    'wi-day-sprinkle.svg': ['drizzle', 'sprinkle', 'mist', 'misty', 'Slight Chance Rain Showers']
+    'wi-day-sprinkle.svg': ['drizzle', 'sprinkle', 'mist', 'misty', 'Slight Chance Rain Showers', 'chance rain showers', 'chance of a shower']
     'wi-strong-wind.svg': ['windy', 'strong winds', 'blustery', 'straight-line winds', 'winds in excess of']
     'wi-na.svg': ['None', 'N/A', 'NA']
 
@@ -108,48 +108,48 @@ azdir:
 plusminus: 11.25
 
 warnings:
- - 'Blizzard Warning'
- - 'Ice Storm Warning'
- - 'High Wind Warning'
- - 'Severe Thunderstorm Warning'
- - 'Tornado Warning'
- - 'Extreme Wind Warning'
- - 'Gale Warning'
- - 'Hurricane Force Wind Warning'
- - 'Flash Flood Warning'
- - 'Flood Warning'
- - 'River Flood Warning'
- - 'Tropical Storm Warning'
- - 'Hurricane Warning'
- - 'Coastal Flood Warning'
- - 'Special Weather Statement'
+ - 'blizzard warning'
+ - 'ice storm warning'
+ - 'high wind warning'
+ - 'severe thunderstorm warning'
+ - 'tornado warning'
+ - 'extreme wind warning'
+ - 'gale warning'
+ - 'hurricane force wind warning'
+ - 'flash flood warning'
+ - 'flood warning'
+ - 'river flood warning'
+ - 'tropical storm warning'
+ - 'hurricane warning'
+ - 'coastal flood warning'
+ - 'special weather statement'
 
 watches:
- - 'Winter Storm Watch'
- - 'Winter Weather Advisory'
- - 'Freeze Watch'
- - 'Freeze Warning'
- - 'Frost Advisory'
- - 'Wind Chill Advisory'
- - 'Wind Chill Warning'
- - 'Red Flag Warning'
- - 'Dense Fog Advisory'
- - 'High Wind Watch'
- - 'Wind Advisory'
- - 'Severe Thunderstorm Watch'
- - 'Tornado Watch'
- - 'Small Craft Advisory'
- - 'Storm Warning'
- - 'Special Marine Warning'
- - 'Coastal Flood Watch'
- - 'Flash Flood Watch'
- - 'Flood Watch'
- - 'River Flood Watch'
- - 'Excessive Heat Watch'
- - 'Excessive Heat Warning'
- - 'Heat Advisory'
- - 'Tropical Storm Watch'
- - 'Hurricane Watch'
+ - 'winter storm watch'
+ - 'winter weather advisory'
+ - 'freeze watch'
+ - 'freeze warning'
+ - 'frost advisory'
+ - 'wind chill advisory'
+ - 'wind chill warning'
+ - 'red flag warning'
+ - 'dense fog advisory'
+ - 'high wind watch'
+ - 'wind advisory'
+ - 'severe thunderstorm watch'
+ - 'tornado watch'
+ - 'small craft advisory'
+ - 'storm warning'
+ - 'special marine warning'
+ - 'coastal flood watch'
+ - 'flash flood watch'
+ - 'flood watch'
+ - 'river flood watch'
+ - 'excessive heat watch'
+ - 'excessive heat warning'
+ - 'heat advisory'
+ - 'tropical storm watch'
+ - 'hurricane watch'
 
 alerts:
  - 'special weather statement'
@@ -161,6 +161,7 @@ alerts:
  - 'dense fog advisory'
  - 'wind chill advisory'
  - 'air quality alert'
+ - 'flood advisory'
 
 missing: -9999.9
 
