@@ -33,7 +33,8 @@ class EventDict(object):
                       'certainty': '',
                       'summary': '',
                       'event_id': '',
-                      'warning_summary': ''
+                      'warning_summary': '',
+                      'alert_type': ''
                      }
     self.data = data
 
@@ -81,7 +82,6 @@ class EventDict(object):
     not a lawyer and this is really just the way I perceive the usefulness
     of seeing alerts on a dashboard.
     """
-
     if event_type.lower() in self.data['defaults']['watches']:
       return 'watch'
     elif event_type.lower() in self.data['defaults']['warnings']:
@@ -138,7 +138,7 @@ class Alerts(object):
 
     textfilepath = os.path.join(self.data['output_dir'], 'today_hwo.txt')
     if not self.alerts['hwo']['today_text']:
-      self.alerts['hwo']['today_text'] = ('Hazardous Weather Outlook:\n ' + nodata)
+      self.alerts['hwo']['today_text'] = nodata
     wf.write_text(filepath=textfilepath, some_text=self.alerts['hwo']['today_text'])
 
     if self.alerts['hwo'] is None:
@@ -148,11 +148,9 @@ class Alerts(object):
                   filename='hwo.json',
                   some_dict=self.alerts['hwo'])
 
-    print('Getting alerts for the following counties: {0}.'.format(self.data['alert_counties']))
+    print('Getting alerts for these counties: {0}.'.format(self.data['alert_counties'].keys()))
     self.get_current_alerts()
-
     self.set_flags()
-
 
     alertpath = os.path.join(self.data['output_dir'], self.outputalertsfile)
     if not self.alerts:
@@ -174,14 +172,75 @@ class Alerts(object):
     """
     Go through the alerts and HWO and see what booleans should be set.
     """
+    nospotter = 'Spotter activation is not expected at this time'
     if self.alerts['warn']:
       self.alerts['flags']['has_warnings'] = True
     if self.alerts['watch']:
       self.alerts['flags']['has_watches'] = True
-    if self.alerts['warn']:
-      self.alerts['flags']['has_warnings'] = True
-    if self.alerts['warn']:
-      self.alerts['flags']['has_warnings'] = True
+    if self.alerts['alert']:
+      self.alerts['flags']['has_alerts'] = True
+    if re.search(nospotter, self.alerts['hwo']['spotter'][1]):
+      self.alerts['flags']['has_spotter'] = False
+    else:
+      self.alerts['flags']['has_spotter'] = True
+
+    return True
+
+
+  def get_county_alerts(self, key):
+    """
+    Retrieve any alerts for a given county.
+    """
+    county_params_dict = {'x': self.data['alert_counties'][key][1],
+                          'y': int(self.data['alert_counties'][key][0])
+                         }
+    print('County params dict for HTTPS request: {0}'.format(str(county_params_dict)))
+    try:
+      response = requests.get(self.data['defaults']['alerts_url'],
+                              params=county_params_dict,
+                              verify=False, timeout=10)
+    except Exception as exc:
+      print('Exception when requesting current alerts: {0}'.format(exc))
+      return None
+
+    if response.status_code == 200:
+      print('Response from NWS alerts server was 200. Continuing.')
+      if response.headers['Content-Type'] == 'text/xml':
+      # Parse the feed for relevant content:
+        entries = BeautifulSoup(response.text, 'xml').find('feed').find_all('entry')
+      else:
+        print('ERROR: response content is: {0}'.format(response.headers['Content-Type']))
+        print('Response text from NWS server: {0}'.format(response.text))
+        return None
+    else:
+      print('ERROR: Response from NWS alerts server is: {0}'.format(response.status_code))
+      return None
+
+    print('Now checking alerts xml.')
+    for entry in entries:
+      print('Entry: {0}'.format(entry))
+      #edict = BeautifulSoup(entry, 'xml')
+      title = entry.find('title').text
+      print('title: {0}'.format(title))
+      if re.search(r'^There are no active watches', title):
+        print('No active watches for this area.')
+        return False
+
+      warning_county = self.is_county_relevant(key,
+                                               entry,
+                                               tagname='areaDesc')
+      if warning_county:
+        print('Found warning for {0} county.'.format(warning_county))
+        print('Text of this warning entry is: {0}'.format(entry.prettify()))
+        event_id = entry.find('id').text
+        print('event id appears to be: {0}'.format(event_id))
+
+        edt = EventDict(entry, self.data)
+        edt.populate()
+        for already in self.alerts[edt.eventdict['alert_type']]:
+          if already['event_id'] == edt.eventdict['event_id']:
+            continue
+          self.alerts[edt.eventdict['alert_type']].append(edt.eventdict)
     return True
 
 
@@ -208,45 +267,17 @@ class Alerts(object):
       Denton County, Texas is TXZ103, for instance.
 
     """
-    if self.data['alert_counties'] is None:
+    if self.data['alert_counties'].keys() is None:
       print('No counties in submitted parameters. Returning -None-')
       return None
 
-    county_params_dict = {'x': self.data['alert_county'], 'y': 1}
-
-    try:
-      response = requests.get(self.data['defaults']['alerts_url'],
-                              params=county_params_dict,
-                              verify=False, timeout=10)
-    except Exception as exc:
-      print('Exception when requesting current alerts: {0}'.format(exc))
-      return None
-
-    if response.status_code == 200 and response.headers['Content-Type'] == 'text/xml':
-      # Parse the feed for relevant content:
-      entries = BeautifulSoup(response.text, 'xml').find('feed').find_all('entry')
-    else:
-      print('ERROR: Response from NWS alerts server is: {0}'.format(response.status_code))
-      return None
-
-    for entry in entries:
-      print('Now checking alerts xml.')
-      warning_county = self.is_county_relevant(entry,
-                                               tagname='areaDesc')
-      if warning_county:
-        print('Found warning for {0} county.'.format(warning_county))
-        print('Text of this warning entry is: {0}'.format(entry.prettify()))
-        event_id = entry.find('id').text
-        print('event id appears to be: {0}'.format(event_id))
-
-        edt = EventDict(entry, self.data)
-        edt.populate()
-        self.alerts[edt.eventdict['alert_type']] = edt.eventdict
+    for county in self.data['alert_counties'].keys():
+      self.get_county_alerts(county)
 
     return self.alerts
 
 
-  def is_county_relevant(self, xml_entry, tagname='areaDesc'):
+  def is_county_relevant(self, key, xml_entry, tagname='areaDesc'):
     """
     Check to see if an xml tag contains items from a user-specified list.
     """
@@ -266,7 +297,7 @@ class Alerts(object):
 
     for county in clist:
       print('Checking county {0}'.format(county))
-      if county.strip() in self.data['alert_counties']:
+      if county.strip() == key:
         return county.strip()
 
     return None
