@@ -4,11 +4,6 @@
 # Current observations
 station: 'KDTO'
 
-# County and Zones maps by state: https://alerts.weather.gov/
-# (Zone maps also available at: https://www.weather.gov/pimar/PubZone )
-alert_zone: 'TXZ103'
-alert_county: 'TXC121'
-
 # Three-letter abbreviations are available at, among other places: 
 # http://weather.rap.ucar.edu/radar/
 radar_station: &r_abbr 'FWS'
@@ -46,12 +41,16 @@ alerts_dict: !!python/dict
   'x': "{{ alert_county }}"
   'y': 1
 
+# County and Zones maps by state: https://alerts.weather.gov/
+# (Zone maps also available at: https://www.weather.gov/pimar/PubZone )
 # Note these counties must be specifically named according to NWS spellings
 alert_counties:
-  - 'Denton'
-  - 'Wise'
-  - 'Dallas'
-  - 'Tarrant'
+  'Denton': [1, 'TXC121', 'TXZ103']
+  'Wise': [1, 'TXC497', 'TXZ102']
+  'Dallas': [1, 'TXC113', 'TXZ119']
+  'Tarrant': [1, 'TXC439', 'TXZ118']
+  'Cooke': [1, 'TXC097', 'TXZ092']
+  'Montague': [1, 'TXC337', 'TXZ091']
 
 # Convective outlook resources:
 convective: !!python/dict
