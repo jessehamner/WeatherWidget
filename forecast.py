@@ -1,5 +1,7 @@
 """
-obs.py: download and consolidate current conditions data for a given location.
+forecast.py: download forecast data for a given location.
+Make icons of expected precip and temperature values.
+Write out JSON.
 """
 
 from __future__ import print_function
