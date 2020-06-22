@@ -111,10 +111,6 @@ def main():
   forecast_obj.write_forecast(outputdir=data['output_dir'])
   # Area forecast discussion:
   afd_dict = forecast_obj.get_afd()
-  wf.write_json(some_dict=afd_dict,
-                outputdir=data['output_dir'],
-                filename='afd.json'
-               )
 
   wf.write_json(some_dict=forecastdict,
                 outputdir=data['output_dir'],
