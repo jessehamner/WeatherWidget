@@ -47,14 +47,14 @@ class EventDict(object):
 
     event_type = self.entry.find('event', text=True)
     if event_type:
-      print('Event_type info: {0}'.format(event_type.text))
       event_type = event_type.text
+      print('Event_type info: {0}'.format(event_type))
     else:
       print('No cap:event tags in entry?')
 
     startdate = self.entry.find('effective', text=True)
     if startdate:
-      # print('Startdate: {0}'.format(startdate.text))
+      print('Startdate: {0}'.format(startdate.text))
       startdate = startdate.text
 
     # category = entry.find('category').string
@@ -72,6 +72,7 @@ class EventDict(object):
                                                             en_date=self.eventdict['enddate'],
                                                             sev=self.eventdict['severity'],
                                                             summary=summary)
+    print('Warning summary: {0}'.format(self.eventdict['warning_summary']))
     return self.eventdict
 
 
@@ -144,9 +145,6 @@ class Alerts(object):
     if self.alerts['hwo'] is None:
       self.alerts['hwo'] = dict(today=[nodata, nodata], spotter=[nodata, nodata],
                                 daystwothroughseven=[nodata, nodata])
-    wf.write_json(outputdir=self.data['output_dir'],
-                  filename='hwo.json',
-                  some_dict=self.alerts['hwo'])
 
     print('Getting alerts for these counties: {0}.'.format(self.data['alert_counties'].keys()))
     self.get_current_alerts()
@@ -191,6 +189,7 @@ class Alerts(object):
     """
     Retrieve any alerts for a given county.
     """
+    county_alerts = []
     county_params_dict = {'x': self.data['alert_counties'][key][1],
                           'y': int(self.data['alert_counties'][key][0])
                          }
@@ -218,30 +217,29 @@ class Alerts(object):
 
     print('Now checking alerts xml.')
     for entry in entries:
-      print('Entry: {0}'.format(entry))
-      #edict = BeautifulSoup(entry, 'xml')
       title = entry.find('title').text
       print('title: {0}'.format(title))
       if re.search(r'^There are no active watches', title):
         print('No active watches for this area.')
         return False
 
+      # print('Entry: {0}'.format(entry))
       warning_county = self.is_county_relevant(key,
                                                entry,
                                                tagname='areaDesc')
       if warning_county:
         print('Found warning for {0} county.'.format(warning_county))
-        print('Text of this warning entry is: {0}'.format(entry.prettify()))
+        # print('Text of this warning entry is: {0}'.format(entry.prettify()))
         event_id = entry.find('id').text
         print('event id appears to be: {0}'.format(event_id))
 
         edt = EventDict(entry, self.data)
         edt.populate()
-        for already in self.alerts[edt.eventdict['alert_type']]:
-          if already['event_id'] == edt.eventdict['event_id']:
-            continue
-          self.alerts[edt.eventdict['alert_type']].append(edt.eventdict)
-    return True
+        print('This event belongs in list: {0}'.format(edt.eventdict['alert_type']))
+        county_alerts.append(edt.eventdict)
+
+
+    return county_alerts
 
 
   def get_current_alerts(self):
@@ -272,8 +270,15 @@ class Alerts(object):
       return None
 
     for county in self.data['alert_counties'].keys():
-      self.get_county_alerts(county)
-
+      county_alerts = self.get_county_alerts(county)
+      if not county_alerts:
+        continue
+      
+      for already in county_alerts:
+        print('checking event_id "{0}" for redundancy.'.format(already['event_id']))
+        print('event dictionary: {0}'.format(str(already)))
+        self.alerts[already['alert_type']].append(already)
+    
     return self.alerts
 
 
