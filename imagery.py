@@ -133,7 +133,7 @@ class Imagery(object):
 
     additional_files = self.get_daily_list(localyear, localdoy, links)
     if additional_files:
-      print('Files from previous day, UTC: {0}'.format(additional_files))
+      # print('Files from previous day, UTC: {0}'.format(additional_files))
       files.extend(additional_files)
 
     return files
