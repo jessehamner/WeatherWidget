@@ -37,6 +37,7 @@ class DayForecast(object):
     Write out SVG icons of the day's temps and precip chances.
     """
     filelabel = 'today_{fctype}_plus_{day}.svg'
+    print('Making temperature and precipitation forecast icons for day {0}'.format(self.idx))
     wsvg.high_low_svg(self.fcd['high'],
                       self.fcd['low'],
                       filelabel.format(fctype='temp', day=self.idx),
@@ -199,8 +200,8 @@ class Forecast(object):
                           parsed_xml=self.parsed_xml,
                           icon_dict=self.data['defaults']['icon_match']
                          )
+      print('Populating the day\'s forecast dictionary for day {0}'.format(idx))
       today.populate_day_dict()
-      today.make_forecast_icons()
       self.forecast.append(today.fcd)
 
     return self.forecast
