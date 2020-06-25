@@ -242,6 +242,28 @@ class Alerts(object):
     return county_alerts
 
 
+  def check_duplicate(self, current_dict):
+    """
+    Run through each event ID already in the self.alerts[] dict. Return True
+    if the ID is there.
+    """
+    current_id = current_dict['event_id']
+    print('checking event_id "{0}" for redundancy.'.format(current_id))
+    warns = ['alert', 'watch', 'warn']
+    for warntype in warns:
+      print('Existing entries: {0}'.format(str(self.alerts[warntype])))
+      for existing in self.alerts[warntype]:
+        print('Checking {0} vs {1}'.format(existing['event_id'], current_id))
+        if existing['event_id'] == current_id:
+          print('*** Matched {0} to {1} -- returning True'.format(existing['event_id'], current_id))
+          return True
+        if existing['summary'] == current_dict['summary']:
+          print('*** Identical summary text. -- returning True')
+          return True
+    print('Cycled through every entry in self.alerts. Returning False.')
+    return False
+
+
   def get_current_alerts(self):
     """
     Get current watches, warnings, or advisories for a county or zone.
@@ -273,12 +295,14 @@ class Alerts(object):
       county_alerts = self.get_county_alerts(county)
       if not county_alerts:
         continue
-      
+
       for already in county_alerts:
         print('checking event_id "{0}" for redundancy.'.format(already['event_id']))
+        if self.check_duplicate(already):
+          continue
         print('event dictionary: {0}'.format(str(already)))
         self.alerts[already['alert_type']].append(already)
-    
+
     return self.alerts
 
 
