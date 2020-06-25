@@ -13,6 +13,7 @@ import requests
 from bs4 import BeautifulSoup
 import weather_functions as wf
 import hwo
+import weathersvg as wsvg
 
 
 class EventDict(object):
@@ -34,7 +35,8 @@ class EventDict(object):
                       'summary': '',
                       'event_id': '',
                       'warning_summary': '',
-                      'alert_type': ''
+                      'alert_type': '',
+                      'alert_icon': 'wi-na.svg',
                      }
     self.data = data
 
@@ -72,6 +74,8 @@ class EventDict(object):
                                                             en_date=self.eventdict['enddate'],
                                                             sev=self.eventdict['severity'],
                                                             summary=summary)
+    self.eventdict['alert_icon'] = wsvg.assign_icon(self.eventdict['event_type'],
+                                                    self.data['defaults']['icon_match']) 
     print('Warning summary: {0}'.format(self.eventdict['warning_summary']))
     return self.eventdict
 
