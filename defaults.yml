@@ -55,7 +55,7 @@ icon_match:
     'wi-flood.svg': ['Flood Warning', 'flash flood warning', 'flash flood', 'flooding']
     'wi-tornado.svg': ['Tornado Watch', 'Tornado Warning']
     'wi-gale-warning.svg': ['Gale Warning', 'Wind Advisory', 'Small Craft Advisory']
-    'wi-small-craft-advisory': ['Wind Advisory', 'Small Craft Advisory']
+    'wi-small-craft-advisory.svg': ['Wind Advisory', 'Small Craft Advisory']
     'wi-hurricane.svg': ['Hurricane Watch', 'Hurricane Warning']
     'wi-snow-wind.svg': ['Winter Storm Watch', 'Winter Storm Warning', 'Blizzard']
     'wi-snowflake-cold.svg': ['very cold', 'below freezing', 'cold']
@@ -65,6 +65,7 @@ icon_match:
     'wi-fog.svg': ['fog', 'foggy', 'haze']
     'wi-day-sprinkle.svg': ['drizzle', 'sprinkle', 'mist', 'misty', 'Slight Chance Rain Showers', 'chance rain showers', 'chance of a shower']
     'wi-strong-wind.svg': ['windy', 'strong winds', 'blustery', 'straight-line winds', 'winds in excess of']
+    'wi-smog.svg': ['air quality alert']
     'wi-na.svg': ['None', 'N/A', 'NA']
 
   
