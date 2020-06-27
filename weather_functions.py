@@ -382,6 +382,9 @@ def beaufort_scale(data, speed, units='mph'):
   Gusts are NOT used to determine scale rank.
   """
   blist = data['defaults']['beaufort_scale']
+  if speed is None or speed == 'None':
+    print('Input speed {0} cannot be converted to Beaufort. Returning None.'.format(speed))
+    return None
   print('input speed value: {0} {1}'.format(speed, units))
   if units != 'mph':
     speed = convert_units(speed, from_unit=units, to_unit='mph')
@@ -392,6 +395,7 @@ def beaufort_scale(data, speed, units='mph'):
   for i in blist.keys():
     print('Key: {0}\tmin speed: {1}\tmax speed: {2}'.format(i, blist[i][0], blist[i][1]))
     if int(blist[i][0]) <= speed and speed <= int(blist[i][1]):
+      print('Wind speed ({0} mph) is between {1} and {2}. Returning {3}'.format(speed, blist[i][0], blist[i][1], i))
       return int(i)
 
   return None

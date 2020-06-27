@@ -55,7 +55,7 @@ class Observation(object):
     self.matchup = ['pressure', 'dewpoint', 'temperature', 'humidity',
                     'wind_direction', 'heatindex', 'windchill', 'wind',
                     'gusts']
-    self.textonly = ['weather', 'metar', 'textdescription', 'timestamp']
+    self.textonly = ['weather', 'metar', 'textdescription', 'timestamp', 'beaufort']
 
 
   def get_current_conditions(self):
