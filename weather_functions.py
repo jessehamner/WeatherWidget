@@ -386,10 +386,13 @@ def beaufort_scale(data, speed, units='mph'):
   if units != 'mph':
     speed = convert_units(speed, from_unit=units, to_unit='mph')
   print('output speed value: {0} mph'.format(speed))
-
+  speed = int(speed)
+  print('integer speed value: {0} mph'.format(speed))
+  
   for i in blist.keys():
-    if float(blist[i][0]) <= speed and speed <= float(blist[i][1]):
-      return i
+    print('Key: {0}\tmin speed: {1}\tmax speed: {2}'.format(i, blist[i][0], blist[i][1]))
+    if int(blist[i][0]) <= speed and speed <= int(blist[i][1]):
+      return int(i)
 
   return None
 

@@ -10,6 +10,7 @@ import re
 import logging
 from bs4 import BeautifulSoup
 import weather_functions as wf
+import weathersvg as wsvg
 
 class WeatherDict(object):
   """
@@ -34,7 +35,8 @@ class WeatherDict(object):
                     textdescription='',
                     metar='',
                     timestamp='',
-                    beaufort='',
+                    beaufort=0,
+                    weather_icon=''
                    )
 
 
@@ -114,10 +116,11 @@ class Observation(object):
         con1['wind_cardinal'] = 'No Data'
       else:
         con1['wind_cardinal'] = 'Out of the {0}'.format(wdstring)
-      
+
       con1['beaufort'] = wf.beaufort_scale(self.data,
                                            speed=con1['wind']['value'],
                                            units=con1['wind']['units'])
+      print('Beaufort wind speed scale: {0}'.format(con1['beaufort']))
     return con1
 
 
@@ -208,7 +211,7 @@ class Observation(object):
       con2['wind_cardinal'] = 'No data'
     else:
       con2['wind_cardinal'] = 'Out of the {0}'.format(wind_dir)
-    
+
     con2['timestamp'] = self.backup_obs.obs['observation_time_rfc822']
     con2['windchill'] = {'value': self.wind_chill(self.backup_obs.obs['temp_f'],
                                                   self.backup_obs.obs['wind_mph']),
@@ -286,6 +289,9 @@ class Observation(object):
       if ccp[key] is None or ccp[key] == 'None':
         if con2[key]:
           ccp[key] = con2[key]
+
+    ccp['weather_icon'] = wsvg.assign_icon(ccp['textdescription'],
+                                           self.data['defaults']['icon_match'])
 
     return self.con1.obs
 
