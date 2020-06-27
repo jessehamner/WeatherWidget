@@ -17,6 +17,7 @@
       transform-origin: center;
       transform: rotate(0deg);
       stroke: black;
+      fill: black;
     }
   </style>
   <symbol id="whole-icon">

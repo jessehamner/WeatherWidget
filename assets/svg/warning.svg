@@ -33,7 +33,7 @@
        }
      </style>
      <g> 
-       <circle cx="25" cy="25" r="20" class="alert"/>
+       <circle cx="25" cy="25" r="20" class="alert" id="warn_icon"/>
        <text x="24" y="38" class="alert">!</text>
      </g>
 </svg>
