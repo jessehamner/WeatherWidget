@@ -175,11 +175,16 @@ class Forecast(object):
                'format': time_format,
                'numDays': self.data['defaults']['forecast_days']
               }
-    retval = requests.get(url=self.data['defaults']['forecast_url'],
-                          params=payload,
-                          verify=False,
-                          timeout=10
-                         )
+    try:
+      retval = requests.get(url=self.data['defaults']['forecast_url'],
+                            params=payload,
+                            verify=False,
+                            timeout=10
+                           )
+    except requests.exceptions.ReadTimeout as exc:
+      retval.status_code = 404
+      print('Request timed out.')
+      
     if retval.status_code == 200:
       self.data['forecast_xml'] = retval.text
       print('Returned HTTP response code: {0}'.format(retval))
