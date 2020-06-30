@@ -63,14 +63,14 @@ icon_match:
     'wi-snow-wind.svg': ['Winter Storm Watch', 'Winter Storm Warning', 'Blizzard']
     'wi-snowflake-cold.svg': ['very cold', 'below freezing', 'cold']
     'wi-hot.svg': ['hot', 'Heat Advisory']
-    'wi-fire.svg': ['fire', 'burn ban', 'burn']
+    'wi-fire.svg': ['fire', 'burn ban', 'burn', 'fire weather watch']
     'wi-smoke.svg': ['smoke', 'air quality alert']
     'wi-fog.svg': ['fog', 'foggy', 'haze']
     'wi-day-sprinkle.svg': ['drizzle', 'sprinkle', 'mist', 'misty', 'Slight Chance Rain Showers', 'chance rain showers', 'chance of a shower']
     'wi-strong-wind.svg': ['windy', 'strong winds', 'blustery', 'straight-line winds', 'winds in excess of']
     'wi-smog.svg': ['air quality alert']
     'wi-na.svg': ['None', 'N/A', 'NA']
-
+    
   
 circle_css:
     'fill': 'white'
@@ -151,7 +151,6 @@ watches:
  - 'river flood watch'
  - 'excessive heat watch'
  - 'excessive heat warning'
- - 'heat advisory'
  - 'tropical storm watch'
  - 'hurricane watch'
 
