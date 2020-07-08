@@ -19,7 +19,7 @@ from imagery import Imagery
 from moon_phase import MoonPhase
 from alerts import Alerts
 from radar import Radar
-from obs import WeatherDict, Observation
+from obs import Observation
 from forecast import Forecast
 import weathersvg as wsvg
 
@@ -55,6 +55,8 @@ def main():
   data['defaults'] = defaults
   data['today_vars'] = wf.get_today_vars(data['timezone'])
   data['bands'] = data['defaults']['goes_bands']
+  data['alert_counties'] = wf.populate_alert_counties(data['counties_for_alerts'])
+  print('alert counties:\n{0}'.format(str(data['alert_counties'])))
 
   # Check for outage information
   wf.outage_check(data)
@@ -110,7 +112,7 @@ def main():
   forecastdict = forecast_obj.parse_forecast()
   forecast_obj.write_forecast(outputdir=data['output_dir'])
   # Area forecast discussion:
-  afd_dict = forecast_obj.get_afd()
+  forecast_obj.get_afd()
 
   wf.write_json(some_dict=forecastdict,
                 outputdir=data['output_dir'],

@@ -13,11 +13,11 @@ import re
 import datetime
 import json
 
+from time import sleep
 from outage import Outage
 import requests
 import yaml
 import pytz
-from time import sleep
 from bs4 import BeautifulSoup
 requests.packages.urllib3.disable_warnings()
 
@@ -391,11 +391,14 @@ def beaufort_scale(data, speed, units='mph'):
   print('output speed value: {0} mph'.format(speed))
   speed = int(speed)
   print('integer speed value: {0} mph'.format(speed))
-  
+
   for i in blist.keys():
     print('Key: {0}\tmin speed: {1}\tmax speed: {2}'.format(i, blist[i][0], blist[i][1]))
     if int(blist[i][0]) <= speed and speed <= int(blist[i][1]):
-      print('Wind speed ({0} mph) is between {1} and {2}. Returning {3}'.format(speed, blist[i][0], blist[i][1], i))
+      print('Speed ({0} mph) between {1} & {2}. Returning {3}'.format(speed,
+                                                                      blist[i][0],
+                                                                      blist[i][1],
+                                                                      i))
       return int(i)
 
   return None
@@ -435,5 +438,69 @@ def make_request(url, retries=1, payload=False, use_json=True):
       print('Response from server was not OK: {0}'.format(response.status_code))
 
     retries = retries - 1
+
+  return None
+
+
+def populate_alert_counties(somedict):
+  """
+  Takes in a dict, formatted with state name(s) as the key, with a list
+  of county names as the value.
+  Returns a populated dictionary with records in the format:
+  'countyname': [1, 'CountyAbbr', 'ZoneAbbr', 'StateAbbr']
+  """
+  returndict = {}
+
+  for key, values in somedict.iteritems():
+    statezonelist = get_zonelist(key, 'zone')
+    statecountylist = get_zonelist(key, 'county')
+
+    for county in values:
+      cabbr = parse_zone_table(county, statecountylist)
+      zabbr = parse_zone_table(county, statezonelist)
+      returndict[county] = [1, cabbr, zabbr, key]
+
+  return returndict
+
+
+def get_zonelist(stateabbr, zoneorcounty):
+  """
+  go to alerts.weather.gov/cap/ and retrieve the forecast zone / county for
+  the given name of the county. There are other zone names than only county
+  names, like "Central Brewster County", "Chisos Basin", "Coastal Galveston",
+  or even "Guadalupe Mountains Above 7000 Feet", so the user can also list
+  these as "counties".
+  """
+  page = '{0}.php'.format(stateabbr)
+  rooturl = 'https://alerts.weather.gov/cap/{0}'.format(page)
+  x_value = 0
+  if zoneorcounty == 'zone':
+    x_value = 2
+  if zoneorcounty == 'county':
+    x_value = 3
+  if x_value == 0:
+    return None
+  payload = {'x': x_value}
+  # print('Retrieving: {0} -- with payload {1}'.format(rooturl, payload))
+  returned_table = make_request(url=rooturl, payload=payload, use_json=False)
+  if returned_table:
+    parsed_table = BeautifulSoup(returned_table, 'lxml')
+    parsed_table1 = parsed_table.find_all('table')[3]
+    rows = parsed_table1.find_all('tr')
+    return rows
+  return None
+
+
+def parse_zone_table(county, rows):
+  """
+  find the zone or county abbreviation within a returned table that includes
+  a county name or area name to match.
+  """
+  for i in rows:
+    cells = i.find_all('td')
+    if len(cells) > 1:
+      if cells[2].text.lower() == county.lower():
+        # print('{0}: {1}'.format(cells[2].text.strip(), cells[1].text.strip()))
+        return cells[1].text.strip()
 
   return None
