@@ -439,6 +439,7 @@ def make_request(url, retries=1, payload=False, use_json=True):
 
     retries = retries - 1
 
+  print('Unsuccessful response ({0}). Returning -None-'.format(response.status_code))
   return None
 
 

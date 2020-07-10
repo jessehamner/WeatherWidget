@@ -63,6 +63,37 @@ class Observation(object):
     Take the JSON object from the NWS station and produce a reduced set of
     information for display.
     """
+    cur_url = self.data['defaults']['cur_url'].format(station=self.data['station'])
+    returned_json = wf.make_request(url=cur_url)
+    
+    if returned_json is None:
+      print('No usable returned data from URL: {0}'.format(self.data['defaults']['cur_url']))
+      return None
+
+    if 'properties' in returned_json.keys():
+      tempdict = returned_json['properties']
+      con1 = self.con1.obs
+      self.parse_primary_obs(returned_json=returned_json)
+
+      wdstring = self.wind_direction(con1['wind_direction']['value'])
+      if wdstring is None or wdstring == 'None':
+        con1['wind_cardinal'] = 'No Data'
+      else:
+        con1['wind_cardinal'] = 'Out of the {0}'.format(wdstring)
+
+      con1['beaufort'] = wf.beaufort_scale(self.data,
+                                           speed=con1['wind']['value'],
+                                           units=con1['wind']['units'])
+      print('Beaufort wind speed scale: {0}'.format(con1['beaufort']))
+      return con1
+    else:
+      return None
+
+
+  def parse_primary_obs(self, returned_json):
+    """
+    Parse the primary URL for current conditions. Return a dict.
+    """
     other = {'textDescription': 'textdescription',
              'rawMessage': 'metar',
              'timestamp': 'timestamp',
@@ -78,49 +109,36 @@ class Observation(object):
               'windSpeed': ['wind', 'velocity'],
               'windGust': ['gusts', 'velocity']
              }
-    cur_url = self.data['defaults']['cur_url'].format(station=self.data['station'])
-    returned_json = wf.make_request(url=cur_url)
-    if 'properties' in returned_json.keys():
-      tempdict = returned_json['properties']
-      con1 = self.con1.obs
-      for key, val in useful.iteritems():
-        from_unit = re.sub(r'unit:\s*', '', tempdict[key]['unitCode'])
-        from_unit = re.sub(r'^deg', '', from_unit)
-        from_value = wf.sanity_check(tempdict[key]['value'])
+    tempdict = returned_json['properties']
+    con1 = self.con1.obs
+    for key, val in useful.iteritems():
+      from_unit = re.sub(r'unit:\s*', '', tempdict[key]['unitCode'])
+      from_unit = re.sub(r'^deg', '', from_unit)
+      from_value = wf.sanity_check(tempdict[key]['value'])
 
-        if from_value is None or from_value == self.data['defaults']['missing']:
-          con1[val[0]]['value'] = 'None'
-          con1[val[0]]['units'] = ''
-        else:
-          print('Converting {0} to {1} for {2} data'.format(from_unit,
-                                                            self.data['units'][val[1]],
-                                                            val[0])
-               )
-          sys.stdout.write('{0} Input: {1}'.format(val[0], from_value))
-          con1[val[0]]['value'] = wf.convert_units(value=from_value,
-                                                   from_unit=from_unit,
-                                                   to_unit=self.data['units'][val[1]])
-          sys.stdout.write('\tOutput: {0}'.format(con1[val[0]]['value']))
-          con1[val[0]]['units'] = self.data['units'][val[1]]
-          sys.stdout.write('\tUnits: {0}\n'.format(self.data['units'][val[1]]))
-
-      for key, val in other.iteritems():
-        con1[val] = tempdict[key]
-
-      con1['wind_direction'] = {'value': tempdict['windDirection']['value'],
-                                'units': 'degrees',
-                                'label': 'Wind Direction'
-                               }
-      wdstring = self.wind_direction(con1['wind_direction']['value'])
-      if wdstring is None or wdstring == 'None':
-        con1['wind_cardinal'] = 'No Data'
+      if from_value is None or from_value == self.data['defaults']['missing']:
+        con1[val[0]]['value'] = 'None'
+        con1[val[0]]['units'] = ''
       else:
-        con1['wind_cardinal'] = 'Out of the {0}'.format(wdstring)
+        print('Converting {0} to {1} for {2} data'.format(from_unit,
+                                                          self.data['units'][val[1]],
+                                                          val[0])
+             )
+        sys.stdout.write('{0} Input: {1}'.format(val[0], from_value))
+        con1[val[0]]['value'] = wf.convert_units(value=from_value,
+                                                 from_unit=from_unit,
+                                                 to_unit=self.data['units'][val[1]])
+        sys.stdout.write('\tOutput: {0}'.format(con1[val[0]]['value']))
+        con1[val[0]]['units'] = self.data['units'][val[1]]
+        sys.stdout.write('\tUnits: {0}\n'.format(self.data['units'][val[1]]))
 
-      con1['beaufort'] = wf.beaufort_scale(self.data,
-                                           speed=con1['wind']['value'],
-                                           units=con1['wind']['units'])
-      print('Beaufort wind speed scale: {0}'.format(con1['beaufort']))
+    for key, val in other.iteritems():
+      con1[val] = tempdict[key]
+
+    con1['wind_direction'] = {'value': tempdict['windDirection']['value'],
+                              'units': 'degrees',
+                              'label': 'Wind Direction'
+                             }
     return con1
 
 
