@@ -57,6 +57,12 @@ class DayForecast(object):
     Populate a single day's forecast dict.
     """
     params = self.parsed_xml.find('parameters')
+    if params:
+      print('Found parameters tag in parsed XML forecast')
+    else:
+      print('Parsed XML contains no parameters. Returning None!')
+      print(self.parsed_xml)
+      return None
     temps = params.find_all("temperature")
     for temp in range(0, len(temps)):
       if temps[temp].attrs['type'] == "maximum":
@@ -79,7 +85,7 @@ class DayForecast(object):
     self.fcd['icon'] = wsvg.assign_icon(self.fcd['shortcast'],
                                         self.icon_dict)
     self.make_forecast_icons()
-    # print(today.fcd)
+    print('Day forecast: {0}'.format(str(self.fcd)))
     return self.fcd
 
 
@@ -153,7 +159,7 @@ class Forecast(object):
 
   def get_forecast(self, fmt=None):
     """
-    https://graphical.weather.gov/xml/sample_products/browser_interface/
+    https://digital.weather.gov/xml/sample_products/browser_interface/
     ndfdBrowserClientByDay.php?lat=38.99&lon=-77.01&format=24+hourly&numDays=7
 
     These URLs and APIs are subject to change. Refresh times should be no
@@ -182,13 +188,20 @@ class Forecast(object):
                             timeout=10
                            )
     except requests.exceptions.ReadTimeout as exc:
-      retval.status_code = 404
-      print('Request timed out.')
-      
+      print('Request timed out or could not be found.')
+      return None
+
     if retval.status_code == 200:
       self.data['forecast_xml'] = retval.text
       print('Returned HTTP response code: {0}'.format(retval))
       self.parsed_xml = BeautifulSoup(self.data['forecast_xml'], 'xml')
+      
+      if self.parsed_xml.find('error'):
+        print('Server returned 200 but had errors:\n{0}'.format(self.parsed_xml))
+        print('Submitted:\nURL: {0}\nPayload: {1}'.format(self.data['defaults']['forecast_url'],
+                                                          str(payload)))
+        return None
+
       return retval
     print('Cannot retrieve forecast -- server returned {0}'.format(retval))
     return None
@@ -206,8 +219,11 @@ class Forecast(object):
                           icon_dict=self.data['defaults']['icon_match']
                          )
       print('Populating the day\'s forecast dictionary for day {0}'.format(idx))
-      today.populate_day_dict()
-      self.forecast.append(today.fcd)
+      if today.populate_day_dict():
+        self.forecast.append(today.fcd)
+      else:
+        print('Error parsing forecast XML. Forecast is NONE.')
+        return None
 
     return self.forecast
 

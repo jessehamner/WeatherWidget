@@ -110,6 +110,9 @@ def main():
   forecast_obj = Forecast(data=data)
   forecast_obj.get_forecast()
   forecastdict = forecast_obj.parse_forecast()
+  if forecastdict is None:
+    print('Unable to parse forecast.')
+    return 1
   forecast_obj.write_forecast(outputdir=data['output_dir'])
   # Area forecast discussion:
   forecast_obj.get_afd()
