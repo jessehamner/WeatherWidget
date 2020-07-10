@@ -10,6 +10,21 @@ import re
 import svgwrite
 
 
+def fix_missing(value):
+  """
+  If there's a missing value for a number, return two dashes. Otherwise,
+  return the number.
+  """
+
+  try:
+    if value == '' or value is None:
+      return '--'
+    return value
+  except Exception as exc:
+    print('Returning a missing value string: {0}'.format(exc))
+    return '--'
+  
+
 def precip_chance_svg(morning, evening, filename, outputdir='/tmp/'):
   """
   Take the day's precip chances and produce a color-coded svg of percentages.
@@ -44,6 +59,8 @@ def precip_chance_svg(morning, evening, filename, outputdir='/tmp/'):
                                           fontsize='18', fontcolor='#ffd4fb',
                                           closebrace='}'))
   dwg.defs.add(dwg_styles)
+  evening = fix_missing(evening) 
+  morning = fix_missing(morning) 
   evening_text = svgwrite.text.TSpan(text=evening,
                                      insert=svg_info['high_coords'],
                                      class_='evening')
@@ -89,6 +106,8 @@ def high_low_svg(high, low, filename, outputdir='/tmp/'):
                                           fontsize='18', fontcolor='red',
                                           closebrace='}'))
   dwg.defs.add(dwg_styles)
+  high = fix_missing(high) 
+  low = fix_missing(low) 
   high_symbol = (unicode(high) + u'\xb0')
   low_symbol = (unicode(low) + u'\xb0')
   high_text = svgwrite.text.TSpan(text=high_symbol,
