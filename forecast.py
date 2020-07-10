@@ -243,7 +243,7 @@ class Forecast(object):
     return " ".join(result)
 
 
-  def write_forecast(self, outputdir=self.data['output_dir'], filename='forecast.txt'):
+  def write_forecast(self, outputdir='/tmp/', filename='forecast.txt'):
     """
     Write out a nicely formatted text file using the retrieved and summarized
     forecast information.
