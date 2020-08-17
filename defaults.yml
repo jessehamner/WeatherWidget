@@ -52,7 +52,7 @@ icon_match:
     'wi-day-thunderstorm.svg': ['Severe Tstms', 'T-storms', 'Tstorms', 'Chance Thunderstorms', 'Thunderstorms Likely', 'Isolated Thunderstorms', 'Thunderstorm', 'Thunderstorms', 'Thunderstorms and Rain']
     'wi-thunderstorm.svg': ['Severe Thunderstorm Watch', 'Severe Thunderstorm Warning', 'Heavy Thunderstorms and Heavy Rain']
     'wi-storm-showers.svg': ['Showers', 'Storms and Showers']
-    'wi-strong-wind.svg': ['windy', 'cloudy and windy']
+    'wi-strong-wind.svg': ['windy', 'cloudy and windy', 'mostly cloudy and windy']
     'wi-rain-wind.svg': ['rain and wind', 'rainy and windy', 'wind and rain']
     'wi-rain.svg': ['rain', 'rainy', 'heavy rain', 'light rain', 'rain shower']
     'wi-flood.svg': ['Flood Warning', 'flash flood warning', 'flash flood', 'flooding']
@@ -70,7 +70,7 @@ icon_match:
     'wi-strong-wind.svg': ['windy', 'strong winds', 'blustery', 'straight-line winds', 'winds in excess of']
     'wi-smog.svg': ['air quality alert']
     'wi-na.svg': ['None', 'N/A', 'NA']
-    
+    'person.svg': ['Child Abduction Emergency']    
   
 circle_css:
     'fill': 'white'
