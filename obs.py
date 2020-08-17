@@ -11,6 +11,8 @@ import logging
 from bs4 import BeautifulSoup
 import weather_functions as wf
 import weathersvg as wsvg
+import moon_phase
+
 
 class WeatherDict(object):
   """
@@ -36,7 +38,8 @@ class WeatherDict(object):
                     metar='',
                     timestamp='',
                     beaufort=0,
-                    weather_icon=''
+                    weather_icon='',
+                    moon_icon=''
                    )
 
 
@@ -85,6 +88,9 @@ class Observation(object):
                                            speed=con1['wind']['value'],
                                            units=con1['wind']['units'])
       print('Beaufort wind speed scale: {0}'.format(con1['beaufort']))
+
+      con1['moon_icon'] = self.moonphase()
+
       return con1
     else:
       return None
@@ -311,6 +317,8 @@ class Observation(object):
     ccp['weather_icon'] = wsvg.assign_icon(ccp['textdescription'],
                                            self.data['defaults']['icon_match'])
 
+    ccp['moon_icon'] = self.moonphase()
+
     return self.con1.obs
 
 
@@ -407,3 +415,12 @@ class Observation(object):
     except KeyError as exc:
       print('Exception: {0}'.format(exc))
       return False
+  
+
+  def moonphase(self):
+    """
+    Get the moon phase and icon name for the moon phase.
+    """
+    moon_icon = moon_phase.MoonPhase(self.data)
+    moon_icon_name = moon_icon.get_moon_phase()
+    return moon_icon_name
