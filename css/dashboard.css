@@ -1,0 +1,18 @@
+
+.moonDiv {
+  text-align: right;
+  width: 50%;
+  float: right;
+  clear: right;
+  background-color: none;
+  border: 0px outset white;
+}
+.nowDiv {
+  text-align: right;
+  width: 10%;
+  float: right;
+  clear: right;
+  background-color: none;
+  border: 0px outset white;
+  margin: 0px 0px 6px 25px;
+}
