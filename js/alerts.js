@@ -56,6 +56,7 @@ requestg.onload = () => {
 
     if (Boolean(alertdict['flags']['has_spotter'])) {
       document.getElementById("hwo_badge").className = "badge bg-yellow";
+      document.getElementById("hwo_spotter").innerHTML += alertdict['hwo']['spotter'][1];
     } else {
       document.getElementById("hwo_badge").className = "badge bg-green";
       document.getElementById("hwo_spotter").innerHTML += "Spotter activation is not expected at this time.";
