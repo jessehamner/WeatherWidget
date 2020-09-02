@@ -30,7 +30,6 @@ function writeWarningsRow() {
 function writeWarningCard(eventdict, idx, warningicon) {
   var warniconlabel = 'warning' + idx;
   document.getElementById("warnings_row_container").innerHTML += '<div class="alert alert-danger" role="alert"><table><tr><td>' + addSVGIcon(svgpath=warningicon, id=warniconlabel, width=40, height=40) + '</td><td><h3>' + eventdict['event_type'] + ':</h3></td></tr></table>' + eventdict['summary'] + "</div>";
-
 }
 
 
@@ -89,8 +88,6 @@ requestg.onload = () => {
 
 
     if (Boolean(alertdict['flags']['has_warnings'])) {
-      //document.getElementById("warning_alerts").className = "alert alert-danger";
-      //document.getElementById("alert_icon_placeholder").appendChild(generateIconImage('warning.svg', 'weather alert icon'));
       writeWarningsRow();
       for (var i in alertdict['warn']) {
         console.log('Warning list entry: ' + alertdict['warn'][i]['event_type']);
@@ -99,16 +96,26 @@ requestg.onload = () => {
       }
     }
 
-    //document.getElementById("warning_alerts").appendChild(generateIconImage('watch.svg', 'weather watch icon'));
-    //document.getElementById("warning_alerts").innerHTML += 'Major flooding'  + "<br>";
-
+    var para;
+    var textnode;
+    var summary;
+    var h3;
     const keys = Object.keys(alertdict);
     console.log("Keys: " + keys );
     for (i of alertdict['watch']) {
       console.log('Alert dictionary entry: ' + i['event_type']);
-      document.getElementById("watch_entries").innerHTML += '<div class="alert alert-warning" role="alert">';
-      document.getElementById("watch_entries").appendChild(generateIconImage('wi-thunderstorm.svg', 'thunderstorm icon'));
-      document.getElementById("watch_entries").innerHTML += '<h3>' + i['event_type'] + "</h3><br>" + i['summary'] + "</div>";
+      para = document.createElement("div");
+      para.setAttribute("class", "alert alert-warning");
+      para.setAttribute("role", "alert");
+      summary = document.createTextNode(i['summary']);
+      h3 = document.createElement("h3");
+      textnode = document.createTextNode(i['event_type']);
+      h3.appendChild(generateIconImage('wi-thunderstorm.svg', 'specific watch icon'));
+      h3.appendChild(textnode);
+      para.appendChild(h3);
+      para.appendChild(summary);
+
+      document.getElementById("watch_entries").appendChild(para);
       if (i['severity'] == "Severe") {
         console.log("Severity: " + i['severity']);
         if (i['certainty'] == "Observed") {
