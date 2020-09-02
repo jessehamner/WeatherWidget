@@ -55,7 +55,7 @@ icon_match:
     'wi-strong-wind.svg': ['windy', 'cloudy and windy', 'mostly cloudy and windy']
     'wi-rain-wind.svg': ['rain and wind', 'rainy and windy', 'wind and rain']
     'wi-rain.svg': ['rain', 'rainy', 'heavy rain', 'light rain', 'rain shower']
-    'wi-flood.svg': ['Flood Warning', 'flash flood warning', 'flash flood', 'flooding']
+    'wi-flood.svg': ['Flood Warning', 'flash flood warning', 'flash flood', 'flooding', 'flood advisory', 'flash flood watch']
     'wi-tornado.svg': ['Tornado Watch', 'Tornado Warning']
     'wi-gale-warning.svg': ['Gale Warning', 'Wind Advisory', 'Small Craft Advisory']
     'wi-small-craft-advisory.svg': ['Wind Advisory', 'Small Craft Advisory']
