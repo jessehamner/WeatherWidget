@@ -423,6 +423,12 @@ def make_request(url, retries=1, payload=False, use_json=True):
         retries = retries - 1
         continue
 
+    try:
+      if response:
+        pass
+    except Exception as exc:
+      print('No response to HTTP query. Returning -None-.')
+
     if response.status_code == 200:
       if use_json is True:
         try:
