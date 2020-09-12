@@ -27,6 +27,9 @@ function insertSVG(svgpath, id) {
 
 
 function write_one_row(forecast, idx) {
+  var height1 = "50";
+  var width2 = "65";
+  var width1 = "50";
   var daystring = "day" + idx + "";
   var summary = "summary" + daystring;
   var icon = "fc_icon_" + idx + "";
@@ -34,10 +37,10 @@ function write_one_row(forecast, idx) {
   var precip = "today_precip_plus_" + idx + ".svg";
  
   var subheader = '<div class="d-flex align-items-center"><span><div class="subheader" id="' + daystring + '">' + forecast[idx].day + '</div></span></div>';
-  var weather = '<div class="d-flex align-items-baseline"><span class="bg-gray text-white stamp mr-3"><img id="' + icon + '"  src="static/icons/weather-icons-master/svg/' + forecast[idx].icon + '" alt="weather icon daytime" width="40" height="40"></span>';
-  var temps_pane = '<span class="bg-gray forecastDiv mr-3"><img src="static/photos/' + temp + '" alt="weather icon today temperatures" width="40" height="40"></span>';
-  var precip_pane = '<span class="forecastDiv"> <img src="static/photos/' + precip + '" alt="weather icon today precipitation chances" width="55" height="40"></span></div>';
-  var summarytext = '<div class="text-muted" id="' + summary + '">' + forecast[idx].shortcast + '</div>';
+  var weather = '<div class="d-flex align-items-baseline"><span class="bg-gray forecastDiv mr-3" style="--icon-height: ' + height1 + 'px;"><img id="' + icon + '"  src="static/icons/weather-icons-master/svg/' + forecast[idx].icon + '" alt="weather icon daytime" width="' + width1 + '" height="' + height1 + '"></span>';
+  var temps_pane = '<span class="bg-gray forecastDiv mr-3" style="--icon-height: ' + height1 + 'px;"><img src="static/photos/' + temp + '" alt="weather icon today temperatures" width="' + width1 + '" height="' + height1 + '"></span>';
+  var precip_pane = '<span class="forecastDiv" style="--icon-height: ' + height1 + 'px;"> <img src="static/photos/' + precip + '" alt="weather icon today precipitation chances" width="' + width2 + '" height="' + height1  + '"></span></div>';
+  var summarytext = '<div class="text-muted" style="font-size: large" id="' + summary + '">' + forecast[idx].shortcast + '</div>';
 
   return subheader + weather + temps_pane + precip_pane + summarytext;
 }

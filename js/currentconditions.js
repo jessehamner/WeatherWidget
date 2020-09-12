@@ -27,7 +27,7 @@ function writeline(value, unit, label) {
     unit = "";
   }
   console.log("Now: " + value);
-  tablerow = '<tr><td style="padding:3px">' + label + "</td><td>" + value + " " + unit + '</td></tr>';
+  tablerow = '<tr><td style="padding:3px;">' + label + "</td><td>" + value + " " + unit + '</td></tr>';
   return tablerow;
 }
 
@@ -57,19 +57,6 @@ function coolrow(table, obs) {
 }
 
 
-//function simpleTable() {
-//  let table_object = document.createElement("table");
-//  let tr = document.createElement("tr");
-//  let td = document.createElement("td");
-//  document.setAttribute("id", "table2");
-  
-  // var table2 = '<table id="table2" align="right"><tr><td id="weather_icon_here"></td></tr><tr><td id="wind_direction_icon_here"></td></tr><tr><td id="beaufort_icon"></td></tr></table>';
-//  var table_object;
-//
-
-//  return table_object;
-//}
-
 
 let request = new XMLHttpRequest();
 request.open("GET", "http://192.168.0.199:5000/current_conditions");
@@ -80,7 +67,7 @@ request.onload = () => {
     console.log(request.responseText);
     var curDict = JSON.parse(request.responseText);
     var table0 = '<table id="table0"><tr><td id="cc_col1"></td><td>&nbsp;&nbsp;</td><td id="cc_col2"></td></tr></table>';
-    var table1 = '<table id="table1">';
+    var table1 = '<table id="table1" style="font-size: large">';
     table1 = table1 + "<tr><td>Currently:</td><td class=\"paddedCells\">" + curDict["textdescription"] + "</td></tr>";
     table1 = table1 + '</table>';
     var table2 = '<table id="table2" align="right"><tr><td id="weather_icon_here"></td></tr><tr><td id="wind_direction_icon_here"></td></tr><tr><td id="beaufort_icon"></td></tr></table>';
