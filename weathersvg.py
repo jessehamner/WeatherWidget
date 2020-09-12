@@ -25,15 +25,17 @@ def fix_missing(value):
     return '--'
   
 
-def precip_chance_svg(morning, evening, filename, outputdir='/tmp/'):
+def precip_chance_svg(morning, evening, filename, outputdir='/tmp/', iconheight=50):
   """
   Take the day's precip chances and produce a color-coded svg of percentages.
   """
-  svg_info = {'high_coords': (8, 16),
-              'low_coords': (2, 38),
-              'dimensions': (55, 40),
+  fontheight = (iconheight / 2) - 2
+  svg_info = {'high_coords': (8, fontheight),
+              'low_coords': (2, iconheight - 2),
+              'dimensions': (65, iconheight),
               'colors': ['#baa87d', '#7ae6c0', '#2bb5aa', '#023dbd', '#035740'],
-              'fontcolor': 'white'
+              'fontcolor': 'white',
+              'fontheight': fontheight
              }
 
   bgc = svg_info['colors'][int(max(morning, evening)/100.0 * (len(svg_info['colors']) - 1))]
@@ -44,7 +46,7 @@ def precip_chance_svg(morning, evening, filename, outputdir='/tmp/'):
     morning = '{0}%'.format(morning)
 
   style1 = '''.{stylename} {openbrace} font: bold {fontsize}px sans-serif;
-  fill:{fontcolor}; stroke:#000000; stroke-width:1px; stroke-linecap:butt;
+  fill:{fontcolor}; stroke:#000000; stroke-width:2px; stroke-linecap:butt;
   stroke-linejoin:miter; stroke-opacity:0.5; {closebrace}'''
 
   dwg = svgwrite.Drawing(os.path.join(outputdir, filename),
@@ -53,10 +55,10 @@ def precip_chance_svg(morning, evening, filename, outputdir='/tmp/'):
   dwg_styles = svgwrite.container.Style(content='.background {fill: ' + bgc +
                                         '; stroke: #f0f0f0f0;}')
   dwg_styles.append(content=style1.format(stylename='morning', openbrace='{',
-                                          fontsize='18', fontcolor='#f2df94',
+                                          fontsize=fontheight, fontcolor='#f2df94',
                                           closebrace='}'))
   dwg_styles.append(content=style1.format(stylename='evening', openbrace='{',
-                                          fontsize='18', fontcolor='#ffd4fb',
+                                          fontsize=fontheight, fontcolor='#ffd4fb',
                                           closebrace='}'))
   dwg.defs.add(dwg_styles)
   evening = fix_missing(evening) 
@@ -80,7 +82,7 @@ def precip_chance_svg(morning, evening, filename, outputdir='/tmp/'):
   return 0
 
 
-def high_low_svg(high, low, filename, outputdir='/tmp/'):
+def high_low_svg(high, low, filename, outputdir='/tmp/', iconheight=50, iconwidth=50):
   """
   Use svgwrite to make a simple graphic with high/low temps for the day's
   forecast.
@@ -89,21 +91,31 @@ def high_low_svg(high, low, filename, outputdir='/tmp/'):
   Unicode degree symbol is U+00B0 ('\xb0') -- same as Latin-1 encoding, but is
   not available in 1963-standard 7-bit ASCII
   """
+  fontheight = (iconheight / 2) - 2
+  svg_info = {'high_coords': (3, fontheight),
+              'low_coords': (3, iconheight - 2),
+              'dimensions': (iconwidth, iconheight),
+              'colors': ['#baa87d', '#7ae6c0', '#2bb5aa', '#023dbd', '#035740'],
+              'fontcolor': ['blue', 'red', 'white'],
+              'fontheight': fontheight
+             }
 
-  high_coords = (2, 15)
-  low_coords = (2, 36)
-  dimensions = (40, 40)
+  # high_coords = (3, 18)
+  # low_coords = (3, 40)
+  # dimensions = (iconheight, iconwidth)
   style1 = '.{stylename} {openbrace} font: bold {fontsize}px sans-serif;\
   fill:{fontcolor}; stroke:#000000; stroke-width:1px; stroke-linecap:butt;\
   stroke-linejoin:miter; stroke-opacity:0.7; {closebrace}'
 
-  dwg = svgwrite.Drawing(os.path.join(outputdir, filename), size=dimensions)
+  dwg = svgwrite.Drawing(os.path.join(outputdir, filename), size=svg_info['dimensions'])
   dwg_styles = svgwrite.container.Style(content='.background {fill: #f0f0f0f0; stroke: #f0f0f0f0;}')
   dwg_styles.append(content=style1.format(stylename='low', openbrace='{',
-                                          fontsize='16', fontcolor='blue',
+                                          fontsize=fontheight,
+                                          fontcolor=svg_info['fontcolor'][0],
                                           closebrace='}'))
   dwg_styles.append(content=style1.format(stylename='high', openbrace='{',
-                                          fontsize='18', fontcolor='red',
+                                          fontsize=fontheight + 2,
+                                          fontcolor=svg_info['fontcolor'][1],
                                           closebrace='}'))
   dwg.defs.add(dwg_styles)
   high = fix_missing(high) 
@@ -111,9 +123,9 @@ def high_low_svg(high, low, filename, outputdir='/tmp/'):
   high_symbol = (unicode(high) + u'\xb0')
   low_symbol = (unicode(low) + u'\xb0')
   high_text = svgwrite.text.TSpan(text=high_symbol,
-                                  insert=high_coords, class_='high')
+                                  insert=svg_info['high_coords'], class_='high')
   low_text = svgwrite.text.TSpan(text=low_symbol,
-                                 insert=low_coords, class_='low')
+                                 insert=svg_info['low_coords'], class_='low')
   text_block = svgwrite.text.Text('', x='0', y='0')
   text_block.add(high_text)
   text_block.add(low_text)
@@ -218,7 +230,7 @@ def wind_direction_icon(heading, sourcepath='static/icons/weather-icons-master/s
   filepath = os.path.join(sourcepath, filename)
 
 
-  img_html = '''<img src="{0}" width="40" height="40" fill="white"
+  img_html = '''<img src="{0}" width="50" height="50" fill="white"
       transform="rotate({1},20,20)" />'''.format(filepath, int(heading))
   print(img_html)
 
