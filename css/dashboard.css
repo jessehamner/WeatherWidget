@@ -1,18 +1,41 @@
+@charset "UTF-8";
+
+:root {
+  --icon-height: 50px;
+}
 
 .moonDiv {
   text-align: right;
   width: 50%;
   float: right;
   clear: right;
-  background-color: none;
+  background-color: white;
   border: 0px outset white;
 }
+
 .nowDiv {
   text-align: right;
   width: 10%;
   float: right;
   clear: right;
-  background-color: none;
+  background-color: white;
   border: 0px outset white;
   margin: 0px 0px 6px 25px;
+}
+
+.forecastDiv {
+  display: inline-flex;
+  height: var(--icon-height);
+  min-width: var(--icon-height);
+  text-align: center;
+  line-height: var(--icon-height);
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  padding: 0 0;
+  margin: 0 0 0 0;
+}
+
+.paddedCells {
+  padding-left: 9px;
 }
