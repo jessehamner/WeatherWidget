@@ -113,15 +113,11 @@ class Forecast(object):
     - .LONG TERM...
     - .AVIATION...
     - .PRELIMINARY POINT TEMPS/POPS...
-    - .WATCHES/WARNINGS/ADVISORIES...
+    - .[three-letter NWS abbreviation] WATCHES/WARNINGS/ADVISORIES...
 
-    But this function only retrieves the short- and long-term paragraphs.
     """
-
     afdreturn = dict(short_term='', long_term='')
-    endmarker = '&&'
-    url = 'https://forecast.weather.gov/product.php'
-
+    recordsplit = '&&'
     args = {'site':self.data['nws_abbr'],
             'issuedby': self.data['nws_abbr'],
             'product': 'AFD',
@@ -131,7 +127,10 @@ class Forecast(object):
            }
 
     try:
-      response = requests.get(url, params=args, verify=False, timeout=10)
+      response = requests.get(self.defaults['afd_url'],
+                              params=args,
+                              verify=False,
+                              timeout=10)
     except requests.exceptions.ReadTimeout:
       print('Request timed out. Returning -None-')
       return None
@@ -140,21 +139,62 @@ class Forecast(object):
       print('Response from server was not OK: {0}'.format(response.status_code))
       return None
 
-    afd = response.text
-    afdtext = re.sub(r'\n', ' ', afd)
-    afdtext = re.sub(endmarker, '\n', afdtext)
-    short_term = re.search(r'\.SHORT TERM\.\.\.(.*.?)', afdtext).groups(0)[0]
-    long_term = re.search(r'\.LONG TERM\.\.\.(.*.?)', afdtext).groups(0)[0]
-    short_term = re.sub(r'^\s+', '', short_term)
-    short_term = re.sub(r'\s+$', '', short_term)
-    short_term = re.sub(r'\`', "'", short_term)
-    long_term = re.sub(r'\s+\/NEW\/\s+', '', long_term)
-    long_term = re.sub(r'\s+$', '', long_term)
-    afdreturn['short_term'] = short_term
-    afdreturn['long_term'] = long_term
-    write_json(afdreturn, outputdir=self.data['output_dir'], filename='afd.json')
+    afd = BeautifulSoup(response.text, 'lxml').find('body').find('pre').text
+    print('Response text (HTML body/pre/text):\n{0}'.format(afd))
 
+    afd_groups = re.split(re.escape(recordsplit), afd, re.M)
+    if len(afd_groups) < 5:
+      print('There should be five or six sections in the Area Forecast Discussion!')
+      print('Returning None.')
+      return None
+    else:
+      print('There are {0} entries in the Area Forecast Discussion.'.format(len(afd_groups)))
+
+    indicator = self.defaults['afd_divisions'][0]
+    short_term = afd_groups[0]
+    afdreturn['short_title'], afdreturn['short_term'] = self.tidy_afd_text(short_term, indicator)
+
+    indicator = self.defaults['afd_divisions'][1]
+    long_term = afd_groups[1]
+    afdreturn['long_title'], afdreturn['long_term'] = self.tidy_afd_text(long_term, indicator)
+
+    write_json(afdreturn, outputdir=self.data['output_dir'], filename='afd.json')
     return afdreturn
+
+
+  def tidy_afd_text(self, text, upperlabel):
+    """
+    Take the text and do some basic regexing on it, plus extract potential
+    label/header text.
+    """
+    fctxt = re.sub(r'^.+.?(' + re.escape(upperlabel) +  ')', '\\1', text, re.M, re.DOTALL)
+    fctxt = re.sub(r'\n+\d+\n+$', '', fctxt, re.M)
+    label = self.get_forecast_header(fctxt)
+    fctxt = re.sub(r'' + re.escape(upperlabel) + '.+.?\/\n{2}?', '', fctxt, re.M, re.DOTALL)
+    fctxt = re.sub(r'\n(?!\n)', ' ', fctxt)
+    fctxt = re.sub(r'\`', "'", fctxt)
+    fctxt = re.sub(r'^\s+', '', fctxt)
+    return label, fctxt
+
+
+  def get_forecast_header(self, text):
+    """
+    Pull out the forcast timing information label, ignoring the labels that
+    say "NEW". These labels are denoted with forward slashes.
+    """
+
+    headers = [re.sub(r'\/', '', r.group()) for r in re.finditer(r'\/.+.?\/', text)]
+
+    try:
+      if headers[1]:
+        return headers[1]
+      if headers[0]:
+        return headers[0]
+      return ''
+
+    except Exception as exc:
+      print('Cannot match a forecast time frame header in {0}. ({1})'.format(headers, exc))
+    return ''
 
 
   def get_forecast(self, fmt=None):
@@ -188,14 +228,14 @@ class Forecast(object):
                             timeout=10
                            )
     except requests.exceptions.ReadTimeout as exc:
-      print('Request timed out or could not be found.')
+      print('Request timed out or could not be found: {0}.'.format(exc))
       return None
 
     if retval.status_code == 200:
       self.data['forecast_xml'] = retval.text
       print('Returned HTTP response code: {0}'.format(retval))
       self.parsed_xml = BeautifulSoup(self.data['forecast_xml'], 'xml')
-      
+
       if self.parsed_xml.find('error'):
         print('Server returned 200 but had errors:\n{0}'.format(self.parsed_xml))
         print('Submitted:\nURL: {0}\nPayload: {1}'.format(self.data['defaults']['forecast_url'],
