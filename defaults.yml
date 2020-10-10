@@ -42,6 +42,13 @@ afd_url: 'https://forecast.weather.gov/product.php'
 forecast_days: 4
 metar_url: 'https://w1.weather.gov/data/METAR/'
 
+afd_divisions:
+ - '.SHORT TERM...'
+ - '.LONG TERM...'
+ - '.AVIATION...'
+ - '.PRELIMINARY POINT TEMPS/POPS...'
+ - '.XXX WATCHES/WARNINGS/ADVISORIES...'
+
 icon_match:
     'wi-day-sunny-overcast.svg': ['mostly sunny', 'partly sunny', 'partly cloudy', 'becoming sunny', 'gradual clearing']
     'wi-day-sunny.svg': ['sunny', 'clear', 'mostly sunny', 'mostly clear']
@@ -52,9 +59,9 @@ icon_match:
     'wi-day-thunderstorm.svg': ['Severe Tstms', 'T-storms', 'Tstorms', 'Chance Thunderstorms', 'Thunderstorms Likely', 'Isolated Thunderstorms', 'Thunderstorm', 'Thunderstorms', 'Thunderstorms and Rain']
     'wi-thunderstorm.svg': ['Severe Thunderstorm Watch', 'Severe Thunderstorm Warning', 'Heavy Thunderstorms and Heavy Rain']
     'wi-storm-showers.svg': ['Showers', 'Storms and Showers']
-    'wi-strong-wind.svg': ['windy', 'cloudy and windy', 'mostly cloudy and windy']
+    'wi-strong-wind.svg': ['windy', 'cloudy and windy', 'mostly cloudy and windy','breezy']
     'wi-rain-wind.svg': ['rain and wind', 'rainy and windy', 'wind and rain', 'heavy rain and fog/mist']
-    'wi-rain.svg': ['rain', 'rainy', 'heavy rain', 'light rain', 'rain shower', 'light rain and fog/mist', 'rain showers likely']
+    'wi-rain.svg': ['rain', 'rainy', 'heavy rain', 'light rain', 'rain shower', 'light rain and fog/mist', 'rain showers likely', 'rain showers']
     'wi-flood.svg': ['Flood Warning', 'flash flood warning', 'flash flood', 'flooding', 'flood advisory', 'flash flood watch']
     'wi-tornado.svg': ['Tornado Watch', 'Tornado Warning']
     'wi-gale-warning.svg': ['Gale Warning', 'Wind Advisory', 'Small Craft Advisory']
