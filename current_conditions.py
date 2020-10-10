@@ -14,9 +14,9 @@ from __future__ import print_function
 
 import sys
 import os
+import re
 import weather_functions as wf
 from imagery import Imagery
-from moon_phase import MoonPhase
 from alerts import Alerts
 from radar import Radar
 from obs import Observation
@@ -57,7 +57,9 @@ def main():
   data['bands'] = data['defaults']['goes_bands']
   data['alert_counties'] = wf.populate_alert_counties(data['counties_for_alerts'])
   print('alert counties:\n{0}'.format(str(data['alert_counties'])))
-
+  data['defaults']['afd_divisions'][4] = re.sub('XXX',
+                                                data['nws_abbr'],
+                                                defaults['afd_divisions'][4])
   # Check for outage information
   wf.outage_check(data)
 
@@ -72,9 +74,9 @@ def main():
   if right_now.con1.obs and sum_con:
     text_conditions, nice_con = right_now.format_current_conditions()
     print('Current conditions from primary source: {0}'.format(nice_con))
-    html_table = wf.htable_current_conditions(nice_con,
-                                              'current_conditions.html',
-                                              outputdir=data['output_dir'])
+    #html_table = wf.htable_current_conditions(nice_con,
+    #                                          'current_conditions.html',
+    #                                          outputdir=data['output_dir'])
     wf.write_json(some_dict=nice_con,
                   outputdir=data['output_dir'],
                   filename='current_conditions.json'
@@ -126,10 +128,6 @@ def main():
   # Satellite imagery:
   current_image = Imagery(band='GEOCOLOR', data=data)
   current_image.get_current_image()
-
-  # Moon phase and icon name for the moon phase:
-  moon_icon = MoonPhase(data)
-  moon_icon_name = moon_icon.get_moon_phase()
 
   return 0
 
