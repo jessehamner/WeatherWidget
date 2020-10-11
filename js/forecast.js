@@ -72,6 +72,8 @@ afd.onload = () => {
     console.log(afd.responseText);
     document.getElementById("afd1").innerHTML += afd_text.short_term ;
     document.getElementById("afd2").innerHTML += afd_text.long_term ;
+    document.getElementById("long-term-forecast-header").innerHTML += afd_text.long_title ;
+    document.getElementById("short-term-forecast-header").innerHTML += afd_text.short_title ;
   } else {
     console.log(`error ${afd.status} ${afd.statusText}`);
   }
