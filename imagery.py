@@ -209,3 +209,36 @@ class Imagery(object):
       return False
 
     return True
+
+
+  def get_forecast_map(self):
+    """
+    Retrieve the national forecast map.
+
+    """
+    response = requests.get(url=self.data['forecast_map_url'], verify=False)
+    if response.status_code != 200:
+      print('Response code: {0}. Returning False.'.format(response.status_code))
+      return False
+    with open(os.path.join(self.data['defaults']['output_dir'], 'national_forecast_map.gif'), 'wb') as outputfile:
+      outputfile.write(response.content)
+      outputfile.close()
+    return True
+
+
+  def get_national_temp_map(self):
+    """
+    Pull the national high temperature map from 
+    https://graphical.weather.gov/images/conus/MaxT1_conus.png
+    """
+    response = requests.get(url='https://graphical.weather.gov/images/conus/MaxT1_conus.png')
+    if response.status_code != 200:
+      print('Response code: {0}. Returning False.'.format(response.status_code))
+      return False
+    with open(os.path.join(self.data['defaults']['output_dir'], 'national_high_temp_map.png'), 'wb') as outputfile:
+      outputfile.write(response.content)
+      outputfile.close()
+    return True
+
+
+    
