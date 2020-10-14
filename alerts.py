@@ -50,13 +50,13 @@ class EventDict(object):
     event_type = self.entry.find('event', text=True)
     if event_type:
       event_type = event_type.text
-      print('Event_type info: {0}'.format(event_type))
+      logging.info('Event_type info: %s', event_type)
     else:
-      print('No cap:event tags in entry?')
+      logging.info('No cap:event tags in entry?')
 
     startdate = self.entry.find('effective', text=True)
     if startdate:
-      print('Startdate: {0}'.format(startdate.text))
+      logging.info('Startdate: %s', startdate.text)
       startdate = startdate.text
 
     # category = entry.find('category').string
@@ -75,8 +75,8 @@ class EventDict(object):
                                                             sev=self.eventdict['severity'],
                                                             summary=summary)
     self.eventdict['alert_icon'] = wsvg.assign_icon(self.eventdict['event_type'],
-                                                    self.data['defaults']['icon_match']) 
-    print('Warning summary: {0}'.format(self.eventdict['warning_summary']))
+                                                    self.data['defaults']['icon_match'])
+    logging.debug('Warning summary: %s', self.eventdict['warning_summary'])
     return self.eventdict
 
 
@@ -94,7 +94,7 @@ class EventDict(object):
     elif event_type.lower() in self.data['defaults']['alerts']:
       return 'alert'
 
-    print('Unable to classify {0}'.format(event_type))
+    logging.warn('Unable to classify %s', event_type)
     return 'alert'
 
 
@@ -150,7 +150,7 @@ class Alerts(object):
       self.alerts['hwo'] = dict(today=[nodata, nodata], spotter=[nodata, nodata],
                                 daystwothroughseven=[nodata, nodata])
 
-    print('Getting alerts for these counties: {0}.'.format(self.data['alert_counties'].keys()))
+    logging.info('Getting alerts for these counties: %s', self.data['alert_counties'].keys())
     self.get_current_alerts()
     self.set_flags()
 
@@ -160,7 +160,7 @@ class Alerts(object):
         if os.path.exists(alertpath):
           os.remove(alertpath)
       except OSError as exc:
-        print('OS Error: {0}'.format(exc))
+        logging.error('OS Error: %s}', exc)
 
     wf.write_json(some_dict=self.alerts,
                   filename='alerts.json',
@@ -197,51 +197,50 @@ class Alerts(object):
     county_params_dict = {'x': self.data['alert_counties'][key][1],
                           'y': int(self.data['alert_counties'][key][0])
                          }
-    print('County params dict for HTTPS request: {0}'.format(str(county_params_dict)))
+    logging.debug('County params dict for HTTPS request: %s', str(county_params_dict))
     try:
       response = requests.get(self.data['defaults']['alerts_url'],
                               params=county_params_dict,
                               verify=False, timeout=10)
     except Exception as exc:
-      print('Exception when requesting current alerts: {0}'.format(exc))
+      logging.error('Exception when requesting current alerts: %s', exc)
       return None
 
     if response.status_code == 200:
-      print('Response from NWS alerts server was 200. Continuing.')
+      logging.debug('Response from NWS alerts server was 200. Continuing.')
       if response.headers['Content-Type'] == 'text/xml':
       # Parse the feed for relevant content:
         entries = BeautifulSoup(response.text, 'xml').find('feed').find_all('entry')
       else:
-        print('ERROR: response content is: {0}'.format(response.headers['Content-Type']))
-        print('Response text from NWS server: {0}'.format(response.text))
+        logging.error('Response content is: %s', response.headers['Content-Type'])
+        logging.debug('Response text from NWS server: %s', response.text)
         return None
     else:
-      print('ERROR: Response from NWS alerts server is: {0}'.format(response.status_code))
+      logging.error('Response from NWS alerts server is: %s', response.status_code)
       return None
 
-    print('Now checking alerts xml.')
+    logging.info('Now checking alerts xml for county: %s.', key)
     for entry in entries:
       title = entry.find('title').text
-      print('title: {0}'.format(title))
+      logging.debug('title: %s', title)
       if re.search(r'^There are no active watches', title):
-        print('No active watches for this area.')
+        logging.info('No active watches for this area.')
         return False
 
-      # print('Entry: {0}'.format(entry))
+      logging.debug('Entry: %s', entry)
       warning_county = self.is_county_relevant(key,
                                                entry,
                                                tagname='areaDesc')
       if warning_county:
-        print('Found warning for {0} county.'.format(warning_county))
-        # print('Text of this warning entry is: {0}'.format(entry.prettify()))
+        logging.info('Found warning for %s county', warning_county)
+        logging.debug('Text of warning entry: %s', entry.prettify())
         event_id = entry.find('id').text
-        print('event id appears to be: {0}'.format(event_id))
+        logging.debug('event id appears to be: %s', event_id)
 
         edt = EventDict(entry, self.data)
         edt.populate()
-        print('This event belongs in list: {0}'.format(edt.eventdict['alert_type']))
+        logging.info('This event belongs in list: %s', edt.eventdict['alert_type'])
         county_alerts.append(edt.eventdict)
-
 
     return county_alerts
 
@@ -252,19 +251,19 @@ class Alerts(object):
     if the ID is there.
     """
     current_id = current_dict['event_id']
-    print('checking event_id "{0}" for redundancy.'.format(current_id))
+    logging.info('checking event_id "%s" for redundancy.', current_id)
     warns = ['alert', 'watch', 'warn']
     for warntype in warns:
-      print('Existing entries: {0}'.format(str(self.alerts[warntype])))
+      logging.debug('Existing entries: %s', str(self.alerts[warntype]))
       for existing in self.alerts[warntype]:
-        print('Checking {0} vs {1}'.format(existing['event_id'], current_id))
+        logging.debug('Checking %s vs %s', existing['event_id'], current_id)
         if existing['event_id'] == current_id:
-          print('*** Matched {0} to {1} -- returning True'.format(existing['event_id'], current_id))
+          logging.info('Matched %s to %s -- returning True', existing['event_id'], current_id)
           return True
         if existing['summary'] == current_dict['summary']:
-          print('*** Identical summary text. -- returning True')
+          logging.info('Identical summary text. -- returning True')
           return True
-    print('Cycled through every entry in self.alerts. Returning False.')
+    logging.info('Cycled through every entry in self.alerts. Returning False.')
     return False
 
 
@@ -292,7 +291,7 @@ class Alerts(object):
 
     """
     if self.data['alert_counties'].keys() is None:
-      print('No counties in submitted parameters. Returning -None-')
+      logging.info('No counties in submitted parameters. Returning -None-')
       return None
 
     for county in self.data['alert_counties'].keys():
@@ -301,10 +300,10 @@ class Alerts(object):
         continue
 
       for already in county_alerts:
-        print('checking event_id "{0}" for redundancy.'.format(already['event_id']))
+        logging.info('checking event_id "%s" for redundancy.', already['event_id'])
         if self.check_duplicate(already):
           continue
-        print('event dictionary: {0}'.format(str(already)))
+        logging.debug('event dictionary: %s', str(already))
         self.alerts[already['alert_type']].append(already)
 
     return self.alerts
@@ -325,11 +324,11 @@ class Alerts(object):
       if not clist:
         return None
     except AttributeError as exc:
-      print('Attribute Error: {0}. Returning None.'.format(exc))
+      logging.error('Attribute Error: %s. Returning None.', exc)
       return None
 
     for county in clist:
-      print('Checking county {0}'.format(county))
+      logging.info('Checking county %s', county)
       if county.strip() == key:
         return county.strip()
 

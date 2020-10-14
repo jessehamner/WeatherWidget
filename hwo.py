@@ -77,37 +77,38 @@ class HWO(object):
 
     """
     bodytext = self.hwo_text
-    # print('Raw body text of HWO: \n{0}'.format(bodytext))
+    logging.debug('Raw body text of HWO: \n%s', bodytext)
 
     dayone = re.search(r'(\.DAY ONE.*?)(\.DAYS TWO THROUGH SEVEN.*?)', bodytext, re.DOTALL)
     if dayone:
       hwotext = re.sub(r'\n\n$', '', dayone.group(1))
       hwotext = re.sub(r'\.{1,}DAY ONE[\.]{1,}', '', hwotext)
       first_sentence = re.search(r'^(.*)\.', hwotext).group(1)
-      # print('First sentence: {0}'.format(first_sentence))
+      logging.debug('First sentence: %s', first_sentence)
       hwotext = re.sub('\n', ' ', hwotext)
+      hwotext = self.nice_plumbing(hwotext)
+
       first_info = re.sub(first_sentence, '', hwotext)
       first_info = re.sub(r'^\s*\.*', '', first_info)
       self.hwodict['dayone'] = [first_sentence.strip(), first_info.strip()]
 
-
     daytwo = re.search('DAYS TWO THROUGH SEVEN(.*)SPOTTER', bodytext, re.DOTALL).group(1)
     if daytwo:
-      print('DayTwo: {0}'.format(daytwo))
+      logging.debug('DayTwo: %s', daytwo)
       daytwo = re.sub(r'\n{1,}', ' ', daytwo)
       daytwo = re.sub(r'\.{3,}\s*', ' ', daytwo)
       first_sentence = re.search(r'^(.*?)\.', daytwo).group(1)
-      # print('First sentence: {0}'.format(first_sentence))
+      logging.debug('First sentence: %s', first_sentence)
       second_info = re.sub(first_sentence, '', daytwo)
-      second_info = re.sub(r'^\s*\.*', '', second_info)
+      second_info = self.nice_plumbing(second_info)
       self.hwodict['daystwothroughseven'] = [first_sentence.strip(),
                                              second_info.strip()]
 
-    spotter = re.search(r'(\.SPOTTER INFORMATION STATEMENT.*?)(\s*\$\$)',
+    spotter = re.search(r'(\.*SPOTTER INFORMATION STATEMENT.*?)(\s*\$\$)',
                         bodytext, re.DOTALL)
     if spotter:
-      spottext = re.sub(r'\n\n$', '', spotter.group(1))
-      spottext = re.sub(r'\.{1,}SPOTTER INFORMATION STATEMENT[\.]{1,}',
+      spottext = self.nice_plumbing(spotter.group(1))
+      spottext = re.sub(r'SPOTTER INFORMATION STATEMENT[\.]{1,}',
                         '', spottext)
       spottext = re.sub('\n', ' ', spottext)
       self.hwodict['spotter'] = ['Spotter Information Statement',
@@ -120,3 +121,14 @@ class HWO(object):
         return True
       self.hwodict['has_spotter'] = True
     return True
+
+
+  def nice_plumbing(self, text):
+    """
+    Try and regex/tidy some of the text.
+    """
+
+    return_text = re.sub(r'^\s*\.*', '', text)
+    return_text = re.sub(r'\.\s+\.$', '.', return_text)
+    return_text = re.sub(r'\n+$', '', return_text)
+    return return_text
