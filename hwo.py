@@ -3,8 +3,6 @@ hwo.py: download and sort the NOAA / All Hazards hazardous weather outlook.
 Return a nice dictionary.
 """
 
-from __future__ import print_function
-
 import os
 import re
 import logging

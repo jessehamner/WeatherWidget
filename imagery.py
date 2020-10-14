@@ -2,8 +2,6 @@
 imagery.py: a Class for obtaining weather satellite imagery from NOAA.
 """
 
-from __future__ import print_function
-
 import os
 import re
 import logging
@@ -55,20 +53,20 @@ class Imagery(object):
       self.fileslist = self.get_goes_list()
       timestamps = self.get_goes_timestamps()
     except Exception as exc:
-      print('Exception when determining current timestamps:\n{0}'.format(exc))
+      logging.error('Exception when determining current timestamps: %s', exc)
       return False
 
     try:
       current_timestamp = timestamps[-1]
-      print('Current timestamp: {0}'.format(current_timestamp))
+      logging.info('Current timestamp: %s', current_timestamp)
     except Exception as exc:
-      print('Exception when evaluating current timestamps, {0}:\n{1}'.format(timestamps, exc))
+      logging.error('Exception when evaluating current timestamps, %s: %s', timestamps, exc)
       return False
 
     try:
       current_image = self.get_goes_image(timehhmm=current_timestamp)
       img_path = os.path.join(self.data['image_dir'], current_image)
-      print('retrieved {0}'.format(current_image))
+      logging.info('retrieved %s', current_image)
       self.goes_current['preferred_band'] = current_image
       self.goes_current['image_html'] = image_html.format(img=img_path)
       wf.write_json(self.goes_current,
@@ -76,7 +74,7 @@ class Imagery(object):
                     filename='goes.json')
       return True
     except Exception as exc:
-      print('Exception: {0}'.format(exc))
+      logging.error('Exception: %s', exc)
       return False
 
 
@@ -87,12 +85,12 @@ class Imagery(object):
     """
     filelist = []
     todaystring = '{0}{1}'.format(localyear, localdoy)
-    print('Today-string for GOES imagery: {0}'.format(todaystring))
+    logging.debug('Today-string for GOES imagery: %s', todaystring)
     myimage = re.compile('ABI-{0}-{1}-{2}'.format(self.data['goes_sector'], self.band, self.res))
     for link in links:
       if link.has_attr("href"):
         filename = link['href']
-        #print('Checking file: "{0}"'.format(filename))
+        logging.debug('Checking file: "%s"', filename)
       try:
         if myimage.search(filename):
           if re.search(self.res, filename) and re.search(todaystring, filename):
@@ -116,14 +114,14 @@ class Imagery(object):
     necessary to consider the previous *year* for a few minutes: so, corner
     cases require less elegant programming, ha ha.
     """
-    print('Checking url: {0}'.format(self.url))
+    logging.debug('Checking url: %s', self.url)
     filelist = BeautifulSoup(requests.get(self.url).text, 'html.parser')
     links = filelist.find_all("a", attrs={"href": True})
     files = []
 
     localdoy = int(self.today_v['utcdoy'])
     localyear = int(self.today_v['utcyear'])
-    print('UTC year: {0}; UTC day-of-the-year: {1}'.format(localyear, localdoy))
+    logging.info('UTC year: %s; UTC day-of-the-year: %s', localyear, localdoy)
     files.extend(self.get_daily_list(localyear, localdoy, links))
     if localdoy == 1:
       localdoy = 365  # TODO check for leap year with timedelta instead
@@ -133,7 +131,7 @@ class Imagery(object):
 
     additional_files = self.get_daily_list(localyear, localdoy, links)
     if additional_files:
-      # print('Files from previous day, UTC: {0}'.format(additional_files))
+      logging.debug('Files from previous day, UTC: %s', str(additional_files))
       files.extend(additional_files)
 
     return files
@@ -146,14 +144,14 @@ class Imagery(object):
     """
     band_timestamps = []
     yeardoy = '{0}{1}'.format(self.today_v['year'], self.today_v['utcdoy'])
-    print('year-doy combination tag: {0}'.format(yeardoy))
+    logging.debug('year-doy combination tag: %s', yeardoy)
     for filename in self.fileslist:
       try:
         protostamp = re.search(yeardoy + r'(\d{4})', filename)
         if protostamp:
           band_timestamps.append(protostamp.groups(1)[0])
       except Exception as exc:
-        print('Exception: {0}'.format(exc))
+        logging.error('Exception: %s', exc)
         continue
 
     return band_timestamps
@@ -205,40 +203,48 @@ class Imagery(object):
     try:
       [os.remove(b) for b in [os.path.join(self.data['output_dir'], a) for a in removeme]]
     except Exception as exc:
-      print('Exception! {0}'.format(exc))
+      logging.error('Exception! %s', exc)
       return False
 
     return True
 
 
-  def get_forecast_map(self):
+  def get_file(self, url, mapname, file_to_retrieve, verify=False):
+    """
+    Generic helper function to retrieve a file from a given url and write it
+    to the defined output directory.
+    """
+    target_url = os.path.join(url, file_to_retrieve)
+    logging.info('Retrieving %s and saving to %s', target_url, mapname)
+    response = requests.get(url=target_url, verify=verify)
+    if response.status_code != 200:
+      logging.warn('Response code: %s. Returning False.', response.status_code)
+      return False
+    with open(os.path.join(self.data['output_dir'], mapname), 'wb') as outputfile:
+      outputfile.write(response.content)
+      outputfile.close()
+    return True
+
+
+  def get_forecast_map(self, mapname='national_forecast_map.png'):
     """
     Retrieve the national forecast map.
 
     """
-    response = requests.get(url=self.data['forecast_map_url'], verify=False)
-    if response.status_code != 200:
-      print('Response code: {0}. Returning False.'.format(response.status_code))
-      return False
-    with open(os.path.join(self.data['defaults']['output_dir'], 'national_forecast_map.gif'), 'wb') as outputfile:
-      outputfile.write(response.content)
-      outputfile.close()
-    return True
+    return_value = self.get_file(url=self.data['defaults']['forecast_map_url'],
+                                 file_to_retrieve=self.data['defaults']['forecast_map_file'],
+                                 mapname=mapname,
+                                 verify=False)
+    return return_value
 
 
-  def get_national_temp_map(self):
+  def get_national_temp_map(self, mapname='national_high_temp_map.png'):
     """
-    Pull the national high temperature map from 
+    Pull the national high temperature map from
     https://graphical.weather.gov/images/conus/MaxT1_conus.png
     """
-    response = requests.get(url='https://graphical.weather.gov/images/conus/MaxT1_conus.png')
-    if response.status_code != 200:
-      print('Response code: {0}. Returning False.'.format(response.status_code))
-      return False
-    with open(os.path.join(self.data['defaults']['output_dir'], 'national_high_temp_map.png'), 'wb') as outputfile:
-      outputfile.write(response.content)
-      outputfile.close()
-    return True
-
-
-    
+    return_value = self.get_file(url=self.data['defaults']['temp_map_url'],
+                                 mapname=mapname,
+                                 file_to_retrieve=self.data['defaults']['temp_map_file'],
+                                 verify=False)
+    return return_value

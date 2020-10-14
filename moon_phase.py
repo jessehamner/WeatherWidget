@@ -3,8 +3,6 @@ moon_phase.py: a class for determining the current phase of the moon,
 and for assigning a weather icon for that phase.
 """
 
-from __future__ import print_function
-
 import re
 import logging
 import datetime
@@ -80,8 +78,8 @@ class MoonPhase(object):
     try:
       return re.sub('\xa0', '', row.find_all('td')[index].text)
     except IndexError as exc:
-      print('IndexError trying to retrieve table cell {0}: {1}'.format(index, exc))
-      print('Row:\n{0}'.format(row))
+      logging.error('IndexError trying to retrieve table cell %s: %s', index, exc)
+      logging.error('Row: %s', row)
       return 'NA'
 
 
@@ -97,7 +95,7 @@ class MoonPhase(object):
                               verify=False, timeout=10)
 
     if moon_table.status_code != 200:
-      print('Unable to get a proper response from NOAA server. Returning False.')
+      logging.error('Unable to get a proper response from NOAA server. Returning False.')
       return False
 
     soup = BeautifulSoup(moon_table.text, 'html.parser')
@@ -135,9 +133,9 @@ class MoonPhase(object):
     while days_into_cycle > cycle:
       days_into_cycle = days_into_cycle - cycle
 
-    print('Place in the lunar cycle: {0}'.format(days_into_cycle))
+    logging.info('Place in the lunar cycle: %s', days_into_cycle)
     icon_index = int((days_into_cycle / cycle) * 29)
 
-    print('Icon should be: {0}'.format(self.phases[str(icon_index)]))
+    logging.info('Icon should be: %s', self.phases[str(icon_index)])
 
     return self.phases[str(icon_index)]
