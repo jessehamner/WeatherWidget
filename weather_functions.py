@@ -39,7 +39,8 @@ def load_settings_and_defaults(settings_dir, settings_file, defaults_file):
   data['defaults'] = defaults
   data['today_vars'] = get_today_vars(data['timezone'])
   data['bands'] = data['defaults']['goes_bands']
-  data['alert_counties'] = populate_alert_counties(data['counties_for_alerts'])
+  data['alert_counties'] = populate_alert_counties(data['counties_for_alerts'],
+                                                   data['defaults']['alerts_root'])
   if not data['alert_counties']:
     logging.error('Unable to determine county list. Exiting now.')
     return False
@@ -57,9 +58,9 @@ def prettify_timestamp(timestamp):
   """
   posix_timestamp = datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S+00:00')
   logging.debug('Input timestamp: %s', format(timestamp))
-  # print('Posix timestamp: {0}'.format(posix_timestamp))
+  logging.debug('Posix timestamp: %s', posix_timestamp)
   timetext = datetime.datetime.strftime(posix_timestamp, '%Y-%m-%d, %H:%M:%S UTC')
-  # print('Nicely formatted text: {0}'.format(timetext))
+  logging.debug('Nicely formatted text: %s', timetext)
   return timetext
 
 
@@ -69,7 +70,7 @@ def sanity_check(value, numtype='float'):
   formatted text string.
   If it has no value, return a missing value.
   """
-  # print('Input value: {0}'.format(value))
+  logging.debug('sanity_check() function input value: %s', value)
   if numtype != 'float':
     try:
       return str('{0:.0f}'.format(float(value)))
@@ -445,19 +446,21 @@ def make_request(url, retries=1, payload=False, use_json=True):
       try:
         response = requests.get(url, params=payload, verify=False, timeout=10)
       except requests.exceptions.ReadTimeout as exc:
-        print('Request timed out: {0}. Returning -None-'.format(exc))
+        logging.warn('Request timed out: %s', exc)
+        sleep(2)
+        continue
     else:
       try:
         response = requests.get(url, verify=False, timeout=10)
       except requests.exceptions.ReadTimeout as exc:
-        print('Request timed out: {0}. Returning -None-'.format(exc))
+        logging.warn('Request timed out: %s', exc)
         sleep(2)
         retries = retries - 1
         continue
-
-    resp = judge_payload(response, use_json)
-    if resp:
-      return resp
+    if response:
+      resp = judge_payload(response, use_json)
+      if resp:
+        return resp
 
     retries = retries - 1
 
@@ -493,7 +496,7 @@ def judge_payload(response, use_json):
 
 
 
-def populate_alert_counties(somedict):
+def populate_alert_counties(somedict, alerts_url):
   """
   Takes in a dict, formatted with state name(s) as the key, with a list
   of county names as the value.
@@ -503,10 +506,10 @@ def populate_alert_counties(somedict):
   returndict = {}
 
   for key, values in somedict.iteritems():
-    statezonelist = get_zonelist(key, 'zone')
+    statezonelist = get_zonelist(key, 'zone', alerts_url)
     if not statezonelist:
       return None
-    statecountylist = get_zonelist(key, 'county')
+    statecountylist = get_zonelist(key, 'county', alerts_url)
     if not statecountylist:
       return None
 
@@ -518,7 +521,7 @@ def populate_alert_counties(somedict):
   return returndict
 
 
-def get_zonelist(stateabbr, zoneorcounty):
+def get_zonelist(stateabbr, zoneorcounty, alerts_url):
   """
   go to alerts.weather.gov/cap/ and retrieve the forecast zone / county for
   the given name of the county. There are other zone names than only county
@@ -526,8 +529,45 @@ def get_zonelist(stateabbr, zoneorcounty):
   or even "Guadalupe Mountains Above 7000 Feet", so the user can also list
   these as "counties".
   """
+  x_value = 0
+  if zoneorcounty == 'zone':
+    x_value = 2
+  if zoneorcounty == 'county':
+    x_value = 3
+  if x_value == 0:
+    return None
+
+  localfile = 'local_{1}_table_{0}.html'.format(stateabbr, zoneorcounty)
+  if os.path.exists(localfile) is not True:
+    locally_cache_zone_table(alerts_url, stateabbr, zoneorcounty)
+  else:
+    return retrieve_local_zone_table(stateabbr, zoneorcounty)
+
+  logging.error('Unable to retrieve zone table. Returning None.')
+  return None
+
+
+def retrieve_local_zone_table(stateabbr, zoneorcounty):
+  """
+  Check for, and retrieve, a locally cached copy of the zone/county table.
+  """
+  table = False
+  filename = 'local_{1}_table_{0}.html'.format(stateabbr, zoneorcounty)
+  with open(filename, 'r') as localcopy:
+    table = BeautifulSoup(localcopy.read(), 'lxml')
+  parsed_table1 = table.find_all('table')[3]
+  rows = parsed_table1.find_all('tr')
+  return rows
+
+
+def locally_cache_zone_table(alerts_url, stateabbr, zoneorcounty):
+  """
+  The zones and counties change so infrequently that it makes no sense to
+  retrieve the data live, and locally caching the data will improve performance.
+  """
+  write_status = False
   page = '{0}.php'.format(stateabbr)
-  rooturl = 'https://alerts.weather.gov/cap/{0}'.format(page)
+  rooturl = os.path.join(alerts_url, page)
   x_value = 0
   if zoneorcounty == 'zone':
     x_value = 2
@@ -536,14 +576,14 @@ def get_zonelist(stateabbr, zoneorcounty):
   if x_value == 0:
     return None
   payload = {'x': x_value}
-  # print('Retrieving: {0} -- with payload {1}'.format(rooturl, payload))
+  logging.debug('Retrieving: %s -- with payload %s', rooturl, payload)
   returned_table = make_request(url=rooturl, payload=payload, use_json=False)
-  if returned_table:
-    parsed_table = BeautifulSoup(returned_table, 'lxml')
-    parsed_table1 = parsed_table.find_all('table')[3]
-    rows = parsed_table1.find_all('tr')
-    return rows
-  return None
+
+  filename = 'local_{1}_table_{0}.html'.format(stateabbr, zoneorcounty)
+  with open(filename, 'w') as localcopy:
+    localcopy.write(returned_table)
+    write_status = True
+  return write_status
 
 
 def parse_zone_table(county, rows):
