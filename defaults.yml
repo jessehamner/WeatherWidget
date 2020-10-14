@@ -25,6 +25,7 @@ goes_bands:
   - 'DayCloudPhase'
 
 hwo_url: 'https://forecast.weather.gov/product.php'
+alerts_root: 'https://alerts.weather.gov/cap/'
 alerts_url: 'https://alerts.weather.gov/cap/wwaatmget.php'
 water_url: 'https://water.weather.gov/resources/hydrographs'
 forecast_url: 'https://digital.weather.gov/xml/sample_products/browser_interface/ndfdBrowserClientByDay.php'
@@ -41,8 +42,10 @@ legend_file: 'Legend/N0R/{radar}_N0R_Legend_0.gif'
 afd_url: 'https://forecast.weather.gov/product.php'
 forecast_days: 4
 metar_url: 'https://w1.weather.gov/data/METAR/'
-forecast_map_url: 'https://www.wpc.ncep.noaa.gov//noaa/noaa.gif'
-
+forecast_map_url: 'https://www.wpc.ncep.noaa.gov/NationalForecastChart/staticmaps/'
+forecast_map_file: 'noaad1.png'
+temp_map_url: 'https://graphical.weather.gov/images/conus'
+temp_map_file: 'MaxT1_conus.png'
 
 afd_divisions:
  - '.SHORT TERM...'
