@@ -116,6 +116,9 @@ def main():
   # Satellite imagery:
   current_image = Imagery(band='GEOCOLOR', data=data)
   current_image.get_current_image()
+  current_image.get_forecast_map()
+  current_image.get_national_temp_map()
+
   logging.info('Finished program run.')
 
   return 0
