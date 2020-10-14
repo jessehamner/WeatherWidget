@@ -29,8 +29,9 @@ def load_settings_and_defaults(settings_dir, settings_file, defaults_file):
   into a single dict that can be passed around. This is less elegant than it
   should be.
   """
-
+  logging.info('Loading %s from %s', settings_file, settings_dir)
   data = load_yaml(settings_dir, settings_file)
+  logging.info('Loading %s from %s', defaults_file, settings_dir)
   defaults = load_yaml(settings_dir, defaults_file)
   if not (data and defaults):
     logging.error('Unable to load settings files. These are required.')
@@ -314,6 +315,7 @@ def load_yaml(directory, filename):
   """
   Load a YAML file in and return the dictionary that is created.
   """
+  logging.debug('Entering load_yaml() function.')
   try:
     with open(os.path.join(directory, filename), 'r') as iyaml:
       logging.info('Loading YAML file: %s', os.path.join(directory, filename))
@@ -514,6 +516,7 @@ def populate_alert_counties(somedict, alerts_url):
       return None
 
     for county in values:
+      logging.info('Opening zone and county tables for county: %s', county)
       cabbr = parse_zone_table(county, statecountylist)
       zabbr = parse_zone_table(county, statezonelist)
       returndict[county] = [1, cabbr, zabbr, key]
@@ -535,12 +538,14 @@ def get_zonelist(stateabbr, zoneorcounty, alerts_url):
   if zoneorcounty == 'county':
     x_value = 3
   if x_value == 0:
+    logging.error('unable to determine "zone" or "county". Returning None.')
     return None
 
   localfile = 'local_{1}_table_{0}.html'.format(stateabbr, zoneorcounty)
+  logging.info('Checking for existence of %s locally.', localfile)
   if os.path.exists(localfile) is not True:
     locally_cache_zone_table(alerts_url, stateabbr, zoneorcounty)
-  else:
+  if os.path.exists(localfile) is True:
     return retrieve_local_zone_table(stateabbr, zoneorcounty)
 
   logging.error('Unable to retrieve zone table. Returning None.')
