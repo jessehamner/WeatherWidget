@@ -157,7 +157,7 @@ class Forecast(object):
     indicator = self.defaults['afd_divisions'][1]
     long_term = afd_groups[1]
     afdreturn['long_title'], afdreturn['long_term'] = self.tidy_afd_text(long_term, indicator)
-
+    
     write_json(afdreturn, outputdir=self.data['output_dir'], filename='afd.json')
     return afdreturn
 
@@ -174,6 +174,8 @@ class Forecast(object):
     fctxt = re.sub(r'\n(?!\n)', ' ', fctxt)
     fctxt = re.sub(r'\`', "'", fctxt)
     fctxt = re.sub(r'^\s+', '', fctxt)
+    fctxt = re.sub(r'\.\s+\.\s*', '.', fctxt)
+    fctxt = re.sub(r'\n+$', '', fctxt)
     return label, fctxt
 
 
