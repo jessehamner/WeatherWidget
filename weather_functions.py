@@ -12,6 +12,7 @@ import os
 import re
 import datetime
 import json
+import logging
 
 from time import sleep
 from outage import Outage
@@ -19,14 +20,43 @@ import requests
 import yaml
 import pytz
 from bs4 import BeautifulSoup
-requests.packages.urllib3.disable_warnings()
+# requests.packages.urllib3.disable_warnings()
+
+
+def load_settings_and_defaults(settings_dir, settings_file, defaults_file):
+  """
+  Load in all of the settings, default data, and organize the giant data bag
+  into a single dict that can be passed around. This is less elegant than it
+  should be.
+  """
+
+  data = load_yaml(settings_dir, settings_file)
+  defaults = load_yaml(settings_dir, defaults_file)
+  if not (data and defaults):
+    logging.error('Unable to load settings files. These are required.')
+    return False
+
+  data['defaults'] = defaults
+  data['today_vars'] = get_today_vars(data['timezone'])
+  data['bands'] = data['defaults']['goes_bands']
+  data['alert_counties'] = populate_alert_counties(data['counties_for_alerts'])
+  if not data['alert_counties']:
+    logging.error('Unable to determine county list. Exiting now.')
+    return False
+  logging.info('alert counties: %s', str(data['alert_counties']))
+  data['defaults']['afd_divisions'][4] = re.sub('XXX',
+                                                data['nws_abbr'],
+                                                defaults['afd_divisions'][4])
+  logging.info('Defaults and settings loaded.')
+  return data
+
 
 def prettify_timestamp(timestamp):
   """
   Make a more user-readable time stamp for current conditions.
   """
   posix_timestamp = datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S+00:00')
-  # print('Input timestamp: {0}'.format(timestamp))
+  logging.debug('Input timestamp: %s', format(timestamp))
   # print('Posix timestamp: {0}'.format(posix_timestamp))
   timetext = datetime.datetime.strftime(posix_timestamp, '%Y-%m-%d, %H:%M:%S UTC')
   # print('Nicely formatted text: {0}'.format(timetext))
@@ -285,9 +315,11 @@ def load_yaml(directory, filename):
   """
   try:
     with open(os.path.join(directory, filename), 'r') as iyaml:
+      logging.info('Loading YAML file: %s', os.path.join(directory, filename))
       return yaml.load(iyaml.read(), Loader=yaml.Loader)
   except Exception as exc:
     print('EXCEPTION -- unable to open yaml settings file: {0}'.format(exc))
+    logging.error('Unable to open yaml settings file: %s', exc)
     return None
 
 
@@ -423,30 +455,42 @@ def make_request(url, retries=1, payload=False, use_json=True):
         retries = retries - 1
         continue
 
-    try:
-      if response:
-        pass
-    except Exception as exc:
-      print('No response to HTTP query. Returning -None-.')
-
-    if response.status_code == 200:
-      if use_json is True:
-        try:
-          return response.json()
-        except Exception as exc:
-          print('Unable to decode JSON: {0}'.format(exc))
-      else:
-        try:
-          return response.text
-        except Exception as exc:
-          print('Unable to decode response text: {0}'.format(exc))
-    else:
-      print('Response from server was not OK: {0}'.format(response.status_code))
+    resp = judge_payload(response, use_json)
+    if resp:
+      return resp
 
     retries = retries - 1
 
-  print('Unsuccessful response ({0}). Returning -None-'.format(response.status_code))
+  logging.error('Unsuccessful response (%s). Returning -None-', response.status_code)
   return None
+
+
+def judge_payload(response, use_json):
+  """
+  Pull out the request payload, provided it's either text or json.
+  """
+  try:
+    if response.status_code:
+      pass
+  except Exception as exc:
+    logging.error('No response to HTTP query. Returning -None-.')
+    return None
+
+  if response.status_code == 200:
+    if use_json is True:
+      try:
+        return response.json()
+      except Exception as exc:
+        logging.warn('Unable to decode JSON: %s', exc)
+    else:
+      try:
+        return response.text
+      except Exception as exc:
+        logging.error('Unable to decode response text: %s', exc)
+        return None
+  logging.error('Response from server was not OK: %s', response.status_code)
+  return None
+
 
 
 def populate_alert_counties(somedict):
@@ -460,7 +504,11 @@ def populate_alert_counties(somedict):
 
   for key, values in somedict.iteritems():
     statezonelist = get_zonelist(key, 'zone')
+    if not statezonelist:
+      return None
     statecountylist = get_zonelist(key, 'county')
+    if not statecountylist:
+      return None
 
     for county in values:
       cabbr = parse_zone_table(county, statecountylist)
