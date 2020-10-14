@@ -41,6 +41,8 @@ legend_file: 'Legend/N0R/{radar}_N0R_Legend_0.gif'
 afd_url: 'https://forecast.weather.gov/product.php'
 forecast_days: 4
 metar_url: 'https://w1.weather.gov/data/METAR/'
+forecast_map_url: 'https://www.wpc.ncep.noaa.gov//noaa/noaa.gif'
+
 
 afd_divisions:
  - '.SHORT TERM...'
