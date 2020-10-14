@@ -14,7 +14,7 @@ from __future__ import print_function
 
 import sys
 import os
-import re
+import logging
 import weather_functions as wf
 from imagery import Imagery
 from alerts import Alerts
@@ -32,57 +32,45 @@ def main():
   """
   - Parse user-specified data from YaML
   - Check to see that the needed graphics are available. If not, get them.
-  - Get the radar image, plus the legend overlay.
-  - Get the warnings boxes graphic
+  - Get the radar imagery, complete with warnings graphics
   - Get today's hazardous weather outlook statement and parse it
   - Check for FTM outage notifications
-  - Get and parse current weather conditions.
-  - Cache current data to specified locations.
+  - Get, parse, and write out current weather conditions to specified locations.
   - TODO: should run the getweather.sh shell script, that overlays/composites
     the weather graphics. At present, that shell script calls this script
     and runs the overlays with -bash-.
-  - Acquire multi-band GOES-x imagery from today, checking to see if
-    there is a new image and comparing it to the list of files from today,
-    of the specified resolution.
-  - TODO: Make animated gifs of last 24 hours of a few bands of images
-  - TODO: use Flask API as a microservice for JSON data payloads
-  - TODO: derived variables with metpy (especially from METAR string vars)
+  - Check for and acquire current multi-band GOES-x imagery of a given resolution.
   """
-  data = wf.load_yaml(SETTINGS_DIR, 'settings.yml')
-  defaults = wf.load_yaml(SETTINGS_DIR, 'defaults.yml')
-  if not (data and defaults):
+  if os.path.exists('weatherwidget.log'):
+    os.remove('weatherwidget.log')
+  logging.basicConfig(filename='weatherwidget.log', level=logging.INFO,
+                      format='%(asctime)s %(levelname)s %(threadName)-10s %(message)s',)
+
+  data = wf.load_settings_and_defaults(SETTINGS_DIR, 'settings.yml', 'defaults.yml')
+  if not data:
+    logging.error('Unable to load settings files. These are required.')
     sys.exit('settings files are required and could not be loaded successfully.')
-  data['defaults'] = defaults
-  data['today_vars'] = wf.get_today_vars(data['timezone'])
-  data['bands'] = data['defaults']['goes_bands']
-  data['alert_counties'] = wf.populate_alert_counties(data['counties_for_alerts'])
-  print('alert counties:\n{0}'.format(str(data['alert_counties'])))
-  data['defaults']['afd_divisions'][4] = re.sub('XXX',
-                                                data['nws_abbr'],
-                                                defaults['afd_divisions'][4])
-  # Check for outage information
+
+  logging.info('Checking for radar outage.')
   wf.outage_check(data)
 
-  # Get and digest current conditions
+  logging.info('Retrieving current weather observations.')
   right_now = Observation(data)
   right_now.get_current_conditions()
   right_now.get_backup_obs(use_json=False)
   right_now.merge_good_observations()
-  print('Merged current conditions: {0}'.format(right_now.con1.obs))
+  logging.debug('Merged current conditions: %s', right_now.con1.obs)
   sum_con = right_now.conditions_summary()
 
   if right_now.con1.obs and sum_con:
     text_conditions, nice_con = right_now.format_current_conditions()
-    print('Current conditions from primary source: {0}'.format(nice_con))
-    #html_table = wf.htable_current_conditions(nice_con,
-    #                                          'current_conditions.html',
-    #                                          outputdir=data['output_dir'])
+    logging.debug('Current conditions from primary source: %s', nice_con)
     wf.write_json(some_dict=nice_con,
                   outputdir=data['output_dir'],
                   filename='current_conditions.json'
                  )
   else:
-    print('ERROR: something went wrong getting the current conditions. Halting.')
+    logging.error('Something went wrong getting the current conditions. Halting.')
     return 1
 
   wf.write_text(os.path.join(data['output_dir'], 'current_conditions.txt'), text_conditions)
@@ -93,7 +81,7 @@ def main():
   current_radar.get_radar()
   current_radar.get_warnings_box()
   if current_radar.problem:
-    print('Unable to retrieve weather radar image. Halting now.')
+    logging.error('Unable to retrieve weather radar image. Halting now.')
 
   # Hazardous Weather Outlook and alerts:
   today_alerts = Alerts(data)
@@ -103,17 +91,17 @@ def main():
   if wf.get_hydrograph(abbr=data['river_gauge_abbr'],
                        hydro_url=data['defaults']['water_url'],
                        outputdir=data['output_dir']).ok:
-    print('Requesting hydrograph for station {0}, gauge "{1}".'.format(data['radar_station'],
-                                                                       data['river_gauge_abbr']))
+    logging.info('Requesting hydrograph for station %s, gauge "%s".',
+                 data['radar_station'], data['river_gauge_abbr'])
   else:
-    print('...Failed.')
+    logging.error('Failed to get hydrograph information.')
     return 1
 
   forecast_obj = Forecast(data=data)
   forecast_obj.get_forecast()
   forecastdict = forecast_obj.parse_forecast()
   if forecastdict is None:
-    print('Unable to parse forecast.')
+    logging.error('Unable to parse forecast!')
     return 1
   forecast_obj.write_forecast(outputdir=data['output_dir'])
   # Area forecast discussion:
@@ -128,6 +116,7 @@ def main():
   # Satellite imagery:
   current_image = Imagery(band='GEOCOLOR', data=data)
   current_image.get_current_image()
+  logging.info('Finished program run.')
 
   return 0
 
