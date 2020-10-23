@@ -205,4 +205,15 @@ beaufort_scale:
   '11': [64, 72, 56, 63, 'Violent Storm', 'Exceptionally high waves (small and medium-size ships might be for a time lost to view behind the waves). The sea is completely covered with long white patches of foam lying along the direction of the wind. Everywhere the edges of the wave crests are blown into froth. Visibility affected.', 'Very rarely experienced; accompanied by wide-spread damage.']
   '12': [72, 83, 64, 71, 'Hurricane', 'The air is filled with foam and spray. Sea completely white with driving spray; visibility very seriously affected.', 'see Saffir-Simpson Hurricane Scale']
 
+# Cloud cover abbreviations; first three letters are descriptions of coverage
+# # last three digits are "hundreds of feet above ground level"
+cloud_cover:
+  'SKC': ['Clear', 'No clouds below 12,000 feet', '0/8']
+  'CLR': ['Clear', 'No clouds below 12,000 feet', '0/8']
+  'FEW': ['Few', 'Few clouds observed', '1/8 to 2/8' ]
+  'SCT': ['Scattered', 'Scattered clouds', '3/8 to 4/8' ]
+  'BKN': ['Broken','Broken clouds', '5/8 to 7/8' ]
+  'OVC': ['Overcast', 'Complete cloud coverage', '8/8']
+  'VV' : ['Vertical visibility constrained', 'Indefinite visibility ceiling', '8/8']
+
 ...
