@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg version="1.1" 
+     id="bang"
+     xmlns="http://www.w3.org/2000/svg" 
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     x="0px" y="0px"
+	 viewBox="0 0 40 40" 
+     style="enable-background:new 0 0 40 40;"
+     xml:ispace="preserve">
+  <style>
+    circle {
+      fill: white;
+      stroke: black;
+      stroke-width: 3px;
+    }
+    .rot1 {
+      transform-origin: center;
+      transform: rotate(0deg);
+      stroke: black;
+      fill: black;
+    }
+  </style>
+  <symbol id="whole-bang-icon">
+    <g class="rot1">
+      <circle cx="20" cy="20" r="17" id="bang-icon-ring"/>
+      <circle cx="20" cy="31" r="1.5px" stroke-width= "3px" fill="black" id="bang-dot"/>
+      <path d="M19 26 L 21 26 L 23 17 L 24 8 L 16 8 L 17 17 L 19 26 z" id="bang-top" />
+    </g>
+  </symbol>
+  <use xlink:href="#whole-bang-icon"/>
+</svg>
