@@ -1,11 +1,19 @@
 
 var imgpath = "static/icons/weather-icons-master/svg/";
+var radarpath = "static/photos/";
 
 function addSVGIcon(svgpath, id, width, height) {
   var svgtext = '<object id="' + id + '" data="' + svgpath + '" width="' + width + '" height="' + height + '" type="image/svg+xml"></object>';
   //var svgtext = '<embed id="' + id + '" src="' + svgpath + '" width="' + width + '" height="' + height + '" type="image/svg+xml">';
   console.log(svgtext);
   return svgtext;
+}
+
+function createRadarPopup(refid, elemid, title, imgpath, filename) {
+  let image = document.createElement('img');
+  let imgsrc = image.setAttribute("src", imgpath + filename);
+  document.getElementById(elemid).appendChild(image);
+  console.log("Added " + image + " to " + refid);
 }
 
 
@@ -120,3 +128,5 @@ request2.onload = () => {
     document.getElementById("sat_image_thumb").innerHTML += satdict['image_html'];
   }
 }
+
+/* createRadarPopup("modal-animatedradar", "animatedradar",  "Animated Radar Image", radarpath, "animation.gif") */  ;
