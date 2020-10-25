@@ -60,13 +60,13 @@ icon_match:
     'wi-day-cloudy.svg': ['cloudy', 'mostly cloudy']
     'wi-cloud-down.svg': ['decreasing clouds']
     'wi-cloud-up.svg': ['increasing clouds']
-    'wi-day-lightning.svg': ['slight chance thunderstorms', 'slight chance t-storms', 'slight chance tstorms']
+    'wi-day-lightning.svg': ['slight chance thunderstorms', 'slight chance t-storms', 'slight chance tstorms','chance rain']
     'wi-day-thunderstorm.svg': ['Severe Tstms', 'T-storms', 'Tstorms', 'Chance Thunderstorms', 'Thunderstorms Likely', 'Isolated Thunderstorms', 'Thunderstorm', 'Thunderstorms', 'Thunderstorms and Rain']
     'wi-thunderstorm.svg': ['Severe Thunderstorm Watch', 'Severe Thunderstorm Warning', 'Heavy Thunderstorms and Heavy Rain']
     'wi-storm-showers.svg': ['Showers', 'Storms and Showers']
     'wi-day-windy.svg': ['windy', 'cloudy and windy', 'mostly cloudy and windy', 'Breezy']
     'wi-rain-wind.svg': ['rain and wind', 'rainy and windy', 'wind and rain', 'heavy rain and fog/mist']
-    'wi-rain.svg': ['rain', 'rainy', 'heavy rain', 'light rain', 'rain shower', 'light rain and fog/mist', 'rain showers likely', 'rain showers']
+    'wi-rain.svg': ['rain', 'rainy', 'heavy rain', 'light rain', 'rain shower', 'light rain and fog/mist', 'rain showers likely', 'rain showers', 'rain likely']
     'wi-flood.svg': ['Flood Warning', 'flash flood warning', 'flash flood', 'flooding', 'flood advisory', 'flash flood watch']
     'wi-tornado.svg': ['Tornado Watch', 'Tornado Warning']
     'wi-gale-warning.svg': ['Gale Warning', 'Wind Advisory', 'Small Craft Advisory']
@@ -83,6 +83,7 @@ icon_match:
     'wi-smog.svg': ['air quality alert']
     'wi-na.svg': ['None', 'N/A', 'NA']
     'person.svg': ['Child Abduction Emergency']
+    'bang.svg': ['Special weather statement']
 
 circle_css:
     'fill': 'white'
