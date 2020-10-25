@@ -235,8 +235,9 @@
       <div class="card">
         <div class="card-body">
           <h2>Current Radar</h2>
-          <div>
-	          <a href="static/photos/animation.gif"><img src="static/photos/wow.gif"></a>
+          <div id="staticradar">
+            <a href="#" data-toggle="modal" data-target="#modal-animatedradar"><img src="static/photos/wow.gif" alt="Current Radar Image">
+            </a>
           </div>
         </div>
       </div> <!-- close out the card -->
@@ -387,6 +388,26 @@
       </div>
 		</div>
 	</div>
+</div>
+
+
+<div class="modal modal-blur fade" id="modal-animatedradar" tabindex="-1" role="dialog" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+	      <h5 class="modal-title">Animated Radar Image</h5>
+	      <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+	      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="animatedradar">
+        <img src="static/photos/animation.gif" alt="animated radar image">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary mr-auto" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 
