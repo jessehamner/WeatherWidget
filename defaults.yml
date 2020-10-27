@@ -60,30 +60,37 @@ icon_match:
     'wi-day-cloudy.svg': ['cloudy', 'mostly cloudy']
     'wi-cloud-down.svg': ['decreasing clouds']
     'wi-cloud-up.svg': ['increasing clouds']
-    'wi-day-lightning.svg': ['slight chance thunderstorms', 'slight chance t-storms', 'slight chance tstorms','chance rain']
+    'wi-day-lightning.svg': ['slight chance thunderstorms', 'slight chance t-storms', 'slight chance tstorms']
     'wi-day-thunderstorm.svg': ['Severe Tstms', 'T-storms', 'Tstorms', 'Chance Thunderstorms', 'Thunderstorms Likely', 'Isolated Thunderstorms', 'Thunderstorm', 'Thunderstorms', 'Thunderstorms and Rain']
     'wi-thunderstorm.svg': ['Severe Thunderstorm Watch', 'Severe Thunderstorm Warning', 'Heavy Thunderstorms and Heavy Rain']
     'wi-storm-showers.svg': ['Showers', 'Storms and Showers']
     'wi-day-windy.svg': ['windy', 'cloudy and windy', 'mostly cloudy and windy', 'Breezy']
     'wi-rain-wind.svg': ['rain and wind', 'rainy and windy', 'wind and rain', 'heavy rain and fog/mist']
-    'wi-rain.svg': ['rain', 'rainy', 'heavy rain', 'light rain', 'rain shower', 'light rain and fog/mist', 'rain showers likely', 'rain showers', 'rain likely']
+    'wi-rain.svg': ['rain', 'rainy', 'heavy rain', 'rain shower', 'rain showers likely', 'rain showers', 'rain likely']
     'wi-flood.svg': ['Flood Warning', 'flash flood warning', 'flash flood', 'flooding', 'flood advisory', 'flash flood watch']
     'wi-tornado.svg': ['Tornado Watch', 'Tornado Warning']
     'wi-gale-warning.svg': ['Gale Warning', 'Wind Advisory', 'Small Craft Advisory']
     'wi-small-craft-advisory.svg': ['Wind Advisory', 'Small Craft Advisory']
     'wi-hurricane.svg': ['Hurricane Watch', 'Hurricane Warning']
     'wi-snow-wind.svg': ['Winter Storm Watch', 'Winter Storm Warning', 'Blizzard']
-    'wi-snowflake-cold.svg': ['very cold', 'below freezing', 'cold']
+    'wi-snowflake-cold.svg': ['very cold', 'below freezing', 'cold', 'Freeze Warning', 'Winter Weather Advisory']
     'wi-hot.svg': ['hot', 'Heat Advisory']
     'wi-fire.svg': ['fire', 'burn ban', 'burn', 'fire weather watch']
     'wi-smoke.svg': ['smoke', 'air quality alert']
     'wi-fog.svg': ['fog', 'foggy', 'haze']
     'wi-day-sprinkle.svg': ['drizzle', 'sprinkle', 'mist', 'misty', 'Slight Chance Rain Showers', 'chance rain showers', 'chance of a shower']
+    'wi-sprinkle.svg': ['light rain', 'light rain and fog/mist']
     'wi-strong-wind.svg': ['windy', 'strong winds', 'blustery', 'straight-line winds', 'winds in excess of']
     'wi-smog.svg': ['air quality alert']
+    'wi-day-snow.svg': ['light snow', 'snow', 'flurries', 'flurry']
+    'wi-rain-mix.svg': ['Light Snow and Fog/Mist', 'wintry mix']
+    'wi-sleet.svg': ['sleet', 'rain and sleet', 'ice pellets', 'sleet and snow']
+    'wi-raindrop.svg': ['chance rain', 'chance showers']
+    'wi-raindrops.svg': ['some rain']
+    'wi-hail.svg': ['hail', 'rain and hail']
     'wi-na.svg': ['None', 'N/A', 'NA']
     'person.svg': ['Child Abduction Emergency']
-    'bang.svg': ['Special weather statement']
+
 
 circle_css:
     'fill': 'white'
@@ -205,16 +212,5 @@ beaufort_scale:
   '10': [55, 63, 48, 55, 'Storm', 'Very high waves with long overhanging crests. The resulting foam, in great patches, is blown in dense white streaks along the direction of the wind. On the whole the surface of the sea takes on a white appearance. The tumbling of the sea becomes heavy and shock-like. Visibility affected.', 'Seldom experienced inland; trees uprooted; considerable structural damage occurs.']
   '11': [64, 72, 56, 63, 'Violent Storm', 'Exceptionally high waves (small and medium-size ships might be for a time lost to view behind the waves). The sea is completely covered with long white patches of foam lying along the direction of the wind. Everywhere the edges of the wave crests are blown into froth. Visibility affected.', 'Very rarely experienced; accompanied by wide-spread damage.']
   '12': [72, 83, 64, 71, 'Hurricane', 'The air is filled with foam and spray. Sea completely white with driving spray; visibility very seriously affected.', 'see Saffir-Simpson Hurricane Scale']
-
-# Cloud cover abbreviations; first three letters are descriptions of coverage
-# # last three digits are "hundreds of feet above ground level"
-cloud_cover:
-  'SKC': ['Clear', 'No clouds below 12,000 feet', '0/8']
-  'CLR': ['Clear', 'No clouds below 12,000 feet', '0/8']
-  'FEW': ['Few', 'Few clouds observed', '1/8 to 2/8' ]
-  'SCT': ['Scattered', 'Scattered clouds', '3/8 to 4/8' ]
-  'BKN': ['Broken','Broken clouds', '5/8 to 7/8' ]
-  'OVC': ['Overcast', 'Complete cloud coverage', '8/8']
-  'VV' : ['Vertical visibility constrained', 'Indefinite visibility ceiling', '8/8']
 
 ...
