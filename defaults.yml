@@ -77,7 +77,7 @@ icon_match:
     'wi-hot.svg': ['hot', 'Heat Advisory']
     'wi-fire.svg': ['fire', 'burn ban', 'burn', 'fire weather watch']
     'wi-smoke.svg': ['smoke', 'air quality alert']
-    'wi-fog.svg': ['fog', 'foggy', 'haze']
+    'wi-fog.svg': ['fog', 'foggy', 'haze', 'fog/mist']
     'wi-day-sprinkle.svg': ['drizzle', 'sprinkle', 'mist', 'misty', 'Slight Chance Rain Showers', 'chance rain showers', 'chance of a shower', 'Rain and Fog/Mist']
     'wi-sprinkle.svg': ['light rain', 'light rain and fog/mist']
     'wi-strong-wind.svg': ['windy', 'strong winds', 'blustery', 'straight-line winds', 'winds in excess of']
