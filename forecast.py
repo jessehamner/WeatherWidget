@@ -320,13 +320,14 @@ class ZoneForecast(object):
   https://forecast.weather.gov/product.php?site=NWS&product=ZFP&issuedby=FWD
   """
 
-  def __init__(self, data, output_dir='/tmp/'):
+  def __init__(self, data):
 
     self.zonef = list()
     self.data = data
     self.zone = data['forecast_zone']
     self.issuedby = data['nws_abbr']
-    self.output_dir = output_dir
+    self.output_dir = data['output_dir']
+    self.forecasturl = data['defaults']['afd_url']
     self.relevant = list()
     self.parsed_xml = ''
 
@@ -346,7 +347,7 @@ class ZoneForecast(object):
     """
     payload = {'site': 'NWS', 'product':'ZFP', 'issuedby': self.issuedby}
     try:
-      retval = requests.get(url=self.data['defaults']['afd_url'],
+      retval = requests.get(url=self.forecasturl,
                             params=payload,
                             verify=True,
                             timeout=10
@@ -406,5 +407,5 @@ class ZoneForecast(object):
     Write out the zone forecast to a discrete json file.
     """
     logging.info('Writing zone forecast out to zoneforecast.json.')
-    write_json(self.zonef, outputdir=self.data['output_dir'], filename='zoneforecast.json')
+    write_json(self.zonef, outputdir=self.output_dir, filename='zoneforecast.json')
     return True
