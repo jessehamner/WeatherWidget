@@ -8,7 +8,7 @@ from __future__ import print_function
 import os
 import re
 import svgwrite
-
+import logging
 
 def fix_missing(value):
   """
@@ -21,7 +21,7 @@ def fix_missing(value):
       return '--'
     return value
   except Exception as exc:
-    print('Returning a missing value string: {0}'.format(exc))
+    logging.error('Returning a missing value string: %s', exc)
     return '--'
   
 
@@ -163,17 +163,17 @@ def assign_icon(description, icon_match):
   returnvalue = ''
   description = description.strip().lower()
   description = re.sub(r'\s+', ' ', description)
-  print('Finding icon for "{0}"'.format(description))
-  print('Found {0} items in icon list.'.format(len(icon_match.keys())))
+  logging.info('Finding icon for "%s"', description)
+  logging.debug('Found %s items in icon list.', len(icon_match.keys()))
   for key, value in icon_match.iteritems():
-    print('Evaluating key {0} and list {1}'.format(key, value))
+    logging.debug('Evaluating key %s and list %s', key, value)
     for val in value:
       if description == val.lower().strip():
         returnvalue = key
-        print('Matched "{0}"'.format(val))
+        logging.info('Matched "%s"', val)
         return returnvalue
 
-  print('Unable to match "{0}"'.format(description))
+  logging.warn('Unable to match "%s"', description)
   return 'wi-na.svg'
 
 
@@ -233,6 +233,6 @@ def wind_direction_icon(heading, sourcepath='static/icons/weather-icons-master/s
 
   img_html = '''<img src="{0}" width="50" height="50" fill="white"
       transform="rotate({1},20,20)" />'''.format(filepath, int(heading))
-  print(img_html)
+  logging.debug('image HTML: %s', img_html)
 
   return img_html
