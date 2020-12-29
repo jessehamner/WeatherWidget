@@ -36,24 +36,26 @@ class Radar(object):
     and world file from the NWS.
     """
 
-    response1 = requests.get(self.radar_url.format(station=self.station,
-                                                   image='N0R_0.gfw'),
-                             verify=False, timeout=10)
+    url_path = self.radar_url.format(station=self.station, image='N0R_0.gfw')
+    logging.debug('Making request to: %s', url_path)
+    response1 = requests.get(url_path, verify=False, timeout=10)
     if response1.status_code != 200:
-      print('Response from server was not OK: {0}'.format(response1.status_code))
+      logging.error('Response from server was not OK: %s', response1.status_code)
       self.problem = True
       return False
+    logging.debug('Server response: %s', response1.status_code)
     cur1 = open(os.path.join(self.data['output_dir'], 'current_image.gfw'), 'w')
     cur1.write(response1.text)
     cur1.close()
 
-    response2 = requests.get(self.radar_url.format(station=self.station,
-                                                   image='N0R_0.gif'),
-                             verify=False, timeout=10)
+    url_path = self.radar_url.format(station=self.station, image='N0R_0.gif')
+    logging.debug('Making request to: %s', url_path)
+    response2 = requests.get(url_path, verify=False, timeout=10)
     if response2.status_code != 200:
-      print('Response from server was not OK: {0}'.format(response2.status_code))
+      logging.error('Response from server was not OK: %s', response2.status_code)
       self.problem = True
       return False
+    logging.debug('Server response: %s', response2.status_code)
 
     cur2 = open(os.path.join(self.data['output_dir'], 'current_image.gif'), 'wb')
     cur2.write(response2.content)
@@ -68,17 +70,16 @@ class Radar(object):
     from the NWS for the specified locale.
     """
     warnings = 'Warnings'
-    response = requests.get(self.warnings_url.format(station=self.station,
-                                                     warnings=warnings
-                                                    ),
-                            verify=False, timeout=10)
+    url_path = self.warnings_url.format(station=self.station, warnings=warnings)
+    logging.debug('Making request to: %s', url_path)
+    response = requests.get(url_path, verify=False, timeout=10)
     try:
       cur = open(os.path.join(self.data['output_dir'], 'current_warnings.gif'), 'wb')
       cur.write(response.content)
       cur.close()
       return True
     except Exception as exc:
-      print('Exception: {0}'.format(exc))
+      logging.error('Exception: %s', exc)
       self.problem = True
       return False
 
@@ -90,7 +91,7 @@ class Radar(object):
     for asset in self.data['radar_layers']:
       file_url_dir = '{0}'.format(asset.format(r_abbr=self.station))
       filename = file_url_dir.split('/')[-1]
-      print('Local file path: {0}'.format(os.path.join(self.data['output_dir'], filename)))
+      logging.debug('Local file path: %s', os.path.join(self.data['output_dir'], filename))
       if not self._check_asset(self.data['output_dir'],
                                filename=filename,
                                url_dir=file_url_dir,
@@ -100,7 +101,7 @@ class Radar(object):
 
     file_url_dir = '{0}'.format(self.defaults['legend_file'].format(radar=self.station))
     filename = file_url_dir.split('/')[-1]
-    print('Local legend file path: {0}'.format(os.path.join(self.data['output_dir'], filename)))
+    logging.debug('Local legend file path: %s', os.path.join(self.data['output_dir'], filename))
     if not self._check_asset(self.data['output_dir'],
                              filename=filename,
                              url_dir=file_url_dir,
@@ -117,16 +118,16 @@ class Radar(object):
     """
     localpath = os.path.join(outputdir, filename)
     if os.path.isfile(localpath) is False:
-      print('Need to retrieve {0} from {1}'.format(localpath, os.path.join(url, url_dir)))
+      logging.info('Retrieving %s from %s', localpath, os.path.join(url, url_dir))
       if self._retrieve_asset(file_url_dir=url_dir, url=url, filename=filename):
-        print('Got it.')
+        logging.debug('Got it.')
       else:
-        print('Unable to get the file. Returning False.')
+        logging.error('Unable to get the file. Returning False.')
         self.problem = True
         return False
 
     else:
-      print('{0} is where it should be (in {1})'.format(filename, outputdir))
+      logging.debug('%s is where it should be (in %s)', filename, outputdir)
       return True
 
 
@@ -174,11 +175,11 @@ class Radar(object):
       if not os.path.exists(imagepath):
         return None
     except Exception as exc:
-      print('Exception: {0}'.format(exc))
+      logging.error('Exception: %s', exc)
       return None
 
     try:
       return Image.open(imagepath).convert('RGBA')
     except Exception as exc:
-      print('Exception: {0}'.format(exc))
+      logging.error('Exception: %s', exc)
       return None
