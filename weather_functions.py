@@ -117,20 +117,21 @@ def outage_check(data, filename='outage.txt'):
   outage_result = outage_checker.parse_outage()
   outfilepath = os.path.join(data['output_dir'], filename)
   if outage_result is None:
-    print('No outages detected. Proceeding.')
+    logging.info('No radar outage(s) detected. Proceeding.')
     try:
+      logging.debug('Removing file at %s', outfilepath)
       os.unlink(outfilepath)
     except OSError:
-      print('file does not exist: {0}'.format(outfilepath))
+      logging.error('File does not exist: %s', outfilepath)
 
   else:
-    print('There is outage text: {0}'.format(outage_result))
+    logging.warn('There is radar outage text: %s', outage_result)
     try:
       cur = open(outfilepath, 'w')
       cur.write(outage_result)
       cur.close()
     except OSError as exc:
-      print('OSError-- {0}: {1}'.format(outfilepath, exc))
+      logging.error('OSError-- %s: %s', outfilepath, exc)
 
   return outage_result
 
