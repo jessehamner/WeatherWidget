@@ -34,6 +34,15 @@ class Imagery(object):
                          'id': 'sat_image_thumb'
                         }
 
+  def get_all(self):
+    """
+    Convenience function to retrieve several images.
+    """
+    self.get_current_image()
+    self.get_forecast_map()
+    self.get_national_temp_map()
+    return True
+
 
   def get_current_image(self):
     """
