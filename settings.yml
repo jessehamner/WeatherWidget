@@ -13,6 +13,10 @@ radar_station: &r_abbr 'FWS'
 # or the WFO SID column at  https://www.roc.noaa.gov/WSR88D/Program/NetworkSites.aspx
 nws_abbr: 'FWD'
 
+# Forecast zone:
+# 
+forecast_zone: 'TXZ103'
+
 # GOES information: https://www.star.nesdis.noaa.gov/GOES/index.php
 goes_sector: 'sp'
 goes_res: '2400x2400'
