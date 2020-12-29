@@ -24,7 +24,8 @@ class DayForecast(object):
   def __init__(self, output_dir, idx, parsed_xml, icon_dict):
     self.fcd = dict(high=None, low=None, precip_morning=0, precip_evening=0,
                     shortcast='No forecast', forecast_string='',
-                    day='Noneday', date=None, icon='na.svg', idx=idx)
+                    night_forecast_string='', day='Noneday',
+                    date=None, icon='na.svg', idx=idx)
     self.idx = idx
     self.parsed_xml = parsed_xml
     self.icon_dict = icon_dict
@@ -37,7 +38,7 @@ class DayForecast(object):
     Write out SVG icons of the day's temps and precip chances.
     """
     filelabel = 'today_{fctype}_plus_{day}.svg'
-    print('Making temperature and precipitation forecast icons for day {0}'.format(self.idx))
+    logging.info('Making temperature and precipitation forecast icons for day %s', self.idx)
     wsvg.high_low_svg(self.fcd['high'],
                       self.fcd['low'],
                       filelabel.format(fctype='temp', day=self.idx),
@@ -58,10 +59,10 @@ class DayForecast(object):
     """
     params = self.parsed_xml.find('parameters')
     if params:
-      print('Found parameters tag in parsed XML forecast')
+      logging.debug('Found parameters tag in parsed XML forecast')
     else:
-      print('Parsed XML contains no parameters. Returning None!')
-      print(self.parsed_xml)
+      logging.error('Parsed XML contains no parameters. Returning None!')
+      logging.debug(self.parsed_xml)
       return None
     temps = params.find_all("temperature")
     for temp in range(0, len(temps)):
@@ -85,7 +86,7 @@ class DayForecast(object):
     self.fcd['icon'] = wsvg.assign_icon(self.fcd['shortcast'],
                                         self.icon_dict)
     self.make_forecast_icons()
-    print('Day forecast: {0}'.format(str(self.fcd)))
+    logging.debug('Day forecast: %s', self.fcd)
     return self.fcd
 
 
@@ -132,23 +133,24 @@ class Forecast(object):
                               verify=False,
                               timeout=10)
     except requests.exceptions.ReadTimeout:
-      print('Request timed out. Returning -None-')
+      logging.error('Request timed out. Returning -None-')
       return None
 
     if response.status_code != 200:
-      print('Response from server was not OK: {0}'.format(response.status_code))
+      logging.error('Response from server was not OK: %s', response.status_code)
+      logging.debug('Response: %s', response.text)
       return None
 
     afd = BeautifulSoup(response.text, 'lxml').find('body').find('pre').text
-    print('Response text (HTML body/pre/text):\n{0}'.format(afd))
+    logging.debug('Response text (HTML body/pre/text):\n%s', afd)
 
     afd_groups = re.split(re.escape(recordsplit), afd, re.M)
     if len(afd_groups) < 5:
-      print('There should be five or six sections in the Area Forecast Discussion!')
-      print('Returning None.')
+      logging.warn('There should be five or six sections in the Area Forecast Discussion!')
+      logging.warn('Returning None.')
       return None
     else:
-      print('There are {0} entries in the Area Forecast Discussion.'.format(len(afd_groups)))
+      logging.debug('There are %s entries in the Area Forecast Discussion.', len(afd_groups))
 
     indicator = self.defaults['afd_divisions'][0]
     short_term = afd_groups[0]
@@ -157,7 +159,7 @@ class Forecast(object):
     indicator = self.defaults['afd_divisions'][1]
     long_term = afd_groups[1]
     afdreturn['long_title'], afdreturn['long_term'] = self.tidy_afd_text(long_term, indicator)
-    
+
     write_json(afdreturn, outputdir=self.data['output_dir'], filename='afd.json')
     return afdreturn
 
@@ -195,7 +197,7 @@ class Forecast(object):
       return ''
 
     except Exception as exc:
-      print('Cannot match a forecast time frame header in {0}. ({1})'.format(headers, exc))
+      logging.error('Cannot match a forecast time frame header in %s. (%s)', headers, exc)
     return ''
 
 
@@ -230,22 +232,22 @@ class Forecast(object):
                             timeout=10
                            )
     except requests.exceptions.ReadTimeout as exc:
-      print('Request timed out or could not be found: {0}.'.format(exc))
+      logging.error('Request timed out or could not be found: %s.', exc)
       return None
 
     if retval.status_code == 200:
       self.data['forecast_xml'] = retval.text
-      print('Returned HTTP response code: {0}'.format(retval))
+      logging.info('Forecast request returned HTTP response code: %s', retval)
       self.parsed_xml = BeautifulSoup(self.data['forecast_xml'], 'xml')
 
       if self.parsed_xml.find('error'):
-        print('Server returned 200 but had errors:\n{0}'.format(self.parsed_xml))
-        print('Submitted:\nURL: {0}\nPayload: {1}'.format(self.data['defaults']['forecast_url'],
-                                                          str(payload)))
+        logging.warn('Server returned 200 but had errors:\n%s', self.parsed_xml)
+        logging.info('Submitted:\nURL: %s\nPayload: %s',
+                     self.data['defaults']['forecast_url'], str(payload))
         return None
 
       return retval
-    print('Cannot retrieve forecast -- server returned {0}'.format(retval))
+    logging.error('Cannot retrieve forecast -- server returned %s', retval)
     return None
 
 
@@ -260,11 +262,11 @@ class Forecast(object):
                           parsed_xml=self.parsed_xml,
                           icon_dict=self.data['defaults']['icon_match']
                          )
-      print('Populating the day\'s forecast dictionary for day {0}'.format(idx))
+      logging.info('Populating the day\'s forecast dictionary for day %s', idx)
       if today.populate_day_dict():
         self.forecast.append(today.fcd)
       else:
-        print('Error parsing forecast XML. Forecast is NONE.')
+        logging.warn('Error parsing forecast XML. Forecast is NONE.')
         return None
 
     return self.forecast
@@ -306,3 +308,103 @@ class Forecast(object):
         fc_text.write('{0}\n'.format(line))
 
       return True
+
+
+
+class ZoneForecast(object):
+  """
+  Pull the Zone forecast for the next 5-7 days and parse it into a text
+  forecast for each day and night. Return an ordered list.
+  Zone lists can be found on the NWS website.
+  Zone forecasts are provided by regional NWS stations, like FWD.
+  https://forecast.weather.gov/product.php?site=NWS&product=ZFP&issuedby=FWD
+  """
+
+  def __init__(self, data, output_dir='/tmp/'):
+
+    self.zonef = list()
+    self.data = data
+    self.zone = data['forecast_zone']
+    self.issuedby = data['nws_abbr']
+    self.output_dir = output_dir
+    self.relevant = list()
+    self.parsed_xml = ''
+
+  def get(self):
+    """
+    A roll-up (convenience) function to "just get everything."
+    """
+    self.get_zone_forecast()
+    self.parse_zone_forecast()
+    self.write_zone_forecast()
+    return True
+
+
+  def get_zone_forecast(self):
+    """
+    Retrieve and extract the zone forecast product text.
+    """
+    payload = {'site': 'NWS', 'product':'ZFP', 'issuedby': self.issuedby}
+    try:
+      retval = requests.get(url=self.data['defaults']['afd_url'],
+                            params=payload,
+                            verify=True,
+                            timeout=10
+                           )
+    except requests.exceptions.ReadTimeout as exc:
+      logging.error('Request timed out or could not be found: %s.', exc)
+      return None
+
+    if retval.status_code == 200:
+      zone_forecast = retval.text
+      logging.info('Forecast request returned HTTP response code: %s', retval)
+      self.parsed_xml = BeautifulSoup(zone_forecast, 'lxml')
+
+      if self.parsed_xml.find('error'):
+        logging.warn('Server returned 200 but had errors:\n%s', self.parsed_xml)
+        logging.info('Submitted:\nURL: %s\nPayload: %s',
+                     self.data['defaults']['afd_url'], str(payload))
+        return None
+    relevant = self.parsed_xml.find("pre").text
+    logging.debug('The forecast text:  %s', relevant)
+    rlist = relevant.split('''$$''')
+    for i in rlist:
+      if re.search(self.zone, i):
+        logging.debug('Requested forecast: %s', i)
+        self.relevant.append(i)
+        break
+
+    return self.relevant
+
+
+  def parse_zone_forecast(self):
+    """
+    Pull the forecast text out, then assign each element into a list of
+    neatly filtered forecasts.
+    """
+    lines = self.relevant[0]
+    lines = re.sub(r'\n', 'LINEBREAK', lines)
+    lines = re.sub(r'\.([\w\s]+)\.\.\.', '\n\nONEDAY\\1ONEDAY', lines)
+    logging.debug('Forecast text: %s', lines)
+    forecasts = lines.split('\n')
+    for eachf in forecasts:
+      if re.search(r'^\s*$', eachf):
+        continue
+      eachf = re.sub('LINEBREAK', ' ', eachf)
+      if re.search(r'^ONEDAY([\w\s]+)ONEDAY', eachf):
+        day = re.search(r'^ONEDAY([\w\s]+)ONEDAY', eachf).group(1)
+        forecast = re.sub(day, '', eachf)
+        forecast = re.sub('ONEDAY', '', forecast)
+        logging.info('%s: %s', day, forecast)
+        self.zonef.append([day, forecast])
+
+    return True
+
+
+  def write_zone_forecast(self):
+    """
+    Write out the zone forecast to a discrete json file.
+    """
+    logging.info('Writing zone forecast out to zoneforecast.json.')
+    write_json(self.zonef, outputdir=self.data['output_dir'], filename='zoneforecast.json')
+    return True
