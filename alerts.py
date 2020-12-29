@@ -76,6 +76,15 @@ class EventDict(object):
                                                             summary=summary)
     self.eventdict['alert_icon'] = wsvg.assign_icon(self.eventdict['event_type'],
                                                     self.data['defaults']['icon_match'])
+
+    if self.eventdict['alert_icon'] == 'wi-na.svg':
+      if self.eventdict['event_type'] in self.data['defaults']['warnings']:
+        self.eventdict['alert_icon'] = 'warning.svg'
+      elif self.eventdict['event_type'] in self.data['defaults']['watches']:
+        self.eventdict['alert_icon'] = 'warning.svg'
+      elif self.eventdict['event_type'] in self.data['defaults']['alerts']:
+        self.eventdict['alert_icon'] = 'warning.svg'
+
     logging.debug('Warning summary: %s', self.eventdict['warning_summary'])
     return self.eventdict
 
