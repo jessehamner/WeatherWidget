@@ -20,7 +20,7 @@ from imagery import Imagery
 from alerts import Alerts
 from radar import Radar
 from obs import Observation
-from forecast import Forecast
+from forecast import Forecast, ZoneForecast
 import weathersvg as wsvg
 
 # Pull settings in from two YAML files:
@@ -98,14 +98,19 @@ def main():
     return 1
 
   forecast_obj = Forecast(data=data)
+  logging.debug('Getting the forecasts.')
   forecast_obj.get_forecast()
   forecastdict = forecast_obj.parse_forecast()
   if forecastdict is None:
     logging.error('Unable to parse forecast!')
     return 1
   forecast_obj.write_forecast(outputdir=data['output_dir'])
-  # Area forecast discussion:
+  logging.debug('Getting area forecast discussion.')
   forecast_obj.get_afd()
+
+  logging.debug('Getting zone forecast.')
+  zoneforecast = ZoneForecast(data)
+  zoneforecast.get()
 
   wf.write_json(some_dict=forecastdict,
                 outputdir=data['output_dir'],
@@ -115,9 +120,7 @@ def main():
 
   # Satellite imagery:
   current_image = Imagery(band='GEOCOLOR', data=data)
-  current_image.get_current_image()
-  current_image.get_forecast_map()
-  current_image.get_national_temp_map()
+  current_image.get_all()
 
   logging.info('Finished program run.')
 
