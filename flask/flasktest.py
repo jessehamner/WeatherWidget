@@ -68,3 +68,16 @@ def satellite():
   with open('/var/www/html/dist/goes.json', 'r') as cc:
     sat_text = cc.read()
     return sat_text
+
+
+@app.route('/zoneforecast')
+def zoneforecast():
+  """
+  Each of these small functions reads the current JSON from a location and
+  provides it for HTTP API calls. This JSON is the text forecast for
+  today and up to six days in the future.
+  """
+
+  with open('/var/www/html/dist/zoneforecast.json', 'r') as cc:
+    zoneforecastdict = cc.read()
+    return zoneforecastdict
