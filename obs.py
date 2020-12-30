@@ -68,26 +68,29 @@ class Observation(object):
     """
     cur_url = self.data['defaults']['cur_url'].format(station=self.data['station'])
     returned_json = wf.make_request(url=cur_url)
-    
+
     if returned_json is None:
-      print('No usable returned data from URL: {0}'.format(self.data['defaults']['cur_url']))
+      logging.error('No usable reply from %s', self.data['defaults']['cur_url'])
       return None
 
     if 'properties' in returned_json.keys():
-      tempdict = returned_json['properties']
       con1 = self.con1.obs
       self.parse_primary_obs(returned_json=returned_json)
 
+      logging.debug('Determining cardinal wind direction, if possible.')
+      logging.info('Wind azimuth: %s', con1['wind_direction']['value'])
       wdstring = self.wind_direction(con1['wind_direction']['value'])
       if wdstring is None or wdstring == 'None':
+        logging.debug('Unable to determine cardinal wind direction.')
         con1['wind_cardinal'] = 'No Data'
       else:
+        logging.debug('Wind is out of the %s.', wdstring)
         con1['wind_cardinal'] = 'Out of the {0}'.format(wdstring)
 
       con1['beaufort'] = wf.beaufort_scale(self.data,
                                            speed=con1['wind']['value'],
                                            units=con1['wind']['units'])
-      print('Beaufort wind speed scale: {0}'.format(con1['beaufort']))
+      logging.info('Beaufort wind speed scale: %s', con1['beaufort'])
 
       con1['moon_icon'] = self.moonphase()
 
@@ -230,7 +233,9 @@ class Observation(object):
                               'label': 'Wind Direction'
                              }
 
+    logging.debug('Wind dir (backup data) is %s degrees.', self.backup_obs.obs['wind_degrees'])
     wind_dir = self.wind_direction(self.backup_obs.obs['wind_degrees'])
+    logging.debug('Wind direction is out of the %s', wind_dir)
     if wind_dir == 'None' or wind_dir is None:
       con2['wind_cardinal'] = 'No data'
     else:
@@ -415,12 +420,13 @@ class Observation(object):
     except KeyError as exc:
       print('Exception: {0}'.format(exc))
       return False
-  
+
 
   def moonphase(self):
     """
     Get the moon phase and icon name for the moon phase.
     """
+    logging.debug('Getting the moon phase.')
     moon_icon = moon_phase.MoonPhase(self.data)
     moon_icon_name = moon_icon.get_moon_phase()
     return moon_icon_name
