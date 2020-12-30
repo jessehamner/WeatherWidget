@@ -374,7 +374,7 @@ class Observation(object):
                                              trump['value'],
                                              trump['units'])
       except Exception as exc:
-        print('Exception: {0}'.format(exc))
+        logging.error('Exception: %s', exc)
         summary[key] = 'none'
 
     return summary
@@ -382,12 +382,13 @@ class Observation(object):
 
   def wind_direction(self, azimuth):
     """
-    Converts 'wind coming from an azimuth' to cardinal directions.
+    Converts 'wind coming from an azimuth, in degrees', to cardinal directions.
     """
     try:
       azimuth = float(azimuth)
+      logging.debug('Converted azimuth to %s', azimuth)  
     except Exception as exc:
-      print('Cannot convert azimuth {0} to numeric. Returning None. ({1})'.format(azimuth, exc))
+      logging.error('Cannot convert azimuth %s to numeric. Returning None. (%s)', azimuth, exc)
       return None
 
     plusminus = self.data['defaults']['plusminus']  # 11.25
@@ -395,7 +396,9 @@ class Observation(object):
 
     for az_deg, val in azdir.iteritems():
       az_deg = float(az_deg)
+      logging.debug('Checking range %s to %s', az_deg - plusminus, az_deg + plusminus)
       if (az_deg - plusminus < azimuth) and (az_deg + plusminus >= azimuth):
+        logging.info('Wind azimuth %s degrees converts to %s', azimuth, val)
         return val
 
     return 'None'
