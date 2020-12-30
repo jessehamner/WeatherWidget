@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 """
+This set of libraries and scripts originally started as a means to put a
+weather radar image on my Mac Finder background. It has since grown into
+a larger personal project, including a responsive weather webpage and modest
+python Flask API endpoint.
 
-See https://www.weather.gov/jetstream/gis
-https://radar.weather.gov/GIS.html
-https://radar.weather.gov/ridge/Overlays/
-https://mesonet.agron.iastate.edu/GIS/legends/TR0.gif
+The National Weather Service (NWS, part of NOAA)
+has recently changed their radar image delivery and so that portion of the
+functionality does not work at present.
 
 Jesse Hamner, 2019--2020
 
@@ -43,7 +46,7 @@ def main():
   """
   if os.path.exists('weatherwidget.log'):
     os.remove('weatherwidget.log')
-  logging.basicConfig(filename='weatherwidget.log', level=logging.INFO,
+  logging.basicConfig(filename='weatherwidget.log', level=logging.DEBUG,
                       format='%(asctime)s %(levelname)s %(threadName)-10s %(message)s',)
 
   data = wf.load_settings_and_defaults(SETTINGS_DIR, 'settings.yml', 'defaults.yml')
