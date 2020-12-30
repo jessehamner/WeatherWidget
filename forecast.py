@@ -367,11 +367,11 @@ class ZoneForecast(object):
                      self.data['defaults']['afd_url'], str(payload))
         return None
     relevant = self.parsed_xml.find("pre").text
-    logging.debug('The forecast text:  %s', relevant)
+    logging.debug('The forecast text has %s characters', len(relevant))
     rlist = relevant.split('''$$''')
     for i in rlist:
       if re.search(self.zone, i):
-        logging.debug('Requested forecast: %s', i)
+        logging.debug('Found requested forecast: %s', i)
         self.relevant.append(i)
         break
 
@@ -386,7 +386,7 @@ class ZoneForecast(object):
     lines = self.relevant[0]
     lines = re.sub(r'\n', 'LINEBREAK', lines)
     lines = re.sub(r'\.([\w\s]+)\.\.\.', '\n\nONEDAY\\1ONEDAY', lines)
-    logging.debug('Forecast text: %s', lines)
+    # logging.debug('Forecast text: %s', lines)
     forecasts = lines.split('\n')
     for eachf in forecasts:
       if re.search(r'^\s*$', eachf):
@@ -396,6 +396,7 @@ class ZoneForecast(object):
         day = re.search(r'^ONEDAY([\w\s]+)ONEDAY', eachf).group(1)
         forecast = re.sub(day, '', eachf)
         forecast = re.sub('ONEDAY', '', forecast)
+        forecast = re.sub(r'\s*$', '', forecast)
         logging.info('%s: %s', day, forecast)
         self.zonef.append([day, forecast])
 
