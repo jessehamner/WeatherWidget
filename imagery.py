@@ -99,16 +99,18 @@ class Imagery(object):
     for link in links:
       if link.has_attr("href"):
         filename = link['href']
-        logging.debug('Checking file: "%s"', filename)
+        if re.search(self.res, filename):
+          logging.debug('Checking file: "%s"', filename)
       try:
         if myimage.search(filename):
           if re.search(self.res, filename) and re.search(todaystring, filename):
             filelist.append(filename)
-      except KeyError:
-        pass
-      except AttributeError:
-        pass
+      except KeyError as exc:
+        logging.error('KeyError: %s', exc)
+      except AttributeError as exc:
+        logging.error('AttributeError: %s', exc)
 
+    logging.debug('Returning file list.')
     return filelist
 
 
@@ -133,6 +135,7 @@ class Imagery(object):
     logging.info('UTC year: %s; UTC day-of-the-year: %s', localyear, localdoy)
     files.extend(self.get_daily_list(localyear, localdoy, links))
     if localdoy == 1:
+      logging.debug('Today is the first of the year. Yesterday is previous year.')
       localdoy = 365  # TODO check for leap year with timedelta instead
       localyear = localyear - 1
     else:
@@ -182,9 +185,11 @@ class Imagery(object):
     returned_val = requests.get(os.path.join(self.url, image), verify=False)
     with open(os.path.join(self.data['output_dir'], image), 'wb') as satout:
       satout.write(bytearray(returned_val.content))
+      logging.debug('Writing image %s to path %s', image, self.data['output_dir'])
 
     with open(os.path.join(self.data['output_dir'], 'goes_current.jpg'), 'wb') as satout:
       satout.write(bytearray(returned_val.content))
+      logging.debug('Writing "goes_current.jpg" to path %s', self.data['output_dir'])
 
     return image
 
@@ -211,6 +216,7 @@ class Imagery(object):
     removeme = [a for a in thefiles if a not in keepme]
     try:
       [os.remove(b) for b in [os.path.join(self.data['output_dir'], a) for a in removeme]]
+      logging.debug('Removing outdated GOES imagery.')
     except Exception as exc:
       logging.error('Exception! %s', exc)
       return False
@@ -252,8 +258,10 @@ class Imagery(object):
     Pull the national high temperature map from
     https://graphical.weather.gov/images/conus/MaxT1_conus.png
     """
+    logging.debug('Retrieving national high temperatures map from %s',
+                  self.data['defaults']['temp_map_url'])
     return_value = self.get_file(url=self.data['defaults']['temp_map_url'],
                                  mapname=mapname,
                                  file_to_retrieve=self.data['defaults']['temp_map_file'],
-                                 verify=False)
+                                 verify=True)
     return return_value
