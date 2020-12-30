@@ -91,6 +91,7 @@ class MoonPhase(object):
     thisyear = self.today_v['year']
     self.new_moon_dict['year'][thisyear] = {}
     url_args = {'year': thisyear, 'data_type': 'phaX1'}
+    logging.debug('Retrieving moon phase data from %s', self.baseurl)
     moon_table = requests.get(self.baseurl, params=url_args,
                               verify=False, timeout=10)
 
@@ -98,6 +99,7 @@ class MoonPhase(object):
       logging.error('Unable to get a proper response from NOAA server. Returning False.')
       return False
 
+    logging.debug('Parsing the new moon html table from NOAA.')
     soup = BeautifulSoup(moon_table.text, 'html.parser')
     tables = soup.body.find_all('table')
     phase_table = tables[0]
@@ -128,14 +130,13 @@ class MoonPhase(object):
     difference = nextnewmoon - today
     cycle = 29.53 # days in an average moon cycle
 
-    place_in_cycle = (datetime.timedelta(29.53) - difference)
+    place_in_cycle = (datetime.timedelta(cycle) - difference)
     days_into_cycle = ((place_in_cycle.days * 24) + (place_in_cycle.seconds/3600.0)) / 24
     while days_into_cycle > cycle:
       days_into_cycle = days_into_cycle - cycle
 
     logging.info('Place in the lunar cycle: %s', days_into_cycle)
     icon_index = int((days_into_cycle / cycle) * 29)
-
     logging.info('Icon should be: %s', self.phases[str(icon_index)])
 
     return self.phases[str(icon_index)]
