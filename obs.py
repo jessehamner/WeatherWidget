@@ -86,7 +86,6 @@ class Observation(object):
       else:
         logging.debug('Wind is out of the %s.', wdstring)
         con1['wind_cardinal'] = 'Out of the {0}'.format(wdstring)
-        self.obs['wind_cardinal'] = con1['wind_cardinal']
 
       con1['beaufort'] = wf.beaufort_scale(self.data,
                                            speed=con1['wind']['value'],
@@ -162,8 +161,11 @@ class Observation(object):
     retpage = wf.make_request(url=url, use_json=use_json)
     if not retpage:
       self.backup_obs.obs = None
+      logging.error('No weather observation was obtained from %s', url)
       return None
+    
     bsbackup = BeautifulSoup(retpage, 'lxml').find('current_observation')
+    logging.debug('Returned page from %s:\n%s', url, bsbackup.text )
 
     fields = ['location', 'station_id', 'latitude', 'longitude', 'observation_time',
               'observation_time_rfc822', 'weather', 'temperature_string', 'temp_f',
@@ -176,7 +178,7 @@ class Observation(object):
       try:
         self.backup_obs.obs[field] = bsbackup.find(field).text
       except Exception as exc:
-        print('Exception: {0}'.format(exc))
+        logging.error('Exception: %s', exc)
         self.backup_obs.obs[field] = ''
 
     con2 = self.con2.obs
@@ -269,6 +271,8 @@ class Observation(object):
     if temp_f == self.data['defaults']['missing']:
       logging.warn('No temperature data to use. Returning -None-')
       return None
+
+    logging.info('Finding wind chill for %s, with wind at %s mph', temp_f, wind_mph)
     try:
       wind_ch = 35.74 + (0.6215 * temp_f)
     except Exception as exc:
@@ -307,22 +311,25 @@ class Observation(object):
     ccp = self.con1.obs
     con2 = self.con2.obs
     for key in self.matchup:
-      print('key: {0}'.format(key))
-      print('existing value: {0}'.format(ccp[key]['value']))
+      logging.debug('key: %s', key)
+      logging.debug('existing value: %s', ccp[key]['value'])
       if (ccp[key]['value'] is None) or (ccp[key]['value'] == 'None'):
-        print('Testing {0}'.format(con2[key]['value']))
+        logging.debug('Testing %s', con2[key]['value'])
         try:
           if con2[key]['value']:
             ccp[key] = con2[key]
+            logging.debug('Set value for %s in ccp to %s', key, con2[key])
 
         except Exception as exc:
-          print('Something barfed: {0}'.format(exc))
+          logging.error('Unable to compare or set value %s or %s: %s',
+                        con2[key]['value'], ccp[key]['value'], exc)
           continue
 
     for key in self.textonly:
       if ccp[key] is None or ccp[key] == 'None':
         if con2[key]:
           ccp[key] = con2[key]
+          logging.debug('Replaced missing value for %s in ccp with %s', key, con2[key])
 
     ccp['weather_icon'] = wsvg.assign_icon(ccp['textdescription'],
                                            self.data['defaults']['icon_match'])
