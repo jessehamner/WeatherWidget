@@ -99,8 +99,8 @@ class Imagery(object):
     for link in links:
       if link.has_attr("href"):
         filename = link['href']
-        if re.search(self.res, filename):
-          logging.debug('Checking file: "%s"', filename)
+        if re.search(self.res, filename) and re.search(todaystring, filename):
+          logging.debug('File from today: "%s"', filename)
       try:
         if myimage.search(filename):
           if re.search(self.res, filename) and re.search(todaystring, filename):
