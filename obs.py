@@ -326,8 +326,8 @@ class Observation(object):
           continue
 
     for key in self.textonly:
-      logging.debug('Comparing values for %s.', key)
-      if ccp[key] is None or ccp[key] == 'None':
+      logging.debug('Comparing values for %s. Current value is %', key, ccp[key])
+      if ccp[key] is None or ccp[key] == 'None' or ccp[key] == 'No Data':
         if con2[key]:
           ccp[key] = con2[key]
           logging.debug('Replaced missing value for %s in ccp with %s', key, con2[key])
@@ -406,8 +406,6 @@ class Observation(object):
 
     plusminus = self.data['defaults']['plusminus']  # 11.25
     azdir = self.data['defaults']['azdir']
-    #if(azimuth > 360 - plusminus):
-    #  azimuth = azimuth - 360
     for az_deg, val in azdir.iteritems():
       az_deg = float(az_deg)
       logging.debug('Checking range %s to %s', az_deg - plusminus, az_deg + plusminus)
