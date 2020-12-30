@@ -326,7 +326,7 @@ class Observation(object):
           continue
 
     for key in self.textonly:
-      logging.debug('Comparing values for %s. Current value is %', key, str(ccp[key]))
+      logging.debug('Comparing values for %s.', key)
       if ccp[key] is None or ccp[key] == 'None' or ccp[key] == 'No Data':
         if con2[key]:
           ccp[key] = con2[key]
