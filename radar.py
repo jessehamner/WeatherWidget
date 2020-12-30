@@ -1,5 +1,9 @@
 """
 radar.py: download and perform image tasks on radar imagery.
+
+The entire class needs to be re-factored, because NWS has changed how they
+deliver radar imagery in mid-Dec 2020. I have started a GitHub bug issue.
+
 """
 
 from __future__ import print_function
@@ -29,6 +33,7 @@ class Radar(object):
     self.assets_url = data['defaults']['weather_url_root']
     self.warnings_url = data['defaults']['warnings_url']
     self.problem = False
+
 
   def get_radar(self):
     """
