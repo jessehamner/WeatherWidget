@@ -312,10 +312,9 @@ class Observation(object):
     ccp = self.con1.obs
     con2 = self.con2.obs
     for key in self.matchup:
-      logging.debug('key: %s', key)
-      logging.debug('existing value: %s', ccp[key]['value'])
+      logging.debug('Checking key: %s; existing value: %s ', key, ccp[key]['value'])
       if (ccp[key]['value'] is None) or (ccp[key]['value'] == 'None'):
-        logging.debug('Testing %s', con2[key]['value'])
+        logging.debug('Testing con2 value for %s: %s', key, con2[key]['value'])
         try:
           if con2[key]['value']:
             ccp[key] = con2[key]
@@ -327,6 +326,7 @@ class Observation(object):
           continue
 
     for key in self.textonly:
+      logging.debug('Comparing values for %s.', key)
       if ccp[key] is None or ccp[key] == 'None':
         if con2[key]:
           ccp[key] = con2[key]
