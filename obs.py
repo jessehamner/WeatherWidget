@@ -274,17 +274,17 @@ class Observation(object):
 
     logging.info('Finding wind chill for %s, with wind at %s mph', temp_f, wind_mph)
     try:
-      wind_ch = 35.74 + (0.6215 * temp_f)
+      wind_ch = 35.74 + (0.6215 * float(temp_f))
     except Exception as exc:
-      logging.error('Exception! %s', exc)
+      logging.error('Exception computing first wind chill component! %s', exc)
       return None
 
     try:
-      wind_ch = wind_ch - (35.75 * (wind_mph ** 0.16)) + (0.4275 * temp_f * (wind_mph ** 0.16))
+      wind_ch = float(wind_ch) - (35.75 * (float(wind_mph) ** 0.16)) + (0.4275 * float(temp_f) * (float(wind_mph) ** 0.16))
       logging.info('Wind chill computed to be %s degrees.', wind_ch)
-      return wind_ch
+      return int(wind_ch)
     except Exception as exc:
-      logging.error('Exception! %s', exc)
+      logging.error('Exception computing second portion of wind chill! %s', exc)
       return None
 
 
