@@ -86,6 +86,7 @@ class Observation(object):
       else:
         logging.debug('Wind is out of the %s.', wdstring)
         con1['wind_cardinal'] = 'Out of the {0}'.format(wdstring)
+        self.obs['wind_cardinal'] = con1['wind_cardinal']
 
       con1['beaufort'] = wf.beaufort_scale(self.data,
                                            speed=con1['wind']['value'],
@@ -240,6 +241,7 @@ class Observation(object):
       con2['wind_cardinal'] = 'No data'
     else:
       con2['wind_cardinal'] = 'Out of the {0}'.format(wind_dir)
+      logging.debug('Setting backup data wind direction to "%s"', con2['wind_cardinal'])
 
     con2['timestamp'] = self.backup_obs.obs['observation_time_rfc822']
     con2['windchill'] = {'value': self.wind_chill(self.backup_obs.obs['temp_f'],
@@ -265,17 +267,20 @@ class Observation(object):
 
     """
     if temp_f == self.data['defaults']['missing']:
+      logging.warn('No temperature data to use. Returning -None-')
       return None
     try:
       wind_ch = 35.74 + (0.6215 * temp_f)
     except Exception as exc:
+      logging.error('Exception! %s', exc)
       return None
 
     try:
       wind_ch = wind_ch - (35.75 * (wind_mph ** 0.16)) + (0.4275 * temp_f * (wind_mph ** 0.16))
+      logging.info('Wind chill computed to be %s degrees.', wind_ch)
       return wind_ch
     except Exception as exc:
-      print('Exception! {0}'.format(exc))
+      logging.error('Exception! %s', exc)
       return None
 
 
@@ -393,7 +398,8 @@ class Observation(object):
 
     plusminus = self.data['defaults']['plusminus']  # 11.25
     azdir = self.data['defaults']['azdir']
-
+    #if(azimuth > 360 - plusminus):
+    #  azimuth = azimuth - 360
     for az_deg, val in azdir.iteritems():
       az_deg = float(az_deg)
       logging.debug('Checking range %s to %s', az_deg - plusminus, az_deg + plusminus)
