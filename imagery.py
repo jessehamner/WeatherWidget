@@ -93,7 +93,7 @@ class Imagery(object):
 
     """
     filelist = []
-    todaystring = '{0}{1}'.format(localyear, localdoy)
+    todaystring = '{0}{1:03d}'.format(localyear, localdoy)
     logging.debug('Today-string for GOES imagery: %s', todaystring)
     myimage = re.compile('ABI-{0}-{1}-{2}'.format(self.data['goes_sector'], self.band, self.res))
     for link in links:
@@ -110,7 +110,7 @@ class Imagery(object):
       except AttributeError as exc:
         logging.error('AttributeError: %s', exc)
 
-    logging.debug('Returning file list.')
+    logging.debug('Returning file list, with %s entries.', len(filelist))
     return filelist
 
 
