@@ -605,3 +605,14 @@ def parse_zone_table(county, rows):
         return cells[1].text.strip()
 
   return None
+
+
+def make_timestamp():
+  """
+  Returns tuple of two strings: "YYYYMMDD" and "HHMMSS"
+  """
+  dutc = datetime.utcnow()
+  hhmmss = dutc.strftime('%H%M%S')
+  ymd = dutc.strftime('%Y%m%d')
+
+  return (ymd, hhmmss)
