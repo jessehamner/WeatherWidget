@@ -11,6 +11,7 @@ from __future__ import print_function
 import os
 import logging
 import requests
+import gzip
 from PIL import Image
 
 
@@ -136,7 +137,6 @@ class Radar(object):
       return True
 
 
-
   def _retrieve_asset(self, file_url_dir, url, filename):
     """
 
@@ -188,3 +188,27 @@ class Radar(object):
     except Exception as exc:
       logging.error('Exception: %s', exc)
       return None
+
+
+  def retrieve_image(self, directory, imagename):
+    """
+    Stub to replace the outdated get_radar() method, above, with a means to
+    retrieve RIDGEII images.
+    """
+    result = requests.get(os.path.join(directory, imagename))
+    if result.status_code == 200:
+      print('Server returned OK.')
+      return result
+
+    return None
+
+
+  def unzip_and_write(self, payload, filename):
+    """
+    Stub to unzip a gzipped binary file (here, always a NWS GeoTIFF) and
+    write it locally.
+    """
+    with open(filename, 'wb') as binary_output:
+      binary_output.write(gzip.decompress(payload))
+
+    return True
