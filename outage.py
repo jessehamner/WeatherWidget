@@ -42,21 +42,21 @@ class Outage(object):
     The information is identical to the HWO call.
     """
 
-    print('ftm parameter dict: {0}'.format(self.ftm_params))
+    logging.debug('ftm parameter dict: %s', self.ftm_params)
 
     try:
       response = requests.get(self.defaults['hwo_url'],
                               params=self.ftm_params,
                               verify=False, timeout=10)
     except requests.exceptions.ConnectionError as exc:
-      print('ConnectionError: {0}'.format(exc))
+      logging.error('ConnectionError: %s', exc)
       return None
 
     html = response.text
     soup = BeautifulSoup(html, 'html.parser')
 
     if not soup:
-      print('WARNING: no returned data from html request for outages.')
+      logging.warn('WARNING: no returned data from html request for outages.')
       return None
 
     try:
@@ -82,7 +82,7 @@ class Outage(object):
     - what text is relevant (but default to "all of the text")
     """
     if not self.ftm_text:
-      print('No outage text seen. Returning -None-')
+      logging.info('No outage text seen. Returning -None-')
       return None
     message_date = ''
     for line in self.ftm_text:
@@ -93,11 +93,11 @@ class Outage(object):
         continue
       if re.search('MESSAGE DATE:', line, flags=re.I):
         message_date = re.sub(r'MESSAGE DATE:\s+', '', line, flags=re.I)
-        print('Date of issue: {0}'.format(message_date))
+        logging.info('Date of issue: %s', message_date)
         dateobj = datetime.datetime.strptime(message_date, '%b %d %Y %H:%M:%S')
         today = datetime.datetime.now()
         if (today - dateobj) > datetime.timedelta(days=1):
-          print('Outage info is older than one day -- ignoring.')
+          logging.info('Outage info is older than one day -- ignoring.')
           return None
         else:
           self.return_text = str('{0}\nNWS FTM NOTICE:'.format(self.return_text))
