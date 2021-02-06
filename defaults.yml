@@ -82,7 +82,7 @@ icon_match:
     'wi-snowflake-cold.svg': ['very cold', 'below freezing', 'cold', 'Freeze Warning', 'Winter Weather Advisory']
     'wi-hot.svg': ['hot', 'Heat Advisory']
     'wi-fire.svg': ['fire', 'burn ban', 'burn', 'fire weather watch']
-    'wi-smoke.svg': ['smoke', 'air quality alert']
+    'wi-smoke.svg': ['smoke']
     'wi-fog.svg': ['fog', 'foggy', 'haze', 'fog/mist']
     'wi-day-sprinkle.svg': ['drizzle', 'sprinkle', 'mist', 'misty', 'Slight Chance Rain Showers', 'chance rain showers', 'chance of a shower', 'Rain and Fog/Mist']
     'wi-sprinkle.svg': ['light rain', 'light rain and fog/mist', 'slight chance rain']
@@ -95,6 +95,7 @@ icon_match:
     'wi-raindrops.svg': ['some rain']
     'wi-hail.svg': ['hail', 'rain and hail']
     'wi-na.svg': ['None', 'N/A', 'NA']
+    'wi-night-partly-cloudy.svg': ['clearing late']]
     'person.svg': ['Child Abduction Emergency']
 
 
