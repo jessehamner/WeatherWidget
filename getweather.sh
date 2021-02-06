@@ -2,8 +2,11 @@
 python_binary="$(/usr/bin/which python | tr '\n' ' ' | sed 's/ //g')"
 # echo "python: ${python_binary}"
 # python_version="$(${python_binary} --version)"
-sourcelib="${HOME}/Dropbox/weatherwidget"
+sourcelib="/opt/weatherwidget"
 ${python_binary} ${sourcelib}/current_conditions.py
+
+exit
+
 convert_binary=`source ${HOME}/.bash_profile; /usr/bin/which convert`
 # echo "-convert- binary: ${convert_binary}"
 legendfile=""
