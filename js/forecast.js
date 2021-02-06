@@ -1,4 +1,31 @@
 
+function generateZoneForecastHead(table) {
+  let thead = table.createTHead();
+  let row = thead.insertRow();
+  let columns = ["Day", "Forecast"];
+  for (let i in columns) {
+    let th = document.createElement("th");
+    let text = document.createTextNode(columns[i]);
+    th.appendChild(text);
+    row.appendChild(th);
+  }
+}
+
+
+function zoneForecastRow(forecast, table) {
+  let tr = document.createElement("tr");
+  for (let i in forecast) {
+
+    let td1 = document.createElement("td");
+    let text = document.createTextNode(forecast[i]);
+    // console.log('Text of forecast[i]: ' + forecast[i]);
+    td1.appendChild(text);
+    tr.appendChild(td1);
+  }
+
+  table.appendChild(tr);
+}
+
 function generateTableHead(table) {
   let thead = table.createTHead();
   let row = thead.insertRow();
@@ -80,4 +107,23 @@ afd.onload = () => {
 }
 
 
+let zoneforecast = new XMLHttpRequest();
+let table = document.createElement("table");
+zoneforecast.open("GET", "http://192.168.0.199:5000/zoneforecast");
+zoneforecast.send();
+zoneforecast.onload = () => {
+  console.log(zoneforecast);
+  if (zoneforecast.status == 200) {
+//    generateZoneForecastHead(table);
+    let zoneforecast_list = JSON.parse(zoneforecast.responseText);
+    console.log('Zone Forecast JSON: ' + zoneforecast_list);
+    for (item in zoneforecast_list){
+ //     console.log('Zone fc item: ' + zoneforecast_list[item]);
+      zoneForecastRow(zoneforecast_list[item], table);
+    }
 
+  } else {
+    console.log(`error ${zoneforecast.status} ${zoneforecast.statusText}`);
+  }
+  document.getElementById("zoneforecastbody").appendChild(table);
+}
