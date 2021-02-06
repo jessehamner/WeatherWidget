@@ -102,7 +102,7 @@ def get_metar(base_url, station):
   metar = requests.get(os.path.join(base_url, station),
                        verify=False, timeout=10)
   if metar.status_code != 200:
-    print('Response from server was not OK: {0}'.format(metar.status_code))
+    logging.error('Response from server was not OK: %s', metar.status_code)
     return None
   return metar.text
 
@@ -142,13 +142,13 @@ def write_json(some_dict, outputdir='/tmp', filename='unknown.json'):
   """
   filepath = os.path.join(outputdir, filename)
   with open(filepath, 'w') as out_obj:
-    print('writing json to {0}'.format(filepath))
+    logging.info('writing json to %s', filepath)
     try:
       out_obj.write(json.dumps(some_dict))
-      print('raw dict: {0}'.format(some_dict))
+      logging.debug('raw dict: %s', some_dict)
       return True
     except Exception as exc:
-      print('Ugh: {0}'.format(exc))
+      logging.error('Ugh: %s', exc)
       return False
 
 
@@ -158,7 +158,7 @@ def write_dict(filepath, some_dict):
   """
   with open(filepath, 'w') as current_alerts:
     for key, value in some_dict.iteritems():
-      print('Key for this alert entry: {0}'.format(key))
+      logging.debug('Key for this alert entry: %s', key)
       current_alerts.write('{0}: {1}\n'.format(key, value))
 
   return True
@@ -169,7 +169,7 @@ def write_text(filepath, some_text):
   Write a text string out to a file.
   """
   with open(filepath, 'w') as text_file:
-    print('writing text to {0}'.format(filepath))
+    logging.debug('writing text to %s', filepath)
     text_file.write(some_text)
   text_file.close()
   return True
@@ -183,7 +183,7 @@ def pull_beaufort_scale():
   b_url = 'https://www.weather.gov/mfl/beaufort'
   pagerequest = requests.get(b_url)
   if pagerequest.status_code != 200:
-    print('Response from server was not OK: {0}'.format(pagerequest.status_code))
+    logging.error('Response from server was not OK: %s', pagerequest.status_code)
     return None
   beaufort_page = BeautifulSoup(requests.get(b_url).text, 'html')
   btable = beaufort_page.find('table')
@@ -217,7 +217,7 @@ def conditions_summary(conditions):
       summary[key] = conditions['properties'][key]
     except Exception as exc:
       summary[key] = 'none'
-      print('Error trying to read summary for key {0}: {1}'.format(key, exc))
+      logging.error('Error trying to read summary for key {0}: {1}', key, exc)
 
   return summary
 
@@ -229,7 +229,7 @@ def wind_direction(azimuth, data):
   try:
     azimuth = float(azimuth)
   except Exception as exc:
-    print('Unable to convert azimuth to a numerical value: {0}.\nReturning None.'.format(exc))
+    logging.error('Unable to convert azimuth to a numerical value: %s.\nReturning None.', exc)
     return None
 
   plusminus = data['defaults']['plusminus'] # 11.25 degrees
@@ -256,8 +256,8 @@ def get_hydrograph(abbr,
   """
   filename = '{0}_hg.png'.format(abbr.lower())
   retval = requests.get(os.path.join(hydro_url, filename), verify=False)
-  print('retrieving: {0}'.format(retval.url))
-  print('return value: {0}'.format(retval))
+  logging.debug('retrieving: %s', retval.url)
+  logging.debug('return value: %s', retval)
   if retval.status_code == 200:
     cur1 = open(os.path.join(outputdir, 'current_hydrograph.png'), 'wb')
     cur1.write(retval.content)
@@ -300,7 +300,7 @@ def htable_current_conditions(con_dict,
     with open(os.path.join(outputdir, tablefile), 'w') as htmlout:
       htmlout.write('<table>\n')
       for key, value in con_dict.iteritems():
-        print('{0}: {1}'.format(key, value))
+        logging.debug('%s: %s', key, value)
         htmlout.write('<tr><td>{0}</td><td>{1} {2}</td></tr>\n'.format(value[2],
                                                                        value[0],
                                                                        value[1])
@@ -308,7 +308,7 @@ def htable_current_conditions(con_dict,
       htmlout.write('</table>\n')
     return True
   except KeyError as exc:
-    print('Exception: {0}'.format(exc))
+    logging.error('Exception: %s', exc)
     return False
 
 
@@ -419,22 +419,22 @@ def beaufort_scale(data, speed, units='mph'):
   """
   blist = data['defaults']['beaufort_scale']
   if speed is None or speed == 'None':
-    print('Input speed {0} cannot be converted to Beaufort. Returning None.'.format(speed))
+    logging.error('Input speed %s cannot be converted to Beaufort. Returning None.', speed)
     return None
-  print('input speed value: {0} {1}'.format(speed, units))
+  logging.debug('input speed value: %s %s', speed, units)
   if units != 'mph':
     speed = convert_units(speed, from_unit=units, to_unit='mph')
-  print('output speed value: {0} mph'.format(speed))
+  logging.debug('output speed value: %s mph', speed)
   speed = int(speed)
-  print('integer speed value: {0} mph'.format(speed))
+  logging.debug('integer speed value: %s mph', speed)
 
   for i in blist.keys():
-    print('Key: {0}\tmin speed: {1}\tmax speed: {2}'.format(i, blist[i][0], blist[i][1]))
+    logging.debug('Key: %s\tmin speed: %s\tmax speed: %s', i, blist[i][0], blist[i][1])
     if int(blist[i][0]) <= speed and speed <= int(blist[i][1]):
-      print('Speed ({0} mph) between {1} & {2}. Returning {3}'.format(speed,
-                                                                      blist[i][0],
-                                                                      blist[i][1],
-                                                                      i))
+      logging.debug('Speed (%s mph) between %s & %s. Returning %s', speed,
+                                                                    blist[i][0],
+                                                                    blist[i][1],
+                                                                    i)
       return int(i)
 
   return None
