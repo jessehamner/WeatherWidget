@@ -5,7 +5,7 @@ A small set of python and bash utilities to retrieve radar images and the
 text of the Hazardous Weather Outlook for a given region from the 
 US National Weather Service. On Mac OS X, these scripts integrate nicely with
 [GeekTool](https://www.tynsoe.org/v2/geektool/) 
-desktop widgets.
+desktop widgets. On linux, these resources can be nicely incorporated to a <a href="https://github.com/tabler/tabler">tabler</a> (based on Angular.js) dashboard/webpage.
 
 <p align="center">
 <img src="https://github.com/jessehamner/WeatherWidget/blob/master/images/desktop.png" width="300" alt-text="GeekTool desktop widgets showing radar image and hazardous weather outlook information along with forecast and hydrograph.">
@@ -36,7 +36,7 @@ regularly use Windows.
 
 ## Python
 
-The script is a simple library of functions, held together with some glue in 
+The codebase has a library of functions, classes, and methods, held together with some glue in 
 main(). For locations other than Fort Worth / DFW, the end-user will need to
 change numerous abbreviations in the YaML settings file, including: one for the 
 [weather forecast office](https://en.wikipedia.org/wiki/List_of_National_Weather_Service_Weather_Forecast_Office), 
@@ -60,11 +60,11 @@ all pretty well contained in that one file. (Exception: merge_backgrounds.sh sti
 #### Python
 - Check for some required background images and gets them if needed.
 - Retrieve current conditions
-- Get the radar image
+- Get the radar image (currently b0rked, because the NWS changed how they distribute weather radar data in December 2020)
 - Get the warnings image ("boxes" for overlaying)
 - Get the Hazardous Weather Outlook and parse it
 - Check for weather alerts
-- Get the weather forecast and parse it
+- Get the weather forecasts and parse them
 - Get the hydrologic graph for the local river gauge, if any
 - Write out files to `/tmp/` (or where specified in the settings file)
 
