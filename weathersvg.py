@@ -159,6 +159,9 @@ def assign_icon(description, icon_match):
   Try to parse the language in forecasts for each to and match to an
   appropriate weather SVG icon.
   """
+  if description == ''
+    logging.warn('No description available for icon match. Returning NA.')
+    return 'wi-na.svg' 
 
   returnvalue = ''
   description = description.strip().lower()
