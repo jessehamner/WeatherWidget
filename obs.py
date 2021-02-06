@@ -130,9 +130,9 @@ class Observation(object):
         con1[val[0]]['value'] = 'None'
         con1[val[0]]['units'] = ''
       else:
-        print('Converting {0} to {1} for {2} data'.format(from_unit,
-                                                          self.data['units'][val[1]],
-                                                          val[0])
+        logging.info('Converting %s to %s for %s data', from_unit,
+                                                        self.data['units'][val[1]],
+                                                        val[0])
              )
         sys.stdout.write('{0} Input: {1}'.format(val[0], from_value))
         con1[val[0]]['value'] = wf.convert_units(value=from_value,
@@ -314,11 +314,11 @@ class Observation(object):
     for key in self.matchup:
       logging.debug('Checking key: %s; existing value: %s ', key, ccp[key]['value'])
       if (ccp[key]['value'] is None) or (ccp[key]['value'] == 'None'):
-        logging.debug('Testing con2 value for %s: %s', key, con2[key]['value'])
+        logging.debug('Testing con2 value for %s: (%s)', key, con2[key]['value'])
         try:
           if con2[key]['value']:
             ccp[key] = con2[key]
-            logging.debug('Set value for %s in ccp to %s', key, con2[key])
+            logging.debug('Set value for %s in ccp to "%s".', key, con2[key])
 
         except Exception as exc:
           logging.error('Unable to compare or set value %s or %s: %s',
@@ -350,8 +350,8 @@ class Observation(object):
 
     doctext = str('Conditions as of {0}'.format(wf.prettify_timestamp(cur['timestamp'])))
     for entry in ordered:
-      print('Checking key: {0}'.format(entry))
-      print('Stored dict: {0}'.format(cur[entry]))
+      logging.debug('Checking key: %s', entry)
+      logging.debug('Stored dict: %s', cur[entry])
       doctext = wf.quick_doctext(doctext,
                                  '{0}:'.format(cur[entry]['label']),
                                  cur[entry]['value'], cur[entry]['units']
@@ -425,7 +425,7 @@ class Observation(object):
       with open(os.path.join(self.data['output_dir'], tablefile), 'w') as htmlout:
         htmlout.write('<table>\n')
         for key, value in self.con1.obs.iteritems():
-          print('{0}: {1}'.format(key, value))
+          logging.debug('%s: %s', key, value)
           htmlout.write('<tr><td>{0}</td><td>{1} {2}</td></tr>\n'.format(value[2],
                                                                          value[0],
                                                                          value[1])
@@ -433,7 +433,7 @@ class Observation(object):
         htmlout.write('</table>\n')
       return True
     except KeyError as exc:
-      print('Exception: {0}'.format(exc))
+      logging.error('Exception: %s', exc)
       return False
 
 
