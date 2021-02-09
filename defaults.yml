@@ -61,7 +61,7 @@ afd_divisions:
  - '.XXX WATCHES/WARNINGS/ADVISORIES...'
 
 icon_match:
-    'wi-day-sunny-overcast.svg': ['mostly sunny', 'partly sunny', 'partly cloudy', 'becoming sunny', 'gradual clearing', 'clearing late']
+    'wi-day-sunny-overcast.svg': ['mostly sunny', 'partly sunny', 'partly cloudy', 'becoming sunny', 'gradual clearing']
     'wi-day-sunny.svg': ['sunny', 'clear', 'mostly sunny', 'mostly clear']
     'wi-day-cloudy.svg': ['cloudy', 'mostly cloudy']
     'wi-cloud-down.svg': ['decreasing clouds']
@@ -95,7 +95,7 @@ icon_match:
     'wi-raindrops.svg': ['some rain']
     'wi-hail.svg': ['hail', 'rain and hail']
     'wi-na.svg': ['None', 'N/A', 'NA']
-    'wi-night-partly-cloudy.svg': ['clearing late']]
+    'wi-night-partly-cloudy.svg': ['clearing late']
     'person.svg': ['Child Abduction Emergency']
 
 
