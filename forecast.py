@@ -130,7 +130,7 @@ class Forecast(object):
     try:
       response = requests.get(self.defaults['afd_url'],
                               params=args,
-                              verify=False,
+                              verify=True,
                               timeout=10)
     except requests.exceptions.ReadTimeout:
       logging.error('Request timed out. Returning -None-')
@@ -228,7 +228,7 @@ class Forecast(object):
     try:
       retval = requests.get(url=self.data['defaults']['forecast_url'],
                             params=payload,
-                            verify=False,
+                            verify=True,
                             timeout=10
                            )
     except requests.exceptions.ReadTimeout as exc:
@@ -398,6 +398,8 @@ class ZoneForecast(object):
         forecast = re.sub('ONEDAY', '', forecast)
         forecast = re.sub(r'\s*$', '', forecast)
         logging.info('%s: %s', day, forecast)
+        if re.search(r'^\s*$', forecast):
+          continue
         self.zonef.append([day, forecast])
 
     return True
