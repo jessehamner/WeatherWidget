@@ -197,7 +197,7 @@ class Radar(object):
     """
     result = requests.get(os.path.join(directory, imagename))
     if result.status_code == 200:
-      print('Server returned OK.')
+      logging.info('Server returned OK.')
       return result
 
     return None

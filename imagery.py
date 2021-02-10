@@ -182,7 +182,7 @@ class Imagery(object):
                                                      resolution=self.res
                                                     )
     # image = '20200651806_GOES16-ABI-sp-NightMicrophysics-2400x2400.jpg'
-    returned_val = requests.get(os.path.join(self.url, image), verify=False)
+    returned_val = requests.get(os.path.join(self.url, image), verify=True)
     with open(os.path.join(self.data['output_dir'], image), 'wb') as satout:
       satout.write(bytearray(returned_val.content))
       logging.debug('Writing image %s to path %s', image, self.data['output_dir'])
@@ -224,7 +224,7 @@ class Imagery(object):
     return True
 
 
-  def get_file(self, url, mapname, file_to_retrieve, verify=False):
+  def get_file(self, url, mapname, file_to_retrieve, verify=True):
     """
     Generic helper function to retrieve a file from a given url and write it
     to the defined output directory.
@@ -249,7 +249,7 @@ class Imagery(object):
     return_value = self.get_file(url=self.data['defaults']['forecast_map_url'],
                                  file_to_retrieve=self.data['defaults']['forecast_map_file'],
                                  mapname=mapname,
-                                 verify=False)
+                                 verify=True)
     return return_value
 
 

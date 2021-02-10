@@ -210,7 +210,7 @@ class Alerts(object):
     try:
       response = requests.get(self.data['defaults']['alerts_url'],
                               params=county_params_dict,
-                              verify=False, timeout=10)
+                              verify=True, timeout=10)
     except Exception as exc:
       logging.error('Exception when requesting current alerts: %s', exc)
       return None

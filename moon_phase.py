@@ -93,7 +93,7 @@ class MoonPhase(object):
     url_args = {'year': thisyear, 'data_type': 'phaX1'}
     logging.debug('Retrieving moon phase data from %s', self.baseurl)
     moon_table = requests.get(self.baseurl, params=url_args,
-                              verify=False, timeout=10)
+                              verify=True, timeout=10)
 
     if moon_table.status_code != 200:
       logging.error('Unable to get a proper response from NOAA server. Returning False.')

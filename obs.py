@@ -73,6 +73,13 @@ class Observation(object):
     if returned_json is None:
       logging.error('No usable reply from %s', self.data['defaults']['cur_url'])
       return None
+    else:
+      try:
+        returned_text = wf.make_request(url=cur_url, use_json=False)
+        logging.debug('Returned current conditions information: %s', returned_text)
+      except Exception as exc:
+        logging.error('Exception when retrieving current conditions webpage data: %s', exc)
+        return None
 
     if 'properties' in returned_json.keys():
       con1 = self.con1.obs
@@ -130,9 +137,9 @@ class Observation(object):
         con1[val[0]]['value'] = 'None'
         con1[val[0]]['units'] = ''
       else:
-        logging.info('Converting %s to %s for %s data', from_unit,
-                                                        self.data['units'][val[1]],
-                                                        val[0])
+        print('Converting {0} to {1} for {2} data'.format(from_unit,
+                                                          self.data['units'][val[1]],
+                                                          val[0])
              )
         sys.stdout.write('{0} Input: {1}'.format(val[0], from_value))
         con1[val[0]]['value'] = wf.convert_units(value=from_value,
@@ -164,9 +171,9 @@ class Observation(object):
       self.backup_obs.obs = None
       logging.error('No weather observation was obtained from %s', url)
       return None
-    
+
     bsbackup = BeautifulSoup(retpage, 'lxml').find('current_observation')
-    logging.debug('Returned page from %s:\n%s', url, bsbackup.text )
+    logging.debug('Returned weather observation XML page from %s:\n%s', url, bsbackup.text )
 
     fields = ['location', 'station_id', 'latitude', 'longitude', 'observation_time',
               'observation_time_rfc822', 'weather', 'temperature_string', 'temp_f',
@@ -219,7 +226,8 @@ class Observation(object):
                        }
 
     con2['weather'] = self.backup_obs.obs['weather']
-
+    logging.debug('Backup weather observation (current conditions) string: %s', con2['weather'])
+    con2['textdescription'] = con2['weather']
     converted_windspeed = wf.convert_units(value=self.backup_obs.obs['wind_kt'],
                                            from_unit='kt',
                                            to_unit=units['velocity'])
@@ -314,11 +322,11 @@ class Observation(object):
     for key in self.matchup:
       logging.debug('Checking key: %s; existing value: %s ', key, ccp[key]['value'])
       if (ccp[key]['value'] is None) or (ccp[key]['value'] == 'None'):
-        logging.debug('Testing con2 value for %s: (%s)', key, con2[key]['value'])
+        logging.debug('Testing con2 value for %s: %s', key, con2[key]['value'])
         try:
           if con2[key]['value']:
             ccp[key] = con2[key]
-            logging.debug('Set value for %s in ccp to "%s".', key, con2[key])
+            logging.debug('Set value for %s in ccp to %s', key, con2[key])
 
         except Exception as exc:
           logging.error('Unable to compare or set value %s or %s: %s',
@@ -350,8 +358,8 @@ class Observation(object):
 
     doctext = str('Conditions as of {0}'.format(wf.prettify_timestamp(cur['timestamp'])))
     for entry in ordered:
-      logging.debug('Checking key: %s', entry)
-      logging.debug('Stored dict: %s', cur[entry])
+      print('Checking key: {0}'.format(entry))
+      print('Stored dict: {0}'.format(cur[entry]))
       doctext = wf.quick_doctext(doctext,
                                  '{0}:'.format(cur[entry]['label']),
                                  cur[entry]['value'], cur[entry]['units']
@@ -425,7 +433,7 @@ class Observation(object):
       with open(os.path.join(self.data['output_dir'], tablefile), 'w') as htmlout:
         htmlout.write('<table>\n')
         for key, value in self.con1.obs.iteritems():
-          logging.debug('%s: %s', key, value)
+          print('{0}: {1}'.format(key, value))
           htmlout.write('<tr><td>{0}</td><td>{1} {2}</td></tr>\n'.format(value[2],
                                                                          value[0],
                                                                          value[1])
@@ -433,7 +441,7 @@ class Observation(object):
         htmlout.write('</table>\n')
       return True
     except KeyError as exc:
-      logging.error('Exception: %s', exc)
+      print('Exception: {0}'.format(exc))
       return False
 
 
