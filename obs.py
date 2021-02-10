@@ -317,6 +317,7 @@ class Observation(object):
     fill in remaining gaps.
     """
 
+    logging.info('Comparing current observations from multiple sources.')
     ccp = self.con1.obs
     con2 = self.con2.obs
     for key in self.matchup:
@@ -334,8 +335,8 @@ class Observation(object):
           continue
 
     for key in self.textonly:
-      logging.debug('Comparing values for %s.', key)
-      if ccp[key] is None or ccp[key] == 'None' or ccp[key] == 'No Data':
+      logging.debug('Comparing values for key: "%s".', key)
+      if ccp[key] is None or ccp[key] == 'None' or ccp[key] == 'No Data' or ccp[key] == '':
         if con2[key]:
           ccp[key] = con2[key]
           logging.debug('Replaced missing value for %s in ccp with %s', key, con2[key])
