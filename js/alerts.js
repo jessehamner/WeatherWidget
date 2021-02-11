@@ -111,7 +111,7 @@ requestg.onload = () => {
       summary = document.createTextNode(i['summary']);
       h3 = document.createElement("h3");
       textnode = document.createTextNode(i['event_type']);
-      h3.appendChild(generateIconImage('wi-thunderstorm.svg', 'specific watch icon'));
+      h3.appendChild(generateIconImage(i['alert_icon'], 'specific watch icon'));
       h3.appendChild(textnode);
       para.appendChild(h3);
       para.appendChild(summary);
