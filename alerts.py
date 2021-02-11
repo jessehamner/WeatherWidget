@@ -77,13 +77,20 @@ class EventDict(object):
     self.eventdict['alert_icon'] = wsvg.assign_icon(self.eventdict['event_type'],
                                                     self.data['defaults']['icon_match'])
 
-    if self.eventdict['alert_icon'] == 'wi-na.svg':
-      if self.eventdict['event_type'] in self.data['defaults']['warnings']:
+    if self.eventdict['alert_type']:
+      if self.eventdict['alert_type'] == 'warn':
+        logging.info('event_type matched "warnings" list. Assigning "warning.svg"')
         self.eventdict['alert_icon'] = 'warning.svg'
-      elif self.eventdict['event_type'] in self.data['defaults']['watches']:
-        self.eventdict['alert_icon'] = 'warning.svg'
-      elif self.eventdict['event_type'] in self.data['defaults']['alerts']:
-        self.eventdict['alert_icon'] = 'warning.svg'
+      elif self.eventdict['alert_type'] == 'watch':
+        logging.info('event_type matched "watches" list. Assigning "watch.svg"')
+        self.eventdict['alert_icon'] = 'watch.svg'
+      elif self.eventdict['alert_type'] == 'alert':
+        logging.info('event_type matched "alerts" list. Assigning "watch.svg"')
+        self.eventdict['alert_icon'] = 'watch.svg'
+      else:
+        logging.warn('Unable to match alert type to event_type. Using default.')
+    else: 
+      self.eventdict['alert_icon'] = 'wi-na.svg'
 
     logging.debug('Warning summary: %s', self.eventdict['warning_summary'])
     return self.eventdict
