@@ -98,7 +98,7 @@ icon_match:
     'wi-na.svg': ['None', 'N/A', 'NA']
     'wi-night-partly-cloudy.svg': ['clearing late']
     'person.svg': ['Child Abduction Emergency']
-
+    'watch.svg': ['special weather statement']
 
 circle_css:
     'fill': 'white'
@@ -155,7 +155,6 @@ warnings:
  - 'tropical storm warning'
  - 'hurricane warning'
  - 'coastal flood warning'
- - 'special weather statement'
 
 watches:
  - 'winter storm watch'
