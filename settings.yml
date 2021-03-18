@@ -9,6 +9,11 @@ station: 'KDTO'
 radar_station: &r_abbr 'FWS'
 ridgeii_radar_station: 'KFWS'
 
+# Radar imagery details:
+radar_product: 'CREF'
+product_directory: 'L3'
+
+
 # office call signs found at 
 # https://en.wikipedia.org/wiki/List_of_National_Weather_Service_Weather_Forecast_Offices
 # or the WFO SID column at  https://www.roc.noaa.gov/WSR88D/Program/NetworkSites.aspx
@@ -39,14 +44,14 @@ timezone: 'America/Chicago'
 
 # Be sure the directory is universally writable, if you plan to schedule this
 # script to run.
-output_dir: '/tmp/'
+output_dir: '/var/www/html/dist/'
 
 # County and Zones maps by state: https://alerts.weather.gov/
 # (Zone maps also available at: https://www.weather.gov/pimar/PubZone )
 # Note these counties must be specifically named according to NWS spellings
 # But feel free to add other states and counties as needed!
 counties_for_alerts:
-  'TX': ['Denton', 'Wise', 'Dallas', 'Tarrant', 'Cooke', 'Montague']
+  'TX': ['Denton', 'Wise', 'Dallas', 'Tarrant', 'Cooke', 'Collin']
   # 'AL': ['Madison', 'Limestone']
   # 'KY': ['Daviess']
 
