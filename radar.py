@@ -44,7 +44,7 @@ class Radar(object):
 
     url_path = self.radar_url.format(station=self.station, image='N0R_0.gfw')
     logging.debug('Making request to: %s', url_path)
-    response1 = requests.get(url_path, verify=False, timeout=10)
+    response1 = requests.get(url_path, verify=True, timeout=10)
     if response1.status_code != 200:
       logging.error('Response from server was not OK: %s', response1.status_code)
       self.problem = True
@@ -56,7 +56,7 @@ class Radar(object):
 
     url_path = self.radar_url.format(station=self.station, image='N0R_0.gif')
     logging.debug('Making request to: %s', url_path)
-    response2 = requests.get(url_path, verify=False, timeout=10)
+    response2 = requests.get(url_path, verify=True, timeout=10)
     if response2.status_code != 200:
       logging.error('Response from server was not OK: %s', response2.status_code)
       self.problem = True
@@ -78,7 +78,7 @@ class Radar(object):
     warnings = 'Warnings'
     url_path = self.warnings_url.format(station=self.station, warnings=warnings)
     logging.debug('Making request to: %s', url_path)
-    response = requests.get(url_path, verify=False, timeout=10)
+    response = requests.get(url_path, verify=True, timeout=10)
     try:
       cur = open(os.path.join(self.data['output_dir'], 'current_warnings.gif'), 'wb')
       cur.write(response.content)
@@ -120,7 +120,7 @@ class Radar(object):
 
   def _check_asset(self, outputdir, filename, url_dir, url):
     """
-
+    Confirm that a file exists, then go get it remotely if needed.
     """
     localpath = os.path.join(outputdir, filename)
     if os.path.isfile(localpath) is False:
@@ -139,11 +139,11 @@ class Radar(object):
 
   def _retrieve_asset(self, file_url_dir, url, filename):
     """
-
+    Retrieve a file from a URL.
     """
 
     graphic = requests.get(os.path.join(url, file_url_dir),
-                           verify=False, timeout=10)
+                           verify=True, timeout=10)
     with open(os.path.join(self.data['output_dir'], filename), 'wb') as output:
       output.write(graphic.content)
       output.close()
@@ -197,7 +197,7 @@ class Radar(object):
     """
     result = requests.get(os.path.join(directory, imagename))
     if result.status_code == 200:
-      logging.info('Server returned OK.')
+      print('Server returned OK.')
       return result
 
     return None
