@@ -89,7 +89,7 @@ icon_match:
     'wi-fog.svg': ['fog', 'foggy', 'haze', 'fog/mist']
     'wi-day-sprinkle.svg': ['drizzle', 'sprinkle', 'mist', 'misty', 'Slight Chance Rain Showers', 'chance rain showers', 'chance of a shower', 'Rain and Fog/Mist']
     'wi-sprinkle.svg': ['light rain', 'light rain and fog/mist', 'slight chance rain']
-    'wi-strong-wind.svg': ['windy', 'strong winds', 'blustery', 'straight-line winds', 'winds in excess of']
+    'wi-strong-wind.svg': ['windy', 'strong winds', 'blustery', 'straight-line winds', 'winds in excess of', 'breezy', 'Mostly Clear and Windy']
     'wi-smog.svg': ['air quality alert']
     'wi-day-snow.svg': ['light snow', 'snow', 'flurries', 'flurry','chance rain/snow', 'freezing rain', 'chance freezing rain', 'Slight Chance Snow', 'slight chance freezing rain', 'snow likely', 'chance snow']
     'wi-rain-mix.svg': ['Light Snow and Fog/Mist', 'wintry mix', 'rain/snow likely', 'rain/snow', 'chance wintry mix', 'rain/freezing rain', 'freezing drizzle']
