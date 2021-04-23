@@ -84,13 +84,15 @@ class HWO(object):
       first_sentence = re.search(r'^(.*)\.', hwotext).group(1)
       logging.debug('First sentence: %s', first_sentence)
       hwotext = re.sub('\n', ' ', hwotext)
-      hwotext = self.nice_plumbing(hwotext)
+      hwotext = nice_plumbing(hwotext)
 
       first_info = re.sub(first_sentence, '', hwotext)
       first_info = re.sub(r'^\s*\.*', '', first_info)
       self.hwodict['dayone'] = [first_sentence.strip(), first_info.strip()]
 
-    daytwo = re.search('DAYS TWO THROUGH SEVEN(.*)SPOTTER', bodytext, re.DOTALL).group(1)
+    daytwo = re.search('DAYS TWO THROUGH SEVEN(.*)SPOTTER', bodytext, re.DOTALL)
+    if daytwo:
+      daytwo = daytwo.group(1)
     if daytwo:
       logging.debug('DayTwo: %s', daytwo)
       daytwo = re.sub(r'\n{1,}', ' ', daytwo)
@@ -98,14 +100,14 @@ class HWO(object):
       first_sentence = re.search(r'^(.*?)\.', daytwo).group(1)
       logging.debug('First sentence: %s', first_sentence)
       second_info = re.sub(first_sentence, '', daytwo)
-      second_info = self.nice_plumbing(second_info)
+      second_info = nice_plumbing(second_info)
       self.hwodict['daystwothroughseven'] = [first_sentence.strip(),
                                              second_info.strip()]
 
     spotter = re.search(r'(\.*SPOTTER INFORMATION STATEMENT.*?)(\s*\$\$)',
                         bodytext, re.DOTALL)
     if spotter:
-      spottext = self.nice_plumbing(spotter.group(1))
+      spottext = nice_plumbing(spotter.group(1))
       spottext = re.sub(r'SPOTTER INFORMATION STATEMENT[\.]{1,}',
                         '', spottext)
       spottext = re.sub('\n', ' ', spottext)
@@ -121,12 +123,12 @@ class HWO(object):
     return True
 
 
-  def nice_plumbing(self, text):
-    """
-    Try and regex/tidy some of the text.
-    """
+def nice_plumbing(text):
+  """
+  Try and regex/tidy some of the text.
+  """
 
-    return_text = re.sub(r'^\s*\.*', '', text)
-    return_text = re.sub(r'\.\s+\.$', '.', return_text)
-    return_text = re.sub(r'\n+$', '', return_text)
-    return return_text
+  return_text = re.sub(r'^\s*\.*', '', text)
+  return_text = re.sub(r'\.\s+\.$', '.', return_text)
+  return_text = re.sub(r'\n+$', '', return_text)
+  return return_text
